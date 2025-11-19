@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/llamacpp"
+	"github.com/hybridgroup/yzma/pkg/download"
 )
 
 var (
@@ -27,9 +28,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Println("libpath:", libPath)
-	fmt.Println("modelPath:", modelPath)
-	fmt.Println("imageFile:", imageFile)
+	fmt.Println("libpath        :", libPath)
+	fmt.Println("modelPath      :", modelPath)
+	fmt.Println("imageFile      :", imageFile)
+	fmt.Println("LD_LIBRARY_PATH:", os.Getenv("LD_LIBRARY_PATH"))
 
 	if err := filepath.Walk(modelPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -41,10 +43,10 @@ func TestMain(m *testing.M) {
 		fmt.Printf("error walking model path: %v\n", err)
 	}
 
-	// if err := llamacpp.InstallLlama(libPath, download.CPU, true); err != nil {
-	// 	fmt.Printf("unable to install llamacpp: %v", err)
-	// 	os.Exit(1)
-	// }
+	if err := llamacpp.InstallLlama(libPath, download.CPU, true); err != nil {
+		fmt.Printf("unable to install llamacpp: %v", err)
+		os.Exit(1)
+	}
 
 	os.Exit(m.Run())
 }
