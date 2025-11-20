@@ -36,7 +36,6 @@ func TestMain(m *testing.M) {
 	fmt.Println("modelPath      :", modelPath)
 	fmt.Println("imageFile      :", imageFile)
 	fmt.Println("LD_LIBRARY_PATH:", os.Getenv("LD_LIBRARY_PATH"))
-	fmt.Println("YZMA_LIB       :", os.Getenv("YZMA_LIB"))
 
 	if os.Getenv("CONCURRENCY") != "" {
 		var err error

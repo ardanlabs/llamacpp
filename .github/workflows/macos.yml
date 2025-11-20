@@ -51,6 +51,5 @@ jobs:
       - name: Run unit tests
         run: |
           export LD_LIBRARY_PATH=$GITHUB_WORKSPACE/libraries
-          export YZMA_LIB=$GITHUB_WORKSPACE/libraries
           export CONCURRENCY=1
           go test -v -count=1
