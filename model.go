@@ -11,7 +11,6 @@ import (
 )
 
 type model struct {
-	libPath   string
 	model     llama.Model
 	vocab     llama.Vocab
 	ctxParams llama.ContextParams
@@ -20,18 +19,7 @@ type model struct {
 	muHEC     sync.Mutex
 }
 
-func newModel(libPath string, modelFile string, cfg Config, options ...func(m *model) error) (*model, error) {
-	if err := llama.Load(libPath); err != nil {
-		return nil, fmt.Errorf("unable to load library: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	llama.Init()
-	cfg.setLog()
-
-	// -------------------------------------------------------------------------
-
+func newModel(modelFile string, cfg Config, options ...func(m *model) error) (*model, error) {
 	mdl, err := llama.ModelLoadFromFile(modelFile, llama.ModelDefaultParams())
 	if err != nil {
 		return nil, fmt.Errorf("ModelLoadFromFile: %w", err)
@@ -53,7 +41,6 @@ func newModel(libPath string, modelFile string, cfg Config, options ...func(m *m
 	// -------------------------------------------------------------------------
 
 	m := model{
-		libPath:   libPath,
 		model:     mdl,
 		vocab:     vocab,
 		ctxParams: cfg.ctxParams(),

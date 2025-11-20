@@ -10,8 +10,37 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
+
+type LogLevel int
+
+const (
+	LogSilent LogLevel = iota + 1
+	LogNormal
+)
+
+var libraryLocation string
+
+func Init(libPath string, logLevel LogLevel) error {
+	if err := llama.Load(libPath); err != nil {
+		return fmt.Errorf("unable to load library: %w", err)
+	}
+
+	libraryLocation = libPath
+
+	llama.Init()
+
+	switch logLevel {
+	case LogSilent:
+		llama.LogSet(llama.LogSilent())
+	default:
+		llama.LogSet(llama.LogNormal)
+	}
+
+	return nil
+}
 
 // Llama represents a concurrency group of a specified model.
 type Llama struct {
@@ -21,11 +50,15 @@ type Llama struct {
 }
 
 // New provides the ability to use models in a concurrently safe way.
-func New(concurrency int, libPath string, modelFile string, cfg Config, options ...func(llg *model) error) (*Llama, error) {
+func New(concurrency int, modelFile string, cfg Config, options ...func(llg *model) error) (*Llama, error) {
+	if libraryLocation == "" {
+		return nil, fmt.Errorf("the Init() function has not been called")
+	}
+
 	llama := make(chan *model, concurrency)
 
 	for range concurrency {
-		l, err := newModel(libPath, modelFile, cfg, options...)
+		l, err := newModel(modelFile, cfg, options...)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +76,7 @@ func New(concurrency int, libPath string, modelFile string, cfg Config, options 
 
 func WithProjection(projFile string) func(m *model) error {
 	return func(m *model) error {
-		if err := mtmd.Load(m.libPath); err != nil {
+		if err := mtmd.Load(libraryLocation); err != nil {
 			return fmt.Errorf("unable to load mtmd library: %w", err)
 		}
 

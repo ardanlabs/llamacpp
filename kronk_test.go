@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -48,7 +47,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("CONCURRENCY    :", concurrency)
 
-	fmt.Println("LIBRARIES      :")
+	fmt.Println("LIBRARIES:")
 	kronk.InstallLlama(libPath, download.CPU, false)
 	if err := filepath.Walk(libPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -60,7 +59,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("error walking model path: %v\n", err)
 	}
 
-	fmt.Println("MODELS         :")
+	fmt.Println("MODELS:")
 	if err := filepath.Walk(modelPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -71,6 +70,11 @@ func TestMain(m *testing.M) {
 		fmt.Printf("error walking model path: %v\n", err)
 	}
 
+	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+		fmt.Println("Failed to init the llamacpp library")
+		os.Exit(1)
+	}
+
 	os.Exit(m.Run())
 }
 
@@ -79,8 +83,7 @@ func TestChatCompletions(t *testing.T) {
 
 	// -------------------------------------------------------------------------
 
-	llm, err := kronk.New(concurrency, libPath, modelFile, kronk.Config{
-		LogSet:        kronk.LogSilent,
+	llm, err := kronk.New(concurrency, modelFile, kronk.Config{
 		ContextWindow: 1024 * 4,
 	})
 	if err != nil {
@@ -143,9 +146,9 @@ func TestChatCompletions(t *testing.T) {
 }
 
 func TestChatVision(t *testing.T) {
-	if runtime.GOOS == "darwin" {
-		t.Skip("skipping test since it takes too long to run")
-	}
+	// if runtime.GOOS == "darwin" {
+	// 	t.Skip("skipping test since it takes too long to run")
+	// }
 
 	modelFile := modelChatVisionFile
 	projFile := projChatVisionFile
@@ -156,7 +159,7 @@ func TestChatVision(t *testing.T) {
 		ContextWindow: 1024 * 4,
 	}
 
-	llm, err := kronk.New(concurrency, libPath, modelFile, cfg, kronk.WithProjection(projFile))
+	llm, err := kronk.New(concurrency, modelFile, cfg, kronk.WithProjection(projFile))
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
@@ -222,7 +225,7 @@ func TestEmbedding(t *testing.T) {
 		Embeddings:    true,
 	}
 
-	llm, err := kronk.New(concurrency, libPath, modelFile, cfg)
+	llm, err := kronk.New(concurrency, modelFile, cfg)
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
