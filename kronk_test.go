@@ -47,20 +47,22 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("CONCURRENCY    :", concurrency)
 
-	fmt.Printf("LIBRARIES      : Installing at %s\n", libPath)
-	if err := kronk.InstallLlama(libPath, download.CPU, true); err != nil {
-		fmt.Printf("Failed to install llama: %s: error: %s\n", libPath, err)
-		os.Exit(1)
-	}
-
-	if err := filepath.Walk(libPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	if os.Getenv("INSTALL_LLAMA") == "1" {
+		fmt.Printf("LIBRARIES      : Installing at %s\n", libPath)
+		if err := kronk.InstallLlama(libPath, download.CPU, true); err != nil {
+			fmt.Printf("Failed to install llama: %s: error: %s\n", libPath, err)
+			os.Exit(1)
 		}
-		fmt.Println("lib:", path)
-		return nil
-	}); err != nil {
-		fmt.Printf("error walking model path: %v\n", err)
+
+		if err := filepath.Walk(libPath, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			fmt.Println("lib:", path)
+			return nil
+		}); err != nil {
+			fmt.Printf("error walking model path: %v\n", err)
+		}
 	}
 
 	fmt.Println("MODELS:")

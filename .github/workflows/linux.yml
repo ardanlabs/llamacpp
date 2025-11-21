@@ -22,6 +22,14 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "stable"
+      - name: Download llama.cpp
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: "ggml-org/llama.cpp"
+          latest: true
+          fileName: "llama-*-bin-ubuntu-x64.zip"
+          out-file-path: "lib"
+          extract: true
       - name: Move llama.cpp files to libraries directory
         run: |
           mkdir -p ./libraries
