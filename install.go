@@ -18,7 +18,7 @@ func InstallLlama(libPath string, processor download.Processor, allowUpgrade boo
 			return nil
 		}
 
-		return fmt.Errorf("unable to install llamacpp: %s: %w", file, err)
+		return fmt.Errorf("unable to install llamacpp: %w", err)
 	}
 
 	return nil
