@@ -3,11 +3,28 @@ package kronk
 import (
 	"context"
 	"fmt"
+	"strings"
 	"unsafe"
 
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
+
+func (m *model) vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (string, error) {
+	ch := m.visionStreaming(ctx, message, imageFile, params)
+
+	var finalResponse strings.Builder
+
+	for msg := range ch {
+		if msg.Err != nil {
+			return "", fmt.Errorf("error from model: %w", msg.Err)
+		}
+
+		finalResponse.WriteString(msg.Response)
+	}
+
+	return finalResponse.String(), nil
+}
 
 func (m *model) visionStreaming(ctx context.Context, message ChatMessage, imageFile string, params Params) <-chan ChatResponse {
 	ch := make(chan ChatResponse)

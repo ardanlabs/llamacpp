@@ -134,11 +134,25 @@ func (krn *Kronk) ModelInfo(ctx context.Context) (ModelInfo, error) {
 	})
 }
 
+// Chat provides support to interact with an inference model.
+func (krn *Kronk) Chat(ctx context.Context, messages []ChatMessage, params Params) (string, error) {
+	return nonStreaming(ctx, krn, &krn.closed, func(model *model) (string, error) {
+		return model.chat(ctx, messages, params)
+	})
+}
+
 // ChatStreaming provides support to interact with an inference model.
 // It will block until a model becomes available or the context times out.
 func (krn *Kronk) ChatStreaming(ctx context.Context, messages []ChatMessage, params Params) (<-chan ChatResponse, error) {
 	return streaming(ctx, krn, &krn.closed, func(model *model) <-chan ChatResponse {
 		return model.chatStreaming(ctx, messages, params)
+	})
+}
+
+// Vision provides support to interact with a vision inference model.
+func (krn *Kronk) Vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (string, error) {
+	return nonStreaming(ctx, krn, &krn.closed, func(model *model) (string, error) {
+		return model.vision(ctx, message, imageFile, params)
 	})
 }
 

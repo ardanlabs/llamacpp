@@ -3,9 +3,26 @@ package kronk
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
+
+func (m *model) chat(ctx context.Context, messages []ChatMessage, params Params) (string, error) {
+	ch := m.chatStreaming(ctx, messages, params)
+
+	var finalResponse strings.Builder
+
+	for msg := range ch {
+		if msg.Err != nil {
+			return "", fmt.Errorf("error from model: %w", msg.Err)
+		}
+
+		finalResponse.WriteString(msg.Response)
+	}
+
+	return finalResponse.String(), nil
+}
 
 func (m *model) chatStreaming(ctx context.Context, messages []ChatMessage, params Params) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
