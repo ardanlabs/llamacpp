@@ -286,8 +286,8 @@ func (m *model) embed(text string) ([]float32, error) {
 	batch := llama.BatchGetOne(tokens)
 	llama.Decode(lctx, batch)
 
-	dimentions := llama.ModelNEmbd(m.model)
-	vec, err := llama.GetEmbeddingsSeq(lctx, 0, dimentions)
+	dimensions := llama.ModelNEmbd(m.model)
+	vec, err := llama.GetEmbeddingsSeq(lctx, 0, dimensions)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get embeddings: %v", err)
 	}

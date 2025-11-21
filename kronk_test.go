@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("CONCURRENCY    :", concurrency)
 
-	fmt.Println("LIBRARIES:")
+	fmt.Printf("LIBRARIES: Installing: %s\n", libPath)
 	if err := kronk.InstallLlama(libPath, download.CPU, true); err != nil {
 		fmt.Printf("Failed to install llama: %s: error: %s\n", libPath, err)
 		os.Exit(1)
