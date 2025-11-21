@@ -87,13 +87,13 @@ func TestChatCompletions(t *testing.T) {
 
 	// -------------------------------------------------------------------------
 
-	llm, err := kronk.New(concurrency, modelFile, kronk.Config{
+	krn, err := kronk.New(concurrency, modelFile, kronk.Config{
 		ContextWindow: 1024 * 4,
 	})
 	if err != nil {
 		t.Fatalf("unable to load model: %v", err)
 	}
-	defer llm.Unload()
+	defer krn.Unload()
 
 	// -------------------------------------------------------------------------
 
@@ -118,9 +118,9 @@ func TestChatCompletions(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
-		ch, err := llm.ChatCompletions(ctx, messages, params)
+		ch, err := krn.ChatStreaming(ctx, messages, params)
 		if err != nil {
-			return fmt.Errorf("chat completions: %w", err)
+			return fmt.Errorf("chat streaming: %w", err)
 		}
 
 		var finalResponse strings.Builder
@@ -163,11 +163,11 @@ func TestChatVision(t *testing.T) {
 		ContextWindow: 1024 * 4,
 	}
 
-	llm, err := kronk.New(concurrency, modelFile, cfg, kronk.WithProjection(projFile))
+	krn, err := kronk.New(concurrency, modelFile, cfg, kronk.WithProjection(projFile))
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
-	defer llm.Unload()
+	defer krn.Unload()
 
 	// -------------------------------------------------------------------------
 
@@ -188,9 +188,9 @@ func TestChatVision(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
-		ch, err := llm.ChatVision(ctx, message, imageFile, params)
+		ch, err := krn.VisionStreaming(ctx, message, imageFile, params)
 		if err != nil {
-			return fmt.Errorf("chat vision: %w", err)
+			return fmt.Errorf("vision streaming: %w", err)
 		}
 
 		var finalResponse strings.Builder
@@ -229,11 +229,11 @@ func TestEmbedding(t *testing.T) {
 		Embeddings:    true,
 	}
 
-	llm, err := kronk.New(concurrency, modelFile, cfg)
+	krn, err := kronk.New(concurrency, modelFile, cfg)
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
-	defer llm.Unload()
+	defer krn.Unload()
 
 	// -------------------------------------------------------------------------
 
@@ -243,7 +243,7 @@ func TestEmbedding(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
-		embed, err := llm.Embed(ctx, text)
+		embed, err := krn.Embed(ctx, text)
 		if err != nil {
 			return fmt.Errorf("embed: %w", err)
 		}

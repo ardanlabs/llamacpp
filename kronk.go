@@ -129,32 +129,32 @@ func (krn *Kronk) Unload() {
 
 // ModelInfo provides support to extract the model card information.
 func (krn *Kronk) ModelInfo(ctx context.Context) (ModelInfo, error) {
-	return nonStreaming(ctx, krn, &krn.closed, func(llama *model) (ModelInfo, error) {
-		return llama.modelInfo(), nil
+	return nonStreaming(ctx, krn, &krn.closed, func(model *model) (ModelInfo, error) {
+		return model.modelInfo(), nil
 	})
 }
 
-// ChatCompletions provides support to interact with an inference model.
+// ChatStreaming provides support to interact with an inference model.
 // It will block until a model becomes available or the context times out.
-func (krn *Kronk) ChatCompletions(ctx context.Context, messages []ChatMessage, params Params) (<-chan ChatResponse, error) {
-	return streaming(ctx, krn, &krn.closed, func(llama *model) <-chan ChatResponse {
-		return llama.chatCompletions(ctx, messages, params)
+func (krn *Kronk) ChatStreaming(ctx context.Context, messages []ChatMessage, params Params) (<-chan ChatResponse, error) {
+	return streaming(ctx, krn, &krn.closed, func(model *model) <-chan ChatResponse {
+		return model.chatStreaming(ctx, messages, params)
 	})
 }
 
-// ChatVision provides support to interact with a vision language model. It will
-// block until a model becomes available or the context times out.
-func (krn *Kronk) ChatVision(ctx context.Context, message ChatMessage, imageFile string, params Params) (<-chan ChatResponse, error) {
-	return streaming(ctx, krn, &krn.closed, func(llama *model) <-chan ChatResponse {
-		return llama.chatVision(ctx, message, imageFile, params)
+// VisionStreaming provides support to interact with a vision language model.
+// It will block until a model becomes available or the context times out.
+func (krn *Kronk) VisionStreaming(ctx context.Context, message ChatMessage, imageFile string, params Params) (<-chan ChatResponse, error) {
+	return streaming(ctx, krn, &krn.closed, func(model *model) <-chan ChatResponse {
+		return model.visionStreaming(ctx, message, imageFile, params)
 	})
 }
 
 // Embed provides support to interact with an embedding model. It will block
 // until a model becomes available or the context times out.
 func (krn *Kronk) Embed(ctx context.Context, text string) ([]float32, error) {
-	return nonStreaming(ctx, krn, &krn.closed, func(llama *model) ([]float32, error) {
-		return llama.embed(ctx, text)
+	return nonStreaming(ctx, krn, &krn.closed, func(model *model) ([]float32, error) {
+		return model.embed(ctx, text)
 	})
 }
 
