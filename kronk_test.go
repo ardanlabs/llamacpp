@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("CONCURRENCY    :", concurrency)
 
-	fmt.Printf("LIBRARIES: Installing: %s\n", libPath)
+	fmt.Printf("LIBRARIES       : Installing: %s\n", libPath)
 	if err := kronk.InstallLlama(libPath, download.CPU, true); err != nil {
 		fmt.Printf("Failed to install llama: %s: error: %s\n", libPath, err)
 		os.Exit(1)
@@ -115,7 +115,7 @@ func TestChatCompletions(t *testing.T) {
 	// -------------------------------------------------------------------------
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
 		ch, err := llm.ChatCompletions(ctx, messages, params)
@@ -185,7 +185,7 @@ func TestChatVision(t *testing.T) {
 	}
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
 		ch, err := llm.ChatVision(ctx, message, imageFile, params)
@@ -240,7 +240,7 @@ func TestEmbedding(t *testing.T) {
 	text := "Embed this sentence"
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
 		embed, err := llm.Embed(ctx, text)

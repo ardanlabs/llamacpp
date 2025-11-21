@@ -13,11 +13,12 @@ import (
 func InstallLlama(libPath string, processor download.Processor, allowUpgrade bool) error {
 	if err := download.InstallLibraries(libPath, processor, allowUpgrade); err != nil {
 		file := filepath.Join(libPath, "libmtmd.dylib")
-		if _, err := os.Stat(file); !os.IsNotExist(err) {
+
+		if _, err := os.Stat(file); err == nil {
 			return nil
 		}
 
-		return fmt.Errorf("unable to install llamacpp: %w", err)
+		return fmt.Errorf("unable to install llamacpp: %s: %w", file, err)
 	}
 
 	return nil
@@ -29,15 +30,15 @@ func InstallModel(modelURL string, modelPath string) (string, error) {
 		return "", fmt.Errorf("unable to parse modelURL: %w", err)
 	}
 
-	localPath := filepath.Join(modelPath, path.Base(u.Path))
+	file := filepath.Join(modelPath, path.Base(u.Path))
 
-	if _, err := os.Stat(localPath); !os.IsNotExist(err) {
-		return localPath, nil
+	if _, err := os.Stat(file); err == nil {
+		return file, nil
 	}
 
 	if err := download.GetModel(modelURL, modelPath); err != nil {
 		return "", fmt.Errorf("unable to download model: %w", err)
 	}
 
-	return localPath, nil
+	return file, nil
 }

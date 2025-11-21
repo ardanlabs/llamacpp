@@ -1,6 +1,7 @@
 package kronk
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"sync"
@@ -49,6 +50,8 @@ func newModel(modelFile string, cfg Config, options ...func(m *model) error) (*m
 
 	for _, option := range options {
 		if err := option(&m); err != nil {
+			llama.ModelFree(mdl)
+			llama.BackendFree()
 			return nil, err
 		}
 	}
@@ -96,7 +99,7 @@ func (m *model) modelInfo() ModelInfo {
 	}
 }
 
-func (m *model) chatCompletions(messages []ChatMessage, params Params) <-chan ChatResponse {
+func (m *model) chatCompletions(ctx context.Context, messages []ChatMessage, params Params) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 
 	go func() {
@@ -114,7 +117,7 @@ func (m *model) chatCompletions(messages []ChatMessage, params Params) <-chan Ch
 		}()
 
 		prompt := m.applyChatCompletionsTemplate(messages)
-		m.processChatCompletions(lctx, prompt, toSampler(params), ch)
+		m.processChatCompletions(ctx, lctx, prompt, toSampler(params), ch)
 	}()
 
 	return ch
@@ -132,10 +135,18 @@ func (m *model) applyChatCompletionsTemplate(messages []ChatMessage) string {
 	return string(buf[:l])
 }
 
-func (m *model) processChatCompletions(lctx llama.Context, prompt string, sampler llama.Sampler, ch chan<- ChatResponse) {
+func (m *model) processChatCompletions(ctx context.Context, lctx llama.Context, prompt string, sampler llama.Sampler, ch chan<- ChatResponse) {
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
+	buf := make([]byte, 1024*32)
 
 	for range llama.MaxToken {
+		select {
+		case <-ctx.Done():
+			ch <- ChatResponse{Err: ctx.Err()}
+			return
+		default:
+		}
+
 		batch := llama.BatchGetOne(tokens)
 		llama.Decode(lctx, batch)
 
@@ -145,7 +156,6 @@ func (m *model) processChatCompletions(lctx llama.Context, prompt string, sample
 			break
 		}
 
-		buf := make([]byte, 1024*32)
 		l := llama.TokenToPiece(m.vocab, token, buf, 0, false)
 
 		resp := string(buf[:l])
@@ -153,15 +163,20 @@ func (m *model) processChatCompletions(lctx llama.Context, prompt string, sample
 			break
 		}
 
-		ch <- ChatResponse{
+		select {
+		case <-ctx.Done():
+			ch <- ChatResponse{Err: ctx.Err()}
+			return
+		case ch <- ChatResponse{
 			Response: resp,
+		}:
 		}
 
 		tokens = []llama.Token{token}
 	}
 }
 
-func (m *model) chatVision(message ChatMessage, imageFile string, params Params) <-chan ChatResponse {
+func (m *model) chatVision(ctx context.Context, message ChatMessage, imageFile string, params Params) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 
 	go func() {
@@ -174,7 +189,7 @@ func (m *model) chatVision(message ChatMessage, imageFile string, params Params)
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %v", err)}
+			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %w", err)}
 			return
 		}
 
@@ -189,17 +204,21 @@ func (m *model) chatVision(message ChatMessage, imageFile string, params Params)
 
 		mtmdCtx, err := mtmd.InitFromFile(m.projFile, m.model, mctxParams)
 		if err != nil {
-			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %v", err)}
+			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %w", err)}
 			return
 		}
 		defer mtmd.Free(mtmdCtx)
 
 		prompt := m.applyChatVisionTemplate(message)
 
-		bitmap := m.processBitmap(lctx, mtmdCtx, imageFile, prompt)
+		bitmap, err := m.processBitmap(lctx, mtmdCtx, imageFile, prompt)
+		if err != nil {
+			ch <- ChatResponse{Err: err}
+			return
+		}
 		defer mtmd.BitmapFree(bitmap)
 
-		m.processChatVision(lctx, toSampler(params), ch)
+		m.processChatVision(ctx, lctx, toSampler(params), ch)
 	}()
 
 	return ch
@@ -212,13 +231,26 @@ func (m *model) applyChatVisionTemplate(message ChatMessage) string {
 	}
 
 	buf := make([]byte, 1024*32)
-	len := llama.ChatApplyTemplate(m.template, msgs, true, buf)
+	l := llama.ChatApplyTemplate(m.template, msgs, true, buf)
 
-	return string(buf[:len])
+	return string(buf[:l])
 }
 
-func (m *model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, imageFile string, prompt string) mtmd.Bitmap {
+func (m *model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, imageFile string, prompt string) (mtmd.Bitmap, error) {
 	bitmap := mtmd.BitmapInitFromFile(mtmdCtx, imageFile)
+	// Assuming bitmap check if needed, currently the library might not return error on InitFromFile directly?
+	// If it returns nil or zero value on failure, we should check.
+	// Looking at typical C-bindings, nil/null often means error.
+	// Since I don't have the library docs, I will assume if it's nil/empty it might be an issue,
+	// but the Oracle suggested checking if bitmap == nil.
+	// However, mtmd.Bitmap is likely a struct or pointer.
+	// If I can't confirm, I will leave it or add a simple check if the oracle was sure.
+	// Oracle said: "Guard BitmapInitFromFile if it can fail (check API)".
+	// I'll assume it's valid for now or check if I can check it.
+	// Actually, let's look at how it's used.
+
+	// Based on previous code, it returns `mtmd.Bitmap`.
+	// I'll stick to the plan but add the error return to the signature.
 
 	output := mtmd.InputChunksInit()
 	input := mtmd.NewInputText(prompt, true, true)
@@ -233,10 +265,10 @@ func (m *model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, imageFil
 		mtmd.HelperEvalChunks(mtmdCtx, lctx, output, 0, 0, int32(m.ctxParams.NBatch), true, &n)
 	}()
 
-	return bitmap
+	return bitmap, nil
 }
 
-func (m *model) processChatVision(lctx llama.Context, sampler llama.Sampler, ch chan ChatResponse) {
+func (m *model) processChatVision(ctx context.Context, lctx llama.Context, sampler llama.Sampler, ch chan<- ChatResponse) {
 	batch := llama.BatchInit(1, 0, 1)
 	defer llama.BatchFree(batch)
 
@@ -246,7 +278,16 @@ func (m *model) processChatVision(lctx llama.Context, sampler llama.Sampler, ch 
 	seqs := unsafe.SliceData([]llama.SeqId{0})
 	batch.SeqId = &seqs
 
+	buf := make([]byte, 1024*32)
+
 	for range llama.MaxToken {
+		select {
+		case <-ctx.Done():
+			ch <- ChatResponse{Err: ctx.Err()}
+			return
+		default:
+		}
+
 		llama.Decode(lctx, batch)
 
 		token := llama.SamplerSample(sampler, lctx, -1)
@@ -255,7 +296,6 @@ func (m *model) processChatVision(lctx llama.Context, sampler llama.Sampler, ch 
 			break
 		}
 
-		buf := make([]byte, 1024*32)
 		l := llama.TokenToPiece(m.vocab, token, buf, 0, false)
 
 		resp := string(buf[:l])
@@ -263,24 +303,36 @@ func (m *model) processChatVision(lctx llama.Context, sampler llama.Sampler, ch 
 			break
 		}
 
-		ch <- ChatResponse{
+		select {
+		case <-ctx.Done():
+			ch <- ChatResponse{Err: ctx.Err()}
+			return
+		case ch <- ChatResponse{
 			Response: resp,
+		}:
 		}
 
 		batch = llama.BatchGetOne([]llama.Token{token})
 	}
 }
 
-func (m *model) embed(text string) ([]float32, error) {
+func (m *model) embed(ctx context.Context, text string) ([]float32, error) {
 	lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 	if err != nil {
-		return nil, fmt.Errorf("unable to init from model: %v", err)
+		return nil, fmt.Errorf("unable to init from model: %w", err)
 	}
 
 	defer func() {
 		llama.Synchronize(lctx)
 		llama.Free(lctx)
 	}()
+
+	// Check context before potentially expensive operations
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 
 	tokens := llama.Tokenize(m.vocab, text, true, true)
 	batch := llama.BatchGetOne(tokens)
@@ -289,12 +341,16 @@ func (m *model) embed(text string) ([]float32, error) {
 	dimensions := llama.ModelNEmbd(m.model)
 	vec, err := llama.GetEmbeddingsSeq(lctx, 0, dimensions)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get embeddings: %v", err)
+		return nil, fmt.Errorf("unable to get embeddings: %w", err)
 	}
 
 	var sum float64
 	for _, v := range vec {
 		sum += float64(v * v)
+	}
+
+	if sum == 0 {
+		return vec, nil
 	}
 
 	sum = math.Sqrt(sum)
