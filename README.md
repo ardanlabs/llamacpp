@@ -80,13 +80,13 @@ func run() error {
 
 	const concurrency = 1
 
-	llm, err := kronk.New(concurrency, modelFile, kronk.Config{
+	krn, err := kronk.New(concurrency, modelFile, kronk.Config{
 		ContextWindow: 1024 * 32,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create inference model: %w", err)
 	}
-	defer llm.Unload()
+	defer krn.Unload()
 
 	// -------------------------------------------------------------------------
 
@@ -117,9 +117,9 @@ func run() error {
 			Temp: 0.7,
 		}
 
-		ch, err := llm.ChatCompletions(ctx, messages, params)
+		ch, err := krn.ChatStreaming(ctx, messages, params)
 		if err != nil {
-			return fmt.Errorf("chat completions: %w", err)
+			return fmt.Errorf("chat streaming: %w", err)
 		}
 
 		fmt.Print("\nMODEL> ")
