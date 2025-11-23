@@ -121,6 +121,11 @@ func (krn *Kronk) ModelName() string {
 	return krn.modelName
 }
 
+// Device returns the device being used.
+func (krn *Kronk) Device() string {
+	return krn.cfg.Device
+}
+
 // Unload will close down all loaded models. You should call this only when you
 // are completely done using the group.
 func (krn *Kronk) Unload() {

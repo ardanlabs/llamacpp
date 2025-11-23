@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,13 +10,8 @@ import (
 )
 
 const (
-	libPath     = "libraries"
-	versionFile = "version.json"
+	libPath = "libraries"
 )
-
-type tag struct {
-	TagName string `json:"tag_name"`
-}
 
 func main() {
 	if err := run(); err != nil {
@@ -27,51 +21,40 @@ func main() {
 }
 
 func run() error {
-	currentInstalled, _ := versionInfo(libPath)
-
-	if !currentInstalled {
-		if err := kronk.InstallLlama(libPath, download.CPU, true); err != nil {
-			return fmt.Errorf("failed to install llama: %q: error: %w", libPath, err)
-		}
-
-		f := func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("lib:", path)
-			return nil
-		}
-
-		if err := filepath.Walk(libPath, f); err != nil {
-			return fmt.Errorf("error walking model path: %v", err)
-		}
+	vi, err := kronk.RetrieveVersionInfo(libPath)
+	if err != nil {
+		return fmt.Errorf("error retrieving version info: %w", err)
 	}
+
+	fmt.Println()
+
+	if vi.Current == vi.Latest {
+		fmt.Println("Llamacpp is up to date")
+		fmt.Printf("Latest version: %s\nCurrent version: %s\n", vi.Latest, vi.Current)
+		return nil
+	}
+
+	fmt.Println("Installing Llamacpp")
+
+	vi, err = kronk.InstallLlama(libPath, download.CPU, true)
+	if err != nil {
+		return fmt.Errorf("failed to install llama: %q: error: %w", libPath, err)
+	}
+
+	f := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("lib:", path)
+		return nil
+	}
+
+	if err := filepath.Walk(libPath, f); err != nil {
+		return fmt.Errorf("error walking model path: %v", err)
+	}
+
+	fmt.Printf("Latest version: %s\nCurrent version: %s\n", vi.Latest, vi.Current)
 
 	return nil
-}
-
-func versionInfo(libPath string) (bool, error) {
-	versionInfoPath := filepath.Join(libPath, versionFile)
-
-	version, err := download.LlamaLatestVersion()
-	if err != nil {
-		return false, fmt.Errorf("error install: %w", err)
-	}
-
-	fmt.Println("Latest Version   :", version)
-
-	d, err := os.ReadFile(versionInfoPath)
-	if err != nil {
-		return false, fmt.Errorf("error reading version info file: %w", err)
-	}
-
-	var tag tag
-	if err := json.Unmarshal(d, &tag); err != nil {
-		return false, fmt.Errorf("error unmarshalling version info: %w", err)
-	}
-
-	fmt.Println("Currently Version:", tag.TagName)
-
-	return version == tag.TagName, nil
 }

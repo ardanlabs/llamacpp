@@ -20,10 +20,16 @@ const (
 // context window of 4k will be used.
 //
 // MaxTokens when set to 0 will use the Kronk default value of 512.
+//
+// Device is the device to use for the model. If not set, the default device
+// will be used. To see what devices are available, run the following command
+// which will be found where you installed llamacpp.
+// $ llama-bench --list-devices
 type ModelConfig struct {
 	ContextWindow int
 	MaxTokens     int
 	Embeddings    bool
+	Device        string
 }
 
 func adjustConfig(cfg ModelConfig, model llama.Model) ModelConfig {

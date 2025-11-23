@@ -22,7 +22,16 @@ type model struct {
 }
 
 func newModel(modelFile string, projFile string, cfg ModelConfig) (*model, error) {
-	mdl, err := llama.ModelLoadFromFile(modelFile, llama.ModelDefaultParams())
+	mparams := llama.ModelDefaultParams()
+	if cfg.Device != "" {
+		dev := llama.GGMLBackendDeviceByName(cfg.Device)
+		if dev == 0 {
+			return nil, fmt.Errorf("unknown device: %s", cfg.Device)
+		}
+		mparams.SetDevices([]llama.GGMLBackendDevice{dev})
+	}
+
+	mdl, err := llama.ModelLoadFromFile(modelFile, mparams)
 	if err != nil {
 		return nil, fmt.Errorf("ModelLoadFromFile: %w", err)
 	}
