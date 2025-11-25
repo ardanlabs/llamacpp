@@ -3,6 +3,7 @@ package kronk
 import (
 	"context"
 	"fmt"
+	"io"
 	"path"
 	"path/filepath"
 	"strings"
@@ -114,28 +115,17 @@ func (m *model) modelInfo() ModelInfo {
 func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
 	var inputTokens int
 	var completionTokens int
-	var reasonTokens int
 
-	var tokens []llama.Token
-	var batch llama.Batch
-	var finalContent strings.Builder
-
-	// -------------------------------------------------------------------------
-
-	params = adjustParams(params)
-	sampler := toSampler(params)
-
-	tokens = llama.Tokenize(m.vocab, prompt, true, true)
-	batch = llama.BatchGetOne(tokens)
-	inputTokens = int(batch.NTokens)
+	sampler, batch, tokenCount := m.startProcessing(lctx, object, prompt, params)
 
 	switch object {
+	case ObjectChat:
+		inputTokens = tokenCount
 	case ObjectVision:
-		tokens = []llama.Token{llama.SamplerSample(sampler, lctx, -1)}
-		batch = llama.BatchGetOne(tokens)
-
-		completionTokens = int(batch.NTokens)
+		completionTokens = tokenCount
 	}
+
+	totalOutTokens := completionTokens
 
 	// -------------------------------------------------------------------------
 
@@ -143,31 +133,61 @@ func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context
 	buf := make([]byte, bufferSize)
 
 	var index int
+	var reasoning int
+	var completion int
+	var reasonTokens int
 	var tokensPerSecond float64
-	totalOutTokens := reasonTokens + completionTokens
+
+	var finalContent strings.Builder
 
 	now := time.Now()
 
 	// -------------------------------------------------------------------------
 
+loop:
 	for totalOutTokens <= params.MaxTokens {
 		index++
 
-		llama.Decode(lctx, batch)
-		token := llama.SamplerSample(sampler, lctx, -1)
-
-		if llama.VocabIsEOG(m.vocab, token) {
-			break
+		content, token, err := m.batchResponse(lctx, batch, sampler, buf)
+		if err != nil {
+			break loop
 		}
 
-		l := llama.TokenToPiece(m.vocab, token, buf, 0, false)
+		// ---------------------------------------------------------------------
 
-		content := string(buf[:l])
-		if content == "" {
-			break
+		switch content {
+		case "<think>":
+			batch = m.thinkStart(token, &reasoning, &reasonTokens)
+			continue
+
+		case "</think>":
+			batch = m.thinkStop(token, &reasoning, &completionTokens)
+			continue
+
+		case "<|channel|>":
+			batch, content, err = m.channelStart(lctx, token, sampler, buf, &reasoning, &reasonTokens, &completionTokens)
+			if err != nil {
+				break loop
+			}
+
+			if content == "<|continue|>" {
+				continue
+			}
+
+		case "<|end|>":
+			batch, err = m.channelEnd(lctx, token, sampler, buf)
+			if err != nil {
+				break loop
+			}
+			continue
 		}
 
-		finalContent.WriteString(content)
+		if found := m.removeExtraCRLF(reasoning, completion, content); found {
+			batch = m.nextBatch(token)
+			continue
+		}
+
+		// ---------------------------------------------------------------------
 
 		elapsedSeconds := time.Since(now).Seconds()
 		tokensPerSecond = float64(totalOutTokens) / elapsedSeconds
@@ -182,7 +202,7 @@ func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context
 				TokensPerSecond:  tokensPerSecond})
 			return
 
-		case ch <- chatResponseDelta(id, object, m.modelName, index, content, Usage{
+		case ch <- chatResponseDelta(id, object, m.modelName, index, content, reasoning > 0, Usage{
 			InputTokens:      inputTokens,
 			ReasoningTokens:  reasonTokens,
 			CompletionTokens: completionTokens,
@@ -190,19 +210,173 @@ func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context
 			TokensPerSecond:  tokensPerSecond}):
 		}
 
-		tokens = []llama.Token{token}
-		batch = llama.BatchGetOne(tokens)
+		// ---------------------------------------------------------------------
 
-		completionTokens += int(batch.NTokens)
+		batch = m.nextBatch(token)
+
+		switch {
+		case reasoning > 0:
+			reasonTokens += int(batch.NTokens)
+			reasoning++
+
+		default:
+			finalContent.WriteString(content)
+			completionTokens += int(batch.NTokens)
+			completion++
+		}
+
 		totalOutTokens = reasonTokens + completionTokens
 	}
 
 	// -------------------------------------------------------------------------
 
-	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), Usage{
+	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), false, Usage{
 		InputTokens:      inputTokens,
 		ReasoningTokens:  reasonTokens,
 		CompletionTokens: completionTokens,
 		OutputTokens:     reasonTokens + completionTokens,
 		TokensPerSecond:  tokensPerSecond})
+}
+
+func (m *model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int) {
+	params = adjustParams(params)
+	sampler := toSampler(params)
+
+	tokens := llama.Tokenize(m.vocab, prompt, true, true)
+	batch := llama.BatchGetOne(tokens)
+	tokenCount := int(batch.NTokens)
+
+	switch object {
+	case ObjectVision:
+		batch = m.nextBatch(llama.SamplerSample(sampler, lctx, -1))
+		tokenCount = int(batch.NTokens)
+	}
+
+	return sampler, batch, tokenCount
+}
+
+func (m *model) nextBatch(token llama.Token) llama.Batch {
+	tokens := []llama.Token{token}
+	return llama.BatchGetOne(tokens)
+}
+
+func (m *model) batchResponse(lctx llama.Context, batch llama.Batch, sampler llama.Sampler, buf []byte) (string, llama.Token, error) {
+	llama.Decode(lctx, batch)
+	token := llama.SamplerSample(sampler, lctx, -1)
+
+	if llama.VocabIsEOG(m.vocab, token) {
+		return "", 0, io.EOF
+	}
+
+	l := llama.TokenToPiece(m.vocab, token, buf, 0, false)
+
+	content := string(buf[:l])
+	if content == "" {
+		return "", 0, io.EOF
+	}
+
+	return content, token, nil
+}
+
+func (m *model) thinkStart(token llama.Token, reasoning *int, reasonTokens *int) llama.Batch {
+	*reasoning = 1
+
+	batch := m.nextBatch(token)
+	*reasonTokens += int(batch.NTokens)
+
+	return batch
+}
+
+func (m *model) thinkStop(token llama.Token, reasoning *int, completionTokens *int) llama.Batch {
+	*reasoning = 0
+
+	batch := m.nextBatch(token)
+	*completionTokens += int(batch.NTokens)
+
+	return batch
+}
+
+func (m *model) channelStart(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int, completionTokens *int) (llama.Batch, string, error) {
+	// <|channel|>analysis<|message|>REASONING<|end|><|start|>assistant<|channel|>final<|message|>RESPONSE
+
+	batch := m.nextBatch(token)
+	content, token, err := m.batchResponse(lctx, batch, sampler, buf)
+	if err != nil {
+		return batch, "", err
+	}
+
+	switch content {
+	case "analysis":
+		batch, err = m.channelAnalysis(lctx, token, sampler, buf, reasoning, reasonTokens)
+		if err != nil {
+			return batch, "", err
+		}
+
+	case "final":
+		batch, err = m.channelFinal(lctx, token, sampler, buf, reasoning, completionTokens)
+		if err != nil {
+			return batch, "", err
+		}
+
+	default:
+		return batch, content, nil
+	}
+
+	return batch, "<|continue|>", nil
+}
+
+func (m *model) channelAnalysis(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int) (llama.Batch, error) {
+	*reasoning = 1
+
+	batch := m.nextBatch(token)
+	_, token, err := m.batchResponse(lctx, batch, sampler, buf) // <|message|>
+	if err != nil {
+		return batch, err
+	}
+
+	batch = m.nextBatch(token)
+	*reasonTokens += int(batch.NTokens)
+
+	return batch, nil
+}
+
+func (m *model) channelFinal(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, completionTokens *int) (llama.Batch, error) {
+	*reasoning = 0
+
+	batch := m.nextBatch(token)
+	_, token, err := m.batchResponse(lctx, batch, sampler, buf) // <|message|>
+	if err != nil {
+		return batch, err
+	}
+
+	batch = m.nextBatch(token)
+	*completionTokens += int(batch.NTokens)
+
+	return batch, nil
+}
+
+func (m *model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte) (llama.Batch, error) {
+	batch := m.nextBatch(token)
+
+	_, token, err := m.batchResponse(lctx, batch, sampler, buf) // <|start|>
+	if err != nil {
+		return batch, err
+	}
+
+	batch = m.nextBatch(token)
+	return batch, nil
+}
+
+func (m *model) removeExtraCRLF(reasoning int, completion int, content string) bool {
+	// We just started reasoning so remove leading CR.
+	if reasoning == 1 && content == "\x0A" {
+		return true
+	}
+
+	// We just started completion so remove leading CR.
+	if reasoning == 0 && completion == 0 && (content == "\x0A\x0A" || content == "\x0A") {
+		return true
+	}
+
+	return false
 }

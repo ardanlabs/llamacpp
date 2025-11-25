@@ -76,7 +76,7 @@ type ChatResponse struct {
 	Usage   Usage    `json:"usage"`
 }
 
-func chatResponseDelta(id string, object string, model string, index int, content string, u Usage) ChatResponse {
+func chatResponseDelta(id string, object string, model string, index int, content string, reasoning bool, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -87,8 +87,8 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 				Index: index,
 				Delta: ResponseMessage{
 					Role:      RoleAssistant,
-					Content:   content,
-					Reasoning: "",
+					Content:   hasContent(content, reasoning),
+					Reasoning: hasReasoning(content, reasoning),
 				},
 				GeneratedText: "",
 				FinishReason:  "",
@@ -98,7 +98,21 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 	}
 }
 
-func chatResponseFinal(id string, object string, model string, index int, content string, u Usage) ChatResponse {
+func hasReasoning(content string, reasoning bool) string {
+	if reasoning {
+		return content
+	}
+	return ""
+}
+
+func hasContent(content string, reasoning bool) string {
+	if !reasoning {
+		return content
+	}
+	return ""
+}
+
+func chatResponseFinal(id string, object string, model string, index int, content string, reasoning bool, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
