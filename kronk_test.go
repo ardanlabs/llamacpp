@@ -47,7 +47,8 @@ func TestMain(m *testing.M) {
 // =============================================================================
 
 func TestSimpleChat(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
+	// Run on MacOS in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "linux" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
@@ -55,10 +56,16 @@ func TestSimpleChat(t *testing.T) {
 }
 
 func TestThinkChat(t *testing.T) {
+	// Run on Linux in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
+		t.Skip("Skipping test in GitHub Actions")
+	}
+
 	testChat(t, modelThinkChatFile, true)
 }
 
 func TestGPTChat(t *testing.T) {
+	// Don't run at all on GitHub Actions.
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
@@ -69,7 +76,8 @@ func TestGPTChat(t *testing.T) {
 // =============================================================================
 
 func TestSimpleChatStreaming(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
+	// Run on MacOS in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "linux" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
@@ -77,10 +85,16 @@ func TestSimpleChatStreaming(t *testing.T) {
 }
 
 func TestThinkChatStreaming(t *testing.T) {
+	// Run on Linux in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
+		t.Skip("Skipping test in GitHub Actions")
+	}
+
 	testChatStreaming(t, modelThinkChatFile, true)
 }
 
 func TestGPTChatStreaming(t *testing.T) {
+	// Don't run at all on GitHub Actions.
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
@@ -91,16 +105,18 @@ func TestGPTChatStreaming(t *testing.T) {
 // =============================================================================
 
 func TestSimpleVision(t *testing.T) {
-	if runtime.GOOS == "darwin" && os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip("skipping test since it takes too long to run")
+	// Run on Linux in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
+		t.Skip("Skipping test in GitHub Actions")
 	}
 
 	testVision(t, modelSimpleVisionFile, projSimpleVisionFile)
 }
 
 func TestSimpleVisionStreaming(t *testing.T) {
-	if runtime.GOOS == "darwin" && os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip("skipping test since it takes too long to run")
+	// Run on Linux in GitHub Actions.
+	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
+		t.Skip("Skipping test in GitHub Actions")
 	}
 
 	testVisionStreaming(t, modelSimpleVisionFile, projSimpleVisionFile)
@@ -109,6 +125,7 @@ func TestSimpleVisionStreaming(t *testing.T) {
 // =============================================================================
 
 func TestEmbedding(t *testing.T) {
+	// Run on all platforms.
 	testEmbedding(t, modelEmbedFile)
 }
 
@@ -219,7 +236,7 @@ func testResponse(msg kronk.ChatResponse, modelFile string, object string, reaso
 // =============================================================================
 
 func initChatTest(t *testing.T, modelFile string) (*kronk.Kronk, []kronk.ChatMessage, kronk.Params) {
-	krn, err := kronk.New(concurrency, modelFile, "", kronk.ModelConfig{NBatch: 512})
+	krn, err := kronk.New(concurrency, modelFile, "", kronk.ModelConfig{})
 	if err != nil {
 		t.Fatalf("unable to load model: %v", err)
 	}
@@ -330,7 +347,7 @@ func testChatStreaming(t *testing.T, modelFile string, reasoning bool) {
 // =============================================================================
 
 func initVisionTest(t *testing.T, modelFile, projFile string) (*kronk.Kronk, kronk.ChatMessage, kronk.Params) {
-	krn, err := kronk.New(concurrency, modelFile, projFile, kronk.ModelConfig{NBatch: 512})
+	krn, err := kronk.New(concurrency, modelFile, projFile, kronk.ModelConfig{})
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
@@ -426,7 +443,6 @@ func testVisionStreaming(t *testing.T, modelFile string, profFile string) {
 
 func testEmbedding(t *testing.T, modelFile string) {
 	cfg := kronk.ModelConfig{
-		NBatch:     512,
 		Embeddings: true,
 	}
 
