@@ -12,6 +12,10 @@ const (
 // Params represents the different options when using a model. The defaults are
 // used when these values are set to 0.
 //
+// Temperature controls the randomness of the output. It rescales the probability
+// distribution of possible next tokens.
+// When set to 0, the default value is 0.7.
+//
 // TopK limits the pool of possible next tokens to the K number of most probable
 // tokens. If a model predicts 10,000 possible next tokens, setting Top-K to 50
 // means only the 50 tokens with the highest probabilities are considered for
@@ -23,10 +27,6 @@ const (
 // threshold P. Instead of a fixed number of tokens (K), it selects the minimum
 // number of most probable tokens required to reach the cumulative probability P.
 // When set to 0, the default value is 0.9.
-//
-// Temperature controls the randomness of the output. It rescales the probability
-// distribution of possible next tokens.
-// When set to 0, the default value is 0.7.
 //
 // These parameters (TopK, TopP, Temperature) are typically used together. The
 // sampling process usually applies temperature first, then filters the token
