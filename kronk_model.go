@@ -116,6 +116,7 @@ func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context
 	var inputTokens int
 	var completionTokens int
 
+	params = adjustParams(params)
 	sampler, batch, tokenCount := m.startProcessing(lctx, object, prompt, params)
 
 	switch object {
@@ -139,6 +140,7 @@ func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context
 	var tokensPerSecond float64
 
 	var finalContent strings.Builder
+	var finalReasoning strings.Builder
 
 	now := time.Now()
 
@@ -216,6 +218,7 @@ loop:
 
 		switch {
 		case reasoning > 0:
+			finalReasoning.WriteString(content)
 			reasonTokens += int(batch.NTokens)
 			reasoning++
 
@@ -230,7 +233,7 @@ loop:
 
 	// -------------------------------------------------------------------------
 
-	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), false, Usage{
+	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), finalReasoning.String(), Usage{
 		InputTokens:      inputTokens,
 		ReasoningTokens:  reasonTokens,
 		CompletionTokens: completionTokens,
@@ -239,7 +242,6 @@ loop:
 }
 
 func (m *model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int) {
-	params = adjustParams(params)
 	sampler := toSampler(params)
 
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
@@ -359,6 +361,13 @@ func (m *model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.
 	batch := m.nextBatch(token)
 
 	_, token, err := m.batchResponse(lctx, batch, sampler, buf) // <|start|>
+	if err != nil {
+		return batch, err
+	}
+
+	batch = m.nextBatch(token)
+
+	_, token, err = m.batchResponse(lctx, batch, sampler, buf) // assistant
 	if err != nil {
 		return batch, err
 	}

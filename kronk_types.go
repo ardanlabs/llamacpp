@@ -51,10 +51,9 @@ type ResponseMessage struct {
 
 // Choice represents a single choice in a response.
 type Choice struct {
-	Index         int             `json:"index"`
-	Delta         ResponseMessage `json:"delta"`
-	GeneratedText string          `json:"generated_text"`
-	FinishReason  string          `json:"finish_reason"`
+	Index        int             `json:"index"`
+	Delta        ResponseMessage `json:"delta"`
+	FinishReason string          `json:"finish_reason"`
 }
 
 // Usage provides details usage information for the request.
@@ -90,8 +89,7 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 					Content:   hasContent(content, reasoning),
 					Reasoning: hasReasoning(content, reasoning),
 				},
-				GeneratedText: "",
-				FinishReason:  "",
+				FinishReason: "",
 			},
 		},
 		Usage: u,
@@ -112,7 +110,7 @@ func hasContent(content string, reasoning bool) string {
 	return ""
 }
 
-func chatResponseFinal(id string, object string, model string, index int, content string, reasoning bool, u Usage) ChatResponse {
+func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -120,10 +118,13 @@ func chatResponseFinal(id string, object string, model string, index int, conten
 		Model:   model,
 		Choice: []Choice{
 			{
-				Index:         index,
-				Delta:         ResponseMessage{},
-				GeneratedText: content,
-				FinishReason:  FinishReasonStop,
+				Index: index,
+				Delta: ResponseMessage{
+					Role:      RoleAssistant,
+					Content:   content,
+					Reasoning: reasoning,
+				},
+				FinishReason: FinishReasonStop,
 			},
 		},
 		Usage: u,
@@ -138,10 +139,12 @@ func chatResponseErr(id string, object string, model string, index int, err erro
 		Model:   model,
 		Choice: []Choice{
 			{
-				Index:         index,
-				Delta:         ResponseMessage{},
-				GeneratedText: err.Error(),
-				FinishReason:  FinishReasonError,
+				Index: index,
+				Delta: ResponseMessage{
+					Role:    RoleAssistant,
+					Content: err.Error(),
+				},
+				FinishReason: FinishReasonError,
 			},
 		},
 		Usage: u,

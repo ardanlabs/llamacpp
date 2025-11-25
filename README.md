@@ -71,7 +71,7 @@ import (
 )
 
 const (
-	modelURL  = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf?download=true"
+	modelURL  = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf?download=true"
 	libPath   = "zarf/llamacpp"
 	modelPath = "zarf/models"
 )
@@ -191,13 +191,26 @@ func performChat(ctx context.Context, krn *kronk.Kronk, messages []kronk.ChatMes
 func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kronk.ChatResponse) ([]kronk.ChatMessage, error) {
 	fmt.Print("\nMODEL> ")
 
+	var reasoning bool
+
 	var lr kronk.ChatResponse
 	for resp := range ch {
 		if resp.Choice[0].FinishReason == kronk.FinishReasonError {
 			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].GeneratedText)
 		}
 
-		fmt.Print(resp.Choice[0].Delta.Content)
+		if resp.Choice[0].Delta.Reasoning != "" {
+			fmt.Printf("\u001b[91m%s\u001b[0m", resp.Choice[0].Delta.Reasoning)
+			reasoning = true
+			continue
+		}
+
+		if reasoning {
+			reasoning = false
+			fmt.Print("\n\n")
+		}
+
+		fmt.Printf("%s", resp.Choice[0].Delta.Content)
 		lr = resp
 	}
 
@@ -213,8 +226,8 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
 	of := float32(contextWindow) / float32(1024)
 
-	fmt.Printf("\n\n\u001b[90mInput: %d  Output: %d  Context: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
-		lr.Usage.InputTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
+	fmt.Printf("\n\n\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
+		lr.Usage.InputTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
 
 	return messages, nil
 }
@@ -222,28 +235,26 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 
 This example can produce the following output:
 
-```
+<pre>
 $ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:zarf/llamacpp
 $ go run cmd/examples/example13/step1/*.go
 
 Output:
 
-- check llamacpp installation: ✓
-  - latest version : b7151
-  - current version: b7151
-- check "Qwen3-8B-Q8_0" installation: ✓
-- contextWindow: 40960
-- embeddings   : false
+ - check llamacpp installation: ✓
+   - latest version : b7157
+   - current version: b7157
+ - check "gpt-oss-20b-Q8_0" installation: ✓
+ - contextWindow: 131072
+ - embeddings   : false
 
 USER> hello model
 
-MODEL> <think>
-Okay, the user said "hello model". I need to respond appropriately. First, I should acknowledge their greeting. Since they used "model", maybe they're referring to me as an AI model. I should confirm that and offer assistance. Let me make sure to keep the tone friendly and open. I can ask how I can help them today. Also, maybe check if they have any specific questions or need information on a particular topic. Keep it simple and welcoming.
-</think>
+MODEL> <span style="color: #d27474ff;">We have a conversation. The user says "hello model". The system instructions: The user is speaking as a student, wants to solve a math problem. The user hasn't asked a question yet. They just said "hello model". We need to respond appropriately. According to the instruction, we should ask the user what problem they need help with. The user hasn't asked a math question yet. We should respond politely, asking what problem they need help with.</span>
 
-Hello! I'm Qwen, a large language model developed by Alibaba Cloud. How can I assist you today? Whether you have questions, need information, or just want to chat, feel free to let me know! 😊
+Hello! How can I help you with your math problem today?
 
-Input: 22  Output: 143  Context: 165 (0% of 40K) TPS: 45.97
+Input: 9  Reasoning: 92  Completion: 14  Output: 106  Window: 23 (0% of 128K) TPS: 92.59
 
 USER>
-```
+</pre>
