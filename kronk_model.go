@@ -3,16 +3,16 @@ package kronk
 import (
 	"context"
 	"fmt"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-const (
-	modeChat   = "chat"
-	modeVision = "vision"
-)
-
 type model struct {
+	modelName string
 	cfg       ModelConfig
 	model     llama.Model
 	vocab     llama.Vocab
@@ -53,7 +53,13 @@ func newModel(modelFile string, projFile string, cfg ModelConfig) (*model, error
 
 	// -------------------------------------------------------------------------
 
+	filename := filepath.Base(modelFile)
+	modelName := strings.TrimSuffix(filename, path.Ext(filename))
+
+	// -------------------------------------------------------------------------
+
 	m := model{
+		modelName: modelName,
 		cfg:       cfg,
 		model:     mdl,
 		vocab:     vocab,
@@ -105,52 +111,47 @@ func (m *model) modelInfo() ModelInfo {
 	}
 }
 
-func (m *model) processTokens(ctx context.Context, lctx llama.Context, mode string, prompt string, params Params, ch chan<- ChatResponse) {
+func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
 	var inputTokens int
-	var outputTokens int
-	var contextTokens int
-	var totalOutTokens int
+	var completionTokens int
+	var reasonTokens int
 
 	var tokens []llama.Token
 	var batch llama.Batch
+	var finalContent strings.Builder
+
+	// -------------------------------------------------------------------------
 
 	params = adjustParams(params)
 	sampler := toSampler(params)
 
 	tokens = llama.Tokenize(m.vocab, prompt, true, true)
 	batch = llama.BatchGetOne(tokens)
-
 	inputTokens = int(batch.NTokens)
-	inputTokens += inputTokens
-	contextTokens += inputTokens
 
-	switch mode {
-	case modeVision:
+	switch object {
+	case ObjectVision:
 		tokens = []llama.Token{llama.SamplerSample(sampler, lctx, -1)}
 		batch = llama.BatchGetOne(tokens)
 
-		outputTokens = int(batch.NTokens)
-		totalOutTokens += outputTokens
-		contextTokens += outputTokens
+		completionTokens = int(batch.NTokens)
 	}
+
+	// -------------------------------------------------------------------------
 
 	const bufferSize = 32 * 1024
 	buf := make([]byte, bufferSize)
 
+	var index int
+	var tokensPerSecond float64
+	totalOutTokens := reasonTokens + completionTokens
+
+	now := time.Now()
+
+	// -------------------------------------------------------------------------
+
 	for totalOutTokens <= params.MaxTokens {
-		select {
-		case <-ctx.Done():
-			ch <- ChatResponse{
-				Err: ctx.Err(),
-				Tokens: Tokens{
-					Input:   inputTokens,
-					Output:  outputTokens,
-					Context: contextTokens,
-				},
-			}
-			return
-		default:
-		}
+		index++
 
 		llama.Decode(lctx, batch)
 		token := llama.SamplerSample(sampler, lctx, -1)
@@ -161,37 +162,47 @@ func (m *model) processTokens(ctx context.Context, lctx llama.Context, mode stri
 
 		l := llama.TokenToPiece(m.vocab, token, buf, 0, false)
 
-		resp := string(buf[:l])
-		if resp == "" {
+		content := string(buf[:l])
+		if content == "" {
 			break
 		}
 
+		finalContent.WriteString(content)
+
+		elapsedSeconds := time.Since(now).Seconds()
+		tokensPerSecond = float64(totalOutTokens) / elapsedSeconds
+
 		select {
 		case <-ctx.Done():
-			ch <- ChatResponse{
-				Err: ctx.Err(),
-				Tokens: Tokens{
-					Input:   inputTokens,
-					Output:  outputTokens,
-					Context: contextTokens,
-				},
-			}
+			ch <- chatResponseErr(id, object, m.modelName, index, ctx.Err(), Usage{
+				InputTokens:      inputTokens,
+				ReasoningTokens:  reasonTokens,
+				CompletionTokens: completionTokens,
+				OutputTokens:     totalOutTokens,
+				TokensPerSecond:  tokensPerSecond})
 			return
 
-		case ch <- ChatResponse{
-			Response: resp,
-			Tokens: Tokens{
-				Input:   inputTokens,
-				Output:  outputTokens,
-				Context: contextTokens,
-			}}:
+		case ch <- chatResponseDelta(id, object, m.modelName, index, content, Usage{
+			InputTokens:      inputTokens,
+			ReasoningTokens:  reasonTokens,
+			CompletionTokens: completionTokens,
+			OutputTokens:     totalOutTokens,
+			TokensPerSecond:  tokensPerSecond}):
 		}
 
 		tokens = []llama.Token{token}
 		batch = llama.BatchGetOne(tokens)
 
-		outputTokens = int(batch.NTokens)
-		totalOutTokens += outputTokens
-		contextTokens += outputTokens
+		completionTokens += int(batch.NTokens)
+		totalOutTokens = reasonTokens + completionTokens
 	}
+
+	// -------------------------------------------------------------------------
+
+	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), Usage{
+		InputTokens:      inputTokens,
+		ReasoningTokens:  reasonTokens,
+		CompletionTokens: completionTokens,
+		OutputTokens:     reasonTokens + completionTokens,
+		TokensPerSecond:  tokensPerSecond})
 }

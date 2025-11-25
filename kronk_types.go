@@ -1,5 +1,26 @@
 package kronk
 
+import (
+	"time"
+)
+
+// Objects represent the different types of data that can be returned.
+const (
+	ObjectChat   = "chat"
+	ObjectVision = "vision"
+)
+
+// Roles represent the different roles that can be used in a chat.
+const (
+	RoleAssistant = "assistant"
+)
+
+// FinishReasons represent the different reasons a response can be finished.
+const (
+	FinishReasonStop  = "stop"
+	FinishReasonError = "error"
+)
+
 // ModelInfo represents the model's card information.
 type ModelInfo struct {
 	Desc        string
@@ -11,24 +32,109 @@ type ModelInfo struct {
 	Metadata    map[string]string
 }
 
+// =============================================================================
+
 // ChatMessage represent input for chat and vision models.
 type ChatMessage struct {
 	Role    string
 	Content string
 }
 
-type Tokens struct {
-	Input   int
-	Output  int
-	Context int
+// =============================================================================
+
+// ResponseMessage represents a single message in a response.
+type ResponseMessage struct {
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+	Reasoning string `json:"reasoning"`
+}
+
+// Choice represents a single choice in a response.
+type Choice struct {
+	Index         int             `json:"index"`
+	Delta         ResponseMessage `json:"delta"`
+	GeneratedText string          `json:"generated_text"`
+	FinishReason  string          `json:"finish_reason"`
+}
+
+// Usage provides details usage information for the request.
+type Usage struct {
+	InputTokens      int     `json:"input_tokens"`
+	ReasoningTokens  int     `json:"reasoning_tokens"`
+	CompletionTokens int     `json:"completion_tokens"`
+	OutputTokens     int     `json:"output_tokens"`
+	TokensPerSecond  float64 `json:"tokens_per_second"`
 }
 
 // ChatResponse represents output for chat and vision models.
 type ChatResponse struct {
-	Response string
-	Err      error
-	Tokens   Tokens
+	ID      string   `json:"id"`
+	Object  string   `json:"object"`
+	Created int64    `json:"created"`
+	Model   string   `json:"model"`
+	Choice  []Choice `json:"choices"`
+	Usage   Usage    `json:"usage"`
 }
+
+func chatResponseDelta(id string, object string, model string, index int, content string, u Usage) ChatResponse {
+	return ChatResponse{
+		ID:      id,
+		Object:  object,
+		Created: time.Now().UnixMilli(),
+		Model:   model,
+		Choice: []Choice{
+			{
+				Index: index,
+				Delta: ResponseMessage{
+					Role:      RoleAssistant,
+					Content:   content,
+					Reasoning: "",
+				},
+				GeneratedText: "",
+				FinishReason:  "",
+			},
+		},
+		Usage: u,
+	}
+}
+
+func chatResponseFinal(id string, object string, model string, index int, content string, u Usage) ChatResponse {
+	return ChatResponse{
+		ID:      id,
+		Object:  object,
+		Created: time.Now().UnixMilli(),
+		Model:   model,
+		Choice: []Choice{
+			{
+				Index:         index,
+				Delta:         ResponseMessage{},
+				GeneratedText: content,
+				FinishReason:  FinishReasonStop,
+			},
+		},
+		Usage: u,
+	}
+}
+
+func chatResponseErr(id string, object string, model string, index int, err error, u Usage) ChatResponse {
+	return ChatResponse{
+		ID:      id,
+		Object:  object,
+		Created: time.Now().UnixMilli(),
+		Model:   model,
+		Choice: []Choice{
+			{
+				Index:         index,
+				Delta:         ResponseMessage{},
+				GeneratedText: err.Error(),
+				FinishReason:  FinishReasonError,
+			},
+		},
+		Usage: u,
+	}
+}
+
+// =============================================================================
 
 // RankingDocument represents input for reranking.
 type RankingDocument struct {

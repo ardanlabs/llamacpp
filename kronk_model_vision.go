@@ -4,47 +4,44 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
 
-func (m *model) vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (string, error) {
+func (m *model) vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (ChatResponse, error) {
 	ch := m.visionStreaming(ctx, message, imageFile, params)
 
-	var finalResponse strings.Builder
-
+	var lastMsg ChatResponse
 	for msg := range ch {
-		if msg.Err != nil {
-			return "", fmt.Errorf("error from model: %w", msg.Err)
-		}
-
-		finalResponse.WriteString(msg.Response)
+		lastMsg = msg
 	}
 
-	return finalResponse.String(), nil
+	return lastMsg, nil
 }
 
 func (m *model) visionStreaming(ctx context.Context, message ChatMessage, imageFile string, params Params) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 
 	go func() {
+		id := uuid.New().String()
+
 		defer func() {
 			if rec := recover(); rec != nil {
-				ch <- ChatResponse{Err: fmt.Errorf("%v", rec)}
+				ch <- chatResponseErr(id, ObjectVision, m.modelName, 0, fmt.Errorf("%s", rec), Usage{})
 			}
 			close(ch)
 		}()
 
 		if m.projFile == "" {
-			ch <- ChatResponse{Err: fmt.Errorf("projection file not set")}
+			ch <- chatResponseErr(id, ObjectVision, m.modelName, 0, fmt.Errorf("projection file not set"), Usage{})
 			return
 		}
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %w", err)}
+			ch <- chatResponseErr(id, ObjectVision, m.modelName, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
 			return
 		}
 
@@ -59,7 +56,7 @@ func (m *model) visionStreaming(ctx context.Context, message ChatMessage, imageF
 
 		mtmdCtx, err := mtmd.InitFromFile(m.projFile, m.model, mctxParams)
 		if err != nil {
-			ch <- ChatResponse{Err: fmt.Errorf("unable to init from model: %w", err)}
+			ch <- chatResponseErr(id, ObjectVision, m.modelName, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
 			return
 		}
 		defer mtmd.Free(mtmdCtx)
@@ -68,12 +65,12 @@ func (m *model) visionStreaming(ctx context.Context, message ChatMessage, imageF
 
 		bitmap, err := m.processBitmap(lctx, mtmdCtx, imageFile, prompt)
 		if err != nil {
-			ch <- ChatResponse{Err: err}
+			ch <- chatResponseErr(id, ObjectVision, m.modelName, 0, err, Usage{})
 			return
 		}
 		defer mtmd.BitmapFree(bitmap)
 
-		m.processTokens(ctx, lctx, modeVision, prompt, params, ch)
+		m.processTokens(ctx, id, lctx, ObjectVision, prompt, params, ch)
 	}()
 
 	return ch

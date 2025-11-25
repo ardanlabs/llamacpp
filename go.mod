@@ -3,6 +3,7 @@ module github.com/ardanlabs/kronk
 go 1.25.3
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/hybridgroup/yzma v1.0.0-beta2
 	golang.org/x/sync v0.18.0
 )
@@ -49,7 +50,6 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.7 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/hashicorp/aws-sdk-go-base/v2 v2.0.0-beta.68 // indirect

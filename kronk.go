@@ -151,8 +151,8 @@ func (krn *Kronk) ModelInfo(ctx context.Context) (ModelInfo, error) {
 }
 
 // Chat provides support to interact with an inference model.
-func (krn *Kronk) Chat(ctx context.Context, messages []ChatMessage, params Params) (string, error) {
-	f := func(m *model) (string, error) {
+func (krn *Kronk) Chat(ctx context.Context, messages []ChatMessage, params Params) (ChatResponse, error) {
+	f := func(m *model) (ChatResponse, error) {
 		return m.chat(ctx, messages, params)
 	}
 
@@ -167,15 +167,15 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, messages []ChatMessage, par
 	}
 
 	ef := func(err error) ChatResponse {
-		return ChatResponse{Err: err}
+		return chatResponseErr("panic", ObjectChat, "", 0, err, Usage{})
 	}
 
 	return streaming(ctx, krn, &krn.closed, f, ef)
 }
 
 // Vision provides support to interact with a vision inference model.
-func (krn *Kronk) Vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (string, error) {
-	f := func(m *model) (string, error) {
+func (krn *Kronk) Vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (ChatResponse, error) {
+	f := func(m *model) (ChatResponse, error) {
 		return m.vision(ctx, message, imageFile, params)
 	}
 
@@ -190,7 +190,7 @@ func (krn *Kronk) VisionStreaming(ctx context.Context, message ChatMessage, imag
 	}
 
 	ef := func(err error) ChatResponse {
-		return ChatResponse{Err: err}
+		return chatResponseErr("panic", ObjectVision, "", 0, err, Usage{})
 	}
 
 	return streaming(ctx, krn, &krn.closed, f, ef)

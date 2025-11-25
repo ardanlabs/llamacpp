@@ -25,6 +25,26 @@ Email:   bill@ardanlabs.com
 Twitter: goinggodotnet
 ```
 
+### Models
+
+Kronk uses models in the GGUF format supported by llamacpp. You can find many models in GGUF format on Hugging Face (over 147k at last count):
+
+https://huggingface.co/models?library=gguf&sort=trending
+
+### Support
+
+Kronk currently has support for over 94% of llamacpp functionality. See [ROADMAP.md](https://github.com/ardanlabs/yzma/blob/main/ROADMAP.md) on the yzma project for the complete list.
+
+You can use multimodal models (image/audio) and text language models with full hardware acceleration on Linux, on macOS, and on Windows.
+
+| OS      | CPU          | GPU                             |
+| ------- | ------------ | ------------------------------- |
+| Linux   | amd64, arm64 | CUDA, Vulkan, HIP, ROCm, SYCL   |
+| macOS   | arm64        | Metal                           |
+| Windows | amd64        | CUDA, Vulkan, HIP, SYCL, OpenCL |
+
+Whenever there is a new release of llamacpp, the tests for yzma are run automatically. Kronk runs tests once a day and will check for updates to llamacpp. This helps us stay up to date with the latest code and models.
+
 ### Examples
 
 You can find examples in the ArdanLabs AI training repo at example13:
@@ -179,6 +199,8 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 
 	now := time.Now()
 
+    // -------------------------------------------------------------------------
+
 	for msg := range ch {
 		if msg.Err != nil {
 			return messages, fmt.Errorf("error from model: %w", msg.Err)
@@ -203,6 +225,8 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 
 	fmt.Printf("\n\n\u001b[90mInput: %d  Output: %d  Context: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
 		inputTokens, outputTokens, contextTokens, percentage, of, tokensPerSecond)
+
+    // -------------------------------------------------------------------------
 
 	messages = append(messages, kronk.ChatMessage{
 		Role:    "assistant",

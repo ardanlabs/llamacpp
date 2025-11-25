@@ -129,14 +129,18 @@ func TestChat(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
-		response, err := krn.Chat(ctx, messages, params)
+		resp, err := krn.Chat(ctx, messages, params)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
 
+		if err := testResponse(resp, "qwen2.5-0.5b-instruct-q8_0", "chat"); err != nil {
+			return err
+		}
+
 		find := "Gorilla"
-		if !strings.Contains(response, find) {
-			return fmt.Errorf("expected %q, got %q", find, response)
+		if !strings.Contains(resp.Choice[0].GeneratedText, find) {
+			return fmt.Errorf("expected %q, got %q", find, resp.Choice[0].GeneratedText)
 		}
 
 		return nil
@@ -165,17 +169,22 @@ func TestChatStreaming(t *testing.T) {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
 
-		var finalResponse strings.Builder
-		for msg := range ch {
-			if msg.Err != nil {
-				return fmt.Errorf("error from model: %w", msg.Err)
+		var lastResp kronk.ChatResponse
+		for resp := range ch {
+			if err := testResponse(resp, "qwen2.5-0.5b-instruct-q8_0", "chat"); err != nil {
+				return err
 			}
-			finalResponse.WriteString(msg.Response)
+
+			lastResp = resp
+		}
+
+		if err := testResponse(lastResp, "qwen2.5-0.5b-instruct-q8_0", "chat"); err != nil {
+			return err
 		}
 
 		find := "Gorilla"
-		if !strings.Contains(finalResponse.String(), find) {
-			return fmt.Errorf("expected %q, got %q", find, finalResponse.String())
+		if !strings.Contains(lastResp.Choice[0].GeneratedText, find) {
+			return fmt.Errorf("expected %q, got %q", find, lastResp.Choice[0].GeneratedText)
 		}
 
 		return nil
@@ -228,14 +237,18 @@ func TestVision(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
 		defer cancel()
 
-		response, err := krn.Vision(ctx, message, imageFile, params)
+		resp, err := krn.Vision(ctx, message, imageFile, params)
 		if err != nil {
 			return fmt.Errorf("vision streaming: %w", err)
 		}
 
+		if err := testResponse(resp, "Qwen2.5-VL-3B-Instruct-Q8_0", "vision"); err != nil {
+			return err
+		}
+
 		find := "giraffes"
-		if !strings.Contains(response, find) {
-			return fmt.Errorf("expected %q, got %q", find, response)
+		if !strings.Contains(resp.Choice[0].GeneratedText, find) {
+			return fmt.Errorf("expected %q, got %q", find, resp.Choice[0].GeneratedText)
 		}
 
 		return nil
@@ -264,17 +277,22 @@ func TestVisionStreaming(t *testing.T) {
 			return fmt.Errorf("vision streaming: %w", err)
 		}
 
-		var finalResponse strings.Builder
-		for msg := range ch {
-			if msg.Err != nil {
-				return fmt.Errorf("error from model: %w", msg.Err)
+		var lastResp kronk.ChatResponse
+		for resp := range ch {
+			if err := testResponse(resp, "Qwen2.5-VL-3B-Instruct-Q8_0", "vision"); err != nil {
+				return err
 			}
-			finalResponse.WriteString(msg.Response)
+
+			lastResp = resp
+		}
+
+		if err := testResponse(lastResp, "Qwen2.5-VL-3B-Instruct-Q8_0", "vision"); err != nil {
+			return err
 		}
 
 		find := "giraffes"
-		if !strings.Contains(finalResponse.String(), find) {
-			return fmt.Errorf("expected %q, got %q", find, finalResponse.String())
+		if !strings.Contains(lastResp.Choice[0].GeneratedText, find) {
+			return fmt.Errorf("expected %q, got %q", find, lastResp.Choice[0].GeneratedText)
 		}
 
 		return nil
@@ -333,4 +351,42 @@ func TestEmbedding(t *testing.T) {
 	if err := g.Wait(); err != nil {
 		t.Errorf("error: %v", err)
 	}
+}
+
+// =============================================================================
+
+func testResponse(msg kronk.ChatResponse, modelName string, object string) error {
+	if msg.ID == "" {
+		return fmt.Errorf("expected id")
+	}
+
+	if msg.Object != object {
+		return fmt.Errorf("expected object type to be %s, got %s", object, msg.Object)
+	}
+
+	if msg.Created == 0 {
+		return fmt.Errorf("expected created time")
+	}
+
+	if msg.Model != modelName {
+		return fmt.Errorf("expected model to be %s, got %s", modelName, msg.Model)
+	}
+
+	if len(msg.Choice) == 0 {
+		return fmt.Errorf("expected choice, got %d", len(msg.Choice))
+	}
+
+	if msg.Choice[0].FinishReason == "" && msg.Choice[0].Delta.Content == "" {
+		return fmt.Errorf("expected delta content, got %s", msg.Choice[0].Delta.Content)
+	}
+
+	if msg.Choice[0].FinishReason == "stop" && msg.Choice[0].GeneratedText == "" {
+		return fmt.Errorf("expected generated text, got %s", msg.Choice[0].GeneratedText)
+	}
+
+	if msg.Choice[0].FinishReason == "" && msg.Choice[0].Delta.Role != "assistant" {
+		return fmt.Errorf("expected delta role to be assistant, got %s", msg.Choice[0].Delta.Role)
+	}
+
+	return nil
 }
