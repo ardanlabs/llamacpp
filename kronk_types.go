@@ -51,10 +51,9 @@ type ResponseMessage struct {
 
 // Choice represents a single choice in a response.
 type Choice struct {
-	Index         int             `json:"index"`
-	Delta         ResponseMessage `json:"delta"`
-	GeneratedText string          `json:"generated_text"`
-	FinishReason  string          `json:"finish_reason"`
+	Index        int             `json:"index"`
+	Delta        ResponseMessage `json:"delta"`
+	FinishReason string          `json:"finish_reason"`
 }
 
 // Usage provides details usage information for the request.
@@ -76,7 +75,42 @@ type ChatResponse struct {
 	Usage   Usage    `json:"usage"`
 }
 
-func chatResponseDelta(id string, object string, model string, index int, content string, u Usage) ChatResponse {
+func chatResponseDelta(id string, object string, model string, index int, content string, reasoning bool, u Usage) ChatResponse {
+	return ChatResponse{
+		ID:      id,
+		Object:  object,
+		Created: time.Now().UnixMilli(),
+		Model:   model,
+		Choice: []Choice{
+			{
+				Index: index,
+				Delta: ResponseMessage{
+					Role:      RoleAssistant,
+					Content:   hasContent(content, reasoning),
+					Reasoning: hasReasoning(content, reasoning),
+				},
+				FinishReason: "",
+			},
+		},
+		Usage: u,
+	}
+}
+
+func hasReasoning(content string, reasoning bool) string {
+	if reasoning {
+		return content
+	}
+	return ""
+}
+
+func hasContent(content string, reasoning bool) string {
+	if !reasoning {
+		return content
+	}
+	return ""
+}
+
+func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -88,28 +122,9 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 				Delta: ResponseMessage{
 					Role:      RoleAssistant,
 					Content:   content,
-					Reasoning: "",
+					Reasoning: reasoning,
 				},
-				GeneratedText: "",
-				FinishReason:  "",
-			},
-		},
-		Usage: u,
-	}
-}
-
-func chatResponseFinal(id string, object string, model string, index int, content string, u Usage) ChatResponse {
-	return ChatResponse{
-		ID:      id,
-		Object:  object,
-		Created: time.Now().UnixMilli(),
-		Model:   model,
-		Choice: []Choice{
-			{
-				Index:         index,
-				Delta:         ResponseMessage{},
-				GeneratedText: content,
-				FinishReason:  FinishReasonStop,
+				FinishReason: FinishReasonStop,
 			},
 		},
 		Usage: u,
@@ -124,10 +139,12 @@ func chatResponseErr(id string, object string, model string, index int, err erro
 		Model:   model,
 		Choice: []Choice{
 			{
-				Index:         index,
-				Delta:         ResponseMessage{},
-				GeneratedText: err.Error(),
-				FinishReason:  FinishReasonError,
+				Index: index,
+				Delta: ResponseMessage{
+					Role:    RoleAssistant,
+					Content: err.Error(),
+				},
+				FinishReason: FinishReasonError,
 			},
 		},
 		Usage: u,
