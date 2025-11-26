@@ -71,6 +71,8 @@ import (
 )
 
 const (
+	// modelURL  = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q8_0.gguf?download=true"
+	// modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf?download=true"
 	modelURL  = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf?download=true"
 	libPath   = "zarf/llamacpp"
 	modelPath = "zarf/models"
@@ -178,9 +180,13 @@ func userInput(messages []kronk.ChatMessage) ([]kronk.ChatMessage, error) {
 }
 
 func performChat(ctx context.Context, krn *kronk.Kronk, messages []kronk.ChatMessage) (<-chan kronk.ChatResponse, error) {
-	ch, err := krn.ChatStreaming(ctx, messages, kronk.Params{
-		MaxTokens: 2048,
+	ch, err := krn.ChatStreaming(ctx, kronk.ChatRequest{
+		Messages: messages,
+		Params: kronk.Params{
+			MaxTokens: 2048,
+		},
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("chat streaming: %w", err)
 	}
@@ -192,11 +198,16 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 	fmt.Print("\nMODEL> ")
 
 	var reasoning bool
-
 	var lr kronk.ChatResponse
+
+loop:
 	for resp := range ch {
-		if resp.Choice[0].FinishReason == kronk.FinishReasonError {
-			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].GeneratedText)
+		switch resp.Choice[0].FinishReason {
+		case kronk.FinishReasonStop:
+			break loop
+
+		case kronk.FinishReasonError:
+			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
 		}
 
 		if resp.Choice[0].Delta.Reasoning != "" {
@@ -216,7 +227,7 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 
 	messages = append(messages, kronk.ChatMessage{
 		Role:    "assistant",
-		Content: lr.Choice[0].GeneratedText,
+		Content: lr.Choice[0].Delta.Content,
 	})
 
 	// -------------------------------------------------------------------------

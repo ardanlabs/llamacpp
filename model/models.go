@@ -1,8 +1,6 @@
-package kronk
+package model
 
-import (
-	"time"
-)
+import "time"
 
 // Objects represent the different types of data that can be returned.
 const (
@@ -21,6 +19,8 @@ const (
 	FinishReasonError = "error"
 )
 
+// =============================================================================
+
 // ModelInfo represents the model's card information.
 type ModelInfo struct {
 	Desc        string
@@ -34,10 +34,77 @@ type ModelInfo struct {
 
 // =============================================================================
 
-// ChatMessage represent input for chat and vision models.
+// ToolArgument represents a single argument of a tool parameter.
+type ToolArgument struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
+// ToolParameter represents a single parameter for a tool function.
+type ToolParameter struct {
+	Type       string                  `json:"type"`
+	Properties map[string]ToolArgument `json:"properties"`
+}
+
+// ToolFunction represents the definition of a function tool.
+type ToolFunction struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Parameters  []ToolParameter `json:"parameters"`
+}
+
+// Tool represents a tool that can be called by the model.
+type Tool struct {
+	Type     string       `json:"type"`
+	Function ToolFunction `json:"function"`
+}
+
+// AddToolParameter adds a new parameter to the tool function.
+func (t Tool) AddToolParameter(name string, arg ToolArgument) Tool {
+	tp := ToolParameter{
+		Type: "object",
+		Properties: map[string]ToolArgument{
+			name: arg,
+		},
+	}
+
+	t.Function.Parameters = append(t.Function.Parameters, tp)
+
+	return t
+}
+
+// CreateToolFunction creates a new tool function with the given name and description.
+func CreateToolFunction(name string, description string) Tool {
+	return Tool{
+		Type: "function",
+		Function: ToolFunction{
+			Name:        name,
+			Description: description,
+		},
+	}
+}
+
+// =============================================================================
+
+// ChatMessage represent a single message in a chat.
 type ChatMessage struct {
 	Role    string
 	Content string
+}
+
+// ChatRequest represents input for chat and vision models.
+// Tool support is coming soon.
+type ChatRequest struct {
+	Messages []ChatMessage
+	Params   Params
+	Tools    []Tool
+}
+
+// VisionRequest represents input for vision models.
+type VisionRequest struct {
+	ImageFile string
+	Message   ChatMessage
+	Params    Params
 }
 
 // =============================================================================
@@ -131,7 +198,7 @@ func chatResponseFinal(id string, object string, model string, index int, conten
 	}
 }
 
-func chatResponseErr(id string, object string, model string, index int, err error, u Usage) ChatResponse {
+func ChatResponseErr(id string, object string, model string, index int, err error, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -149,18 +216,4 @@ func chatResponseErr(id string, object string, model string, index int, err erro
 		},
 		Usage: u,
 	}
-}
-
-// =============================================================================
-
-// RankingDocument represents input for reranking.
-type RankingDocument struct {
-	Document  string
-	Embedding []float64
-}
-
-// Ranking represents output for reranking.
-type Ranking struct {
-	Document string
-	Score    float64
 }

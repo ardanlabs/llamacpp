@@ -3,15 +3,24 @@ package kronk
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
 
+	"github.com/ardanlabs/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
+
+// Version contains the current version of the kronk package.
+const Version = "0.13.0"
+
+// =============================================================================
 
 // LogLevel represents the logging level.
 type LogLevel int
@@ -60,15 +69,15 @@ func Init(libPath string, logLevel LogLevel) error {
 
 // Kronk provides a concurrently safe api for using llamacpp to access models.
 type Kronk struct {
-	cfg       ModelConfig
+	cfg       model.Config
 	modelName string
-	models    chan *model
+	models    chan *model.Model
 	wg        sync.WaitGroup
 	closed    uint32
 }
 
 // New provides the ability to use models in a concurrently safe way.
-func New(concurrency int, modelFile string, projFile string, cfg ModelConfig) (*Kronk, error) {
+func New(concurrency int, modelFile string, projFile string, cfg model.Config) (*Kronk, error) {
 	if libraryLocation == "" {
 		return nil, fmt.Errorf("the Init() function has not been called")
 	}
@@ -77,15 +86,15 @@ func New(concurrency int, modelFile string, projFile string, cfg ModelConfig) (*
 		return nil, fmt.Errorf("concurrency must be > 0, got %d", concurrency)
 	}
 
-	models := make(chan *model, concurrency)
-	var firstModel *model
+	models := make(chan *model.Model, concurrency)
+	var firstModel *model.Model
 
 	for range concurrency {
-		m, err := newModel(modelFile, projFile, cfg)
+		m, err := model.NewModel(modelFile, projFile, cfg)
 		if err != nil {
 			close(models)
 			for model := range models {
-				model.unload()
+				model.Unload()
 			}
 
 			return nil, err
@@ -99,7 +108,7 @@ func New(concurrency int, modelFile string, projFile string, cfg ModelConfig) (*
 	}
 
 	krn := Kronk{
-		cfg:       firstModel.cfg,
+		cfg:       firstModel.Config(),
 		modelName: strings.TrimSuffix(filepath.Base(modelFile), filepath.Ext(modelFile)),
 		models:    models,
 	}
@@ -110,7 +119,7 @@ func New(concurrency int, modelFile string, projFile string, cfg ModelConfig) (*
 // ModelConfig returns a copy of the configuration being used. This may be
 // different from the configuration passed to New() if the model has
 // overridden any of the settings.
-func (krn *Kronk) ModelConfig() ModelConfig {
+func (krn *Kronk) ModelConfig() model.Config {
 	return krn.cfg
 }
 
@@ -135,23 +144,23 @@ func (krn *Kronk) Unload() {
 
 	close(krn.models)
 	for model := range krn.models {
-		model.unload()
+		model.Unload()
 	}
 }
 
 // ModelInfo provides support to extract the model card information.
-func (krn *Kronk) ModelInfo(ctx context.Context) (ModelInfo, error) {
-	f := func(m *model) (ModelInfo, error) {
-		return m.modelInfo(), nil
+func (krn *Kronk) ModelInfo(ctx context.Context) (model.ModelInfo, error) {
+	f := func(m *model.Model) (model.ModelInfo, error) {
+		return m.ModelInfo(), nil
 	}
 
 	return nonStreaming(ctx, krn, &krn.closed, f)
 }
 
 // Chat provides support to interact with an inference model.
-func (krn *Kronk) Chat(ctx context.Context, messages []ChatMessage, params Params) (ChatResponse, error) {
-	f := func(m *model) (ChatResponse, error) {
-		return m.chat(ctx, messages, params)
+func (krn *Kronk) Chat(ctx context.Context, cr model.ChatRequest) (model.ChatResponse, error) {
+	f := func(m *model.Model) (model.ChatResponse, error) {
+		return m.Chat(ctx, cr)
 	}
 
 	return nonStreaming(ctx, krn, &krn.closed, f)
@@ -159,22 +168,22 @@ func (krn *Kronk) Chat(ctx context.Context, messages []ChatMessage, params Param
 
 // ChatStreaming provides support to interact with an inference model.
 // It will block until a model becomes available or the context times out.
-func (krn *Kronk) ChatStreaming(ctx context.Context, messages []ChatMessage, params Params) (<-chan ChatResponse, error) {
-	f := func(m *model) <-chan ChatResponse {
-		return m.chatStreaming(ctx, messages, params)
+func (krn *Kronk) ChatStreaming(ctx context.Context, cr model.ChatRequest) (<-chan model.ChatResponse, error) {
+	f := func(m *model.Model) <-chan model.ChatResponse {
+		return m.ChatStreaming(ctx, cr)
 	}
 
-	ef := func(err error) ChatResponse {
-		return chatResponseErr("panic", ObjectChat, "", 0, err, Usage{})
+	ef := func(err error) model.ChatResponse {
+		return model.ChatResponseErr("panic", model.ObjectChat, "", 0, err, model.Usage{})
 	}
 
 	return streaming(ctx, krn, &krn.closed, f, ef)
 }
 
 // Vision provides support to interact with a vision inference model.
-func (krn *Kronk) Vision(ctx context.Context, message ChatMessage, imageFile string, params Params) (ChatResponse, error) {
-	f := func(m *model) (ChatResponse, error) {
-		return m.vision(ctx, message, imageFile, params)
+func (krn *Kronk) Vision(ctx context.Context, vr model.VisionRequest) (model.ChatResponse, error) {
+	f := func(m *model.Model) (model.ChatResponse, error) {
+		return m.Vision(ctx, vr)
 	}
 
 	return nonStreaming(ctx, krn, &krn.closed, f)
@@ -182,13 +191,13 @@ func (krn *Kronk) Vision(ctx context.Context, message ChatMessage, imageFile str
 
 // VisionStreaming provides support to interact with a vision language model.
 // It will block until a model becomes available or the context times out.
-func (krn *Kronk) VisionStreaming(ctx context.Context, message ChatMessage, imageFile string, params Params) (<-chan ChatResponse, error) {
-	f := func(m *model) <-chan ChatResponse {
-		return m.visionStreaming(ctx, message, imageFile, params)
+func (krn *Kronk) VisionStreaming(ctx context.Context, vr model.VisionRequest) (<-chan model.ChatResponse, error) {
+	f := func(m *model.Model) <-chan model.ChatResponse {
+		return m.VisionStreaming(ctx, vr)
 	}
 
-	ef := func(err error) ChatResponse {
-		return chatResponseErr("panic", ObjectVision, "", 0, err, Usage{})
+	ef := func(err error) model.ChatResponse {
+		return model.ChatResponseErr("panic", model.ObjectVision, "", 0, err, model.Usage{})
 	}
 
 	return streaming(ctx, krn, &krn.closed, f, ef)
@@ -197,9 +206,144 @@ func (krn *Kronk) VisionStreaming(ctx context.Context, message ChatMessage, imag
 // Embed provides support to interact with an embedding model. It will block
 // until a model becomes available or the context times out.
 func (krn *Kronk) Embed(ctx context.Context, text string) ([]float32, error) {
-	f := func(m *model) ([]float32, error) {
-		return m.embed(ctx, text)
+	f := func(m *model.Model) ([]float32, error) {
+		return m.Embed(ctx, text)
 	}
 
 	return nonStreaming(ctx, krn, &krn.closed, f)
+}
+
+// StreamLogger is a function type for logging.
+type StreamLogger func(ctx context.Context, format string, a ...any)
+
+// StreamResponse streams the response to an HTTP client.
+func (krn *Kronk) StreamResponse(ctx context.Context, log StreamLogger, w http.ResponseWriter, ch <-chan model.ChatResponse) error {
+	log(ctx, "streamResponse: started")
+
+	f, ok := w.(http.Flusher)
+	if !ok {
+		return fmt.Errorf("streaming not supported")
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.WriteHeader(http.StatusOK)
+	f.Flush()
+
+	var lr model.ChatResponse
+
+	for resp := range ch {
+		if err := ctx.Err(); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return errors.New("client disconnected, do not send response")
+			}
+		}
+
+		d, err := json.Marshal(resp)
+		if err != nil {
+			return fmt.Errorf("json.Marshal: %w", err)
+		}
+
+		if resp.Choice[0].FinishReason == model.FinishReasonError {
+			log(ctx, "streamResponse: ERROR: %s", resp.Choice[0].Delta.Content)
+			fmt.Fprintf(w, "data: %s\n", d)
+			f.Flush()
+			break
+		}
+
+		fmt.Fprintf(w, "data: %s\n", d)
+		f.Flush()
+
+		lr = resp
+	}
+
+	w.Write([]byte("data: [DONE]\n"))
+	f.Flush()
+
+	// -------------------------------------------------------------------------
+
+	contextTokens := lr.Usage.InputTokens + lr.Usage.CompletionTokens
+	contextWindow := krn.ModelConfig().ContextWindow
+	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
+	of := float32(contextWindow) / float32(1024)
+
+	log(ctx, "streamResponse: Input: %d  Output: %d  Context: %d (%.0f%% of %.0fK) TPS: %.2f",
+		lr.Usage.InputTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
+
+	return nil
+}
+
+// =============================================================================
+
+type nonStreamingFunc[T any] func(llama *model.Model) (T, error)
+
+func nonStreaming[T any](ctx context.Context, krn *Kronk, closed *uint32, f nonStreamingFunc[T]) (T, error) {
+	var zero T
+
+	if atomic.LoadUint32(closed) == 1 {
+		return zero, fmt.Errorf("Kronk has been unloaded")
+	}
+
+	select {
+	case <-ctx.Done():
+		return zero, ctx.Err()
+
+	case llama, ok := <-krn.models:
+		if !ok {
+			return zero, fmt.Errorf("Kronk has been unloaded")
+		}
+
+		krn.wg.Add(1)
+
+		defer func() {
+			krn.models <- llama
+			krn.wg.Done()
+		}()
+
+		return f(llama)
+	}
+}
+
+type streamingFunc[T any] func(llama *model.Model) <-chan T
+type errorFunc[T any] func(err error) T
+
+func streaming[T any](ctx context.Context, krn *Kronk, closed *uint32, f streamingFunc[T], ef errorFunc[T]) (<-chan T, error) {
+	var zero chan T
+
+	if atomic.LoadUint32(closed) == 1 {
+		return zero, fmt.Errorf("Kronk has been unloaded")
+	}
+
+	ch := make(chan T)
+
+	select {
+	case <-ctx.Done():
+		return zero, ctx.Err()
+
+	case llama, ok := <-krn.models:
+		if !ok {
+			return zero, fmt.Errorf("Kronk has been unloaded")
+		}
+
+		krn.wg.Add(1)
+
+		go func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					ch <- ef(fmt.Errorf("%v", rec))
+				}
+
+				close(ch)
+				krn.models <- llama
+				krn.wg.Done()
+			}()
+
+			lch := f(llama)
+			for msg := range lch {
+				ch <- msg
+			}
+		}()
+	}
+
+	return ch, nil
 }

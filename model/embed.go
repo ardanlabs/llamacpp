@@ -1,4 +1,4 @@
-package kronk
+package model
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-func (m *model) embed(ctx context.Context, text string) ([]float32, error) {
+func (m *Model) Embed(ctx context.Context, text string) ([]float32, error) {
 	lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init from model: %w", err)

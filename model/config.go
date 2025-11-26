@@ -1,4 +1,4 @@
-package kronk
+package model
 
 import (
 	"strconv"
@@ -13,7 +13,7 @@ const (
 	defNUBatch       = 512
 )
 
-// ModelConfig represents model level configuration. These values if configured
+// Config represents model level configuration. These values if configured
 // incorrectly can cause the system to panic. The defaults are used when these
 // values are set to 0.
 //
@@ -50,7 +50,7 @@ const (
 // will be used. To see what devices are available, run the following command
 // which will be found where you installed llamacpp.
 // $ llama-bench --list-devices
-type ModelConfig struct {
+type Config struct {
 	ContextWindow int
 	NBatch        int
 	NUBatch       int
@@ -58,7 +58,7 @@ type ModelConfig struct {
 	Device        string
 }
 
-func adjustConfig(cfg ModelConfig, model llama.Model) ModelConfig {
+func adjustConfig(cfg Config, model llama.Model) Config {
 	cfg = adjustContextWindow(cfg, model)
 
 	if cfg.NBatch <= 0 {
@@ -78,7 +78,7 @@ func adjustConfig(cfg ModelConfig, model llama.Model) ModelConfig {
 	return cfg
 }
 
-func adjustContextWindow(cfg ModelConfig, model llama.Model) ModelConfig {
+func adjustContextWindow(cfg Config, model llama.Model) Config {
 	modelCW := defContextWindow
 	v, found := searchModelMeta(model, "context_length")
 	if found {
@@ -95,7 +95,7 @@ func adjustContextWindow(cfg ModelConfig, model llama.Model) ModelConfig {
 	return cfg
 }
 
-func modelCtxParams(cfg ModelConfig) llama.ContextParams {
+func modelCtxParams(cfg Config) llama.ContextParams {
 	ctxParams := llama.ContextDefaultParams()
 
 	if cfg.Embeddings {
