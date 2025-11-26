@@ -67,6 +67,7 @@ import (
 
 	"github.com/ardanlabs/ai-training/cmd/examples/example13/install"
 	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -97,7 +98,7 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	var messages []kronk.ChatMessage
+	var messages []model.ChatMessage
 
 	for {
 		messages, err = userInput(messages)
@@ -105,7 +106,7 @@ func run() error {
 			return fmt.Errorf("user input: %w", err)
 		}
 
-		messages, err = func() ([]kronk.ChatMessage, error) {
+		messages, err = func() ([]model.ChatMessage, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 			defer cancel()
 
@@ -148,7 +149,7 @@ func newKronk(modelFile string) (*kronk.Kronk, error) {
 
 	const concurrency = 1
 
-	krn, err := kronk.New(concurrency, modelFile, "", kronk.ModelConfig{})
+	krn, err := kronk.New(concurrency, modelFile, "", model.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create inference model: %w", err)
 	}
@@ -159,7 +160,7 @@ func newKronk(modelFile string) (*kronk.Kronk, error) {
 	return krn, nil
 }
 
-func userInput(messages []kronk.ChatMessage) ([]kronk.ChatMessage, error) {
+func userInput(messages []model.ChatMessage) ([]model.ChatMessage, error) {
 	fmt.Print("\nUSER> ")
 
 	reader := bufio.NewReader(os.Stdin)
@@ -169,7 +170,7 @@ func userInput(messages []kronk.ChatMessage) ([]kronk.ChatMessage, error) {
 		return messages, fmt.Errorf("unable to read user input: %w", err)
 	}
 
-	messages = append(messages, kronk.ChatMessage{
+	messages = append(messages, model.ChatMessage{
 		Role:    "user",
 		Content: userInput,
 	})
@@ -177,10 +178,14 @@ func userInput(messages []kronk.ChatMessage) ([]kronk.ChatMessage, error) {
 	return messages, nil
 }
 
-func performChat(ctx context.Context, krn *kronk.Kronk, messages []kronk.ChatMessage) (<-chan kronk.ChatResponse, error) {
-	ch, err := krn.ChatStreaming(ctx, messages, kronk.Params{
-		MaxTokens: 2048,
+func performChat(ctx context.Context, krn *kronk.Kronk, messages []model.ChatMessage) (<-chan model.ChatResponse, error) {
+	ch, err := krn.ChatStreaming(ctx, model.ChatRequest{
+		Messages: messages,
+		Params: model.Params{
+			MaxTokens: 2048,
+		},
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("chat streaming: %w", err)
 	}
@@ -188,15 +193,20 @@ func performChat(ctx context.Context, krn *kronk.Kronk, messages []kronk.ChatMes
 	return ch, nil
 }
 
-func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kronk.ChatResponse) ([]kronk.ChatMessage, error) {
+func modelResponse(krn *kronk.Kronk, messages []model.ChatMessage, ch <-chan model.ChatResponse) ([]model.ChatMessage, error) {
 	fmt.Print("\nMODEL> ")
 
 	var reasoning bool
+	var lr model.ChatResponse
 
-	var lr kronk.ChatResponse
+loop:
 	for resp := range ch {
-		if resp.Choice[0].FinishReason == kronk.FinishReasonError {
-			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].GeneratedText)
+		switch resp.Choice[0].FinishReason {
+		case model.FinishReasonStop:
+			break loop
+
+		case model.FinishReasonError:
+			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
 		}
 
 		if resp.Choice[0].Delta.Reasoning != "" {
@@ -214,9 +224,9 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 		lr = resp
 	}
 
-	messages = append(messages, kronk.ChatMessage{
+	messages = append(messages, model.ChatMessage{
 		Role:    "assistant",
-		Content: lr.Choice[0].GeneratedText,
+		Content: lr.Choice[0].Delta.Content,
 	})
 
 	// -------------------------------------------------------------------------
@@ -235,26 +245,26 @@ func modelResponse(krn *kronk.Kronk, messages []kronk.ChatMessage, ch <-chan kro
 
 This example can produce the following output:
 
-<pre>
+```
 $ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:zarf/llamacpp
 $ go run cmd/examples/example13/step1/*.go
 
 Output:
 
- - check llamacpp installation: ✓
-   - latest version : b7157
-   - current version: b7157
- - check "gpt-oss-20b-Q8_0" installation: ✓
- - contextWindow: 131072
- - embeddings   : false
+- check llamacpp installation: ✓
+  - latest version : b7157
+  - current version: b7157
+- check "gpt-oss-20b-Q8_0" installation: ✓
+- contextWindow: 131072
+- embeddings   : false
 
 USER> hello model
 
-MODEL> <span style="color: #d27474ff;">We have a conversation. The user says "hello model". The system instructions: The user is speaking as a student, wants to solve a math problem. The user hasn't asked a question yet. They just said "hello model". We need to respond appropriately. According to the instruction, we should ask the user what problem they need help with. The user hasn't asked a math question yet. We should respond politely, asking what problem they need help with.</span>
+MODEL> We have a conversation. The user says "hello model". The system instructions: The user is speaking as a student, wants to solve a math problem. The user hasn't asked a question yet. They just said "hello model". We need to respond appropriately. According to the instruction, we should ask the user what problem they need help with. The user hasn't asked a math question yet. We should respond politely, asking what problem they need help with.
 
 Hello! How can I help you with your math problem today?
 
 Input: 9  Reasoning: 92  Completion: 14  Output: 106  Window: 23 (0% of 128K) TPS: 92.59
 
 USER>
-</pre>
+```

@@ -1,4 +1,4 @@
-package kronk
+package model
 
 import "github.com/hybridgroup/yzma/pkg/llama"
 

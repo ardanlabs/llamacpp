@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/install"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -21,7 +21,7 @@ func main() {
 }
 
 func run() error {
-	vi, err := kronk.RetrieveVersionInfo(libPath)
+	vi, err := install.VersionInformation(libPath)
 	if err != nil {
 		return fmt.Errorf("error retrieving version info: %w", err)
 	}
@@ -36,7 +36,7 @@ func run() error {
 
 	fmt.Println("Installing Llamacpp")
 
-	vi, err = kronk.InstallLlama(libPath, download.CPU, true)
+	vi, err = install.Llama(libPath, download.CPU, true)
 	if err != nil {
 		return fmt.Errorf("failed to install llama: %q: error: %w", libPath, err)
 	}

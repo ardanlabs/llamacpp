@@ -1,4 +1,5 @@
-package kronk
+// Package model provides the low-level api for working with models.
+package model
 
 import (
 	"context"
@@ -12,9 +13,10 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-type model struct {
+// Model represents a model and provides a low-level API for working with it.
+type Model struct {
 	modelName string
-	cfg       ModelConfig
+	cfg       Config
 	model     llama.Model
 	vocab     llama.Vocab
 	ctxParams llama.ContextParams
@@ -22,7 +24,7 @@ type model struct {
 	projFile  string
 }
 
-func newModel(modelFile string, projFile string, cfg ModelConfig) (*model, error) {
+func NewModel(modelFile string, projFile string, cfg Config) (*Model, error) {
 	mparams := llama.ModelDefaultParams()
 	if cfg.Device != "" {
 		dev := llama.GGMLBackendDeviceByName(cfg.Device)
@@ -59,7 +61,7 @@ func newModel(modelFile string, projFile string, cfg ModelConfig) (*model, error
 
 	// -------------------------------------------------------------------------
 
-	m := model{
+	m := Model{
 		modelName: modelName,
 		cfg:       cfg,
 		model:     mdl,
@@ -72,12 +74,16 @@ func newModel(modelFile string, projFile string, cfg ModelConfig) (*model, error
 	return &m, nil
 }
 
-func (m *model) unload() {
+func (m *Model) Unload() {
 	llama.ModelFree(m.model)
 	llama.BackendFree()
 }
 
-func (m *model) modelInfo() ModelInfo {
+func (m *Model) Config() Config {
+	return m.cfg
+}
+
+func (m *Model) ModelInfo() ModelInfo {
 	desc := llama.ModelDesc(m.model)
 	size := llama.ModelSize(m.model)
 	encoder := llama.ModelHasEncoder(m.model)
@@ -112,7 +118,7 @@ func (m *model) modelInfo() ModelInfo {
 	}
 }
 
-func (m *model) processTokens(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
+func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
 	var inputTokens int
 	var completionTokens int
 
@@ -196,7 +202,7 @@ loop:
 
 		select {
 		case <-ctx.Done():
-			ch <- chatResponseErr(id, object, m.modelName, index, ctx.Err(), Usage{
+			ch <- ChatResponseErr(id, object, m.modelName, index, ctx.Err(), Usage{
 				InputTokens:      inputTokens,
 				ReasoningTokens:  reasonTokens,
 				CompletionTokens: completionTokens,
@@ -241,7 +247,7 @@ loop:
 		TokensPerSecond:  tokensPerSecond})
 }
 
-func (m *model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int) {
+func (m *Model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int) {
 	sampler := toSampler(params)
 
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
@@ -257,12 +263,12 @@ func (m *model) startProcessing(lctx llama.Context, object string, prompt string
 	return sampler, batch, tokenCount
 }
 
-func (m *model) nextBatch(token llama.Token) llama.Batch {
+func (m *Model) nextBatch(token llama.Token) llama.Batch {
 	tokens := []llama.Token{token}
 	return llama.BatchGetOne(tokens)
 }
 
-func (m *model) batchResponse(lctx llama.Context, batch llama.Batch, sampler llama.Sampler, buf []byte) (string, llama.Token, error) {
+func (m *Model) batchResponse(lctx llama.Context, batch llama.Batch, sampler llama.Sampler, buf []byte) (string, llama.Token, error) {
 	llama.Decode(lctx, batch)
 	token := llama.SamplerSample(sampler, lctx, -1)
 
@@ -280,7 +286,7 @@ func (m *model) batchResponse(lctx llama.Context, batch llama.Batch, sampler lla
 	return content, token, nil
 }
 
-func (m *model) thinkStart(token llama.Token, reasoning *int, reasonTokens *int) llama.Batch {
+func (m *Model) thinkStart(token llama.Token, reasoning *int, reasonTokens *int) llama.Batch {
 	*reasoning = 1
 
 	batch := m.nextBatch(token)
@@ -289,7 +295,7 @@ func (m *model) thinkStart(token llama.Token, reasoning *int, reasonTokens *int)
 	return batch
 }
 
-func (m *model) thinkStop(token llama.Token, reasoning *int, completionTokens *int) llama.Batch {
+func (m *Model) thinkStop(token llama.Token, reasoning *int, completionTokens *int) llama.Batch {
 	*reasoning = 0
 
 	batch := m.nextBatch(token)
@@ -298,7 +304,7 @@ func (m *model) thinkStop(token llama.Token, reasoning *int, completionTokens *i
 	return batch
 }
 
-func (m *model) channelStart(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int, completionTokens *int) (llama.Batch, string, error) {
+func (m *Model) channelStart(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int, completionTokens *int) (llama.Batch, string, error) {
 	// <|channel|>analysis<|message|>REASONING<|end|><|start|>assistant<|channel|>final<|message|>RESPONSE
 
 	batch := m.nextBatch(token)
@@ -327,7 +333,7 @@ func (m *model) channelStart(lctx llama.Context, token llama.Token, sampler llam
 	return batch, "<|continue|>", nil
 }
 
-func (m *model) channelAnalysis(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int) (llama.Batch, error) {
+func (m *Model) channelAnalysis(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, reasonTokens *int) (llama.Batch, error) {
 	*reasoning = 1
 
 	batch := m.nextBatch(token)
@@ -342,7 +348,7 @@ func (m *model) channelAnalysis(lctx llama.Context, token llama.Token, sampler l
 	return batch, nil
 }
 
-func (m *model) channelFinal(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, completionTokens *int) (llama.Batch, error) {
+func (m *Model) channelFinal(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte, reasoning *int, completionTokens *int) (llama.Batch, error) {
 	*reasoning = 0
 
 	batch := m.nextBatch(token)
@@ -357,7 +363,7 @@ func (m *model) channelFinal(lctx llama.Context, token llama.Token, sampler llam
 	return batch, nil
 }
 
-func (m *model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte) (llama.Batch, error) {
+func (m *Model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte) (llama.Batch, error) {
 	batch := m.nextBatch(token)
 
 	_, token, err := m.batchResponse(lctx, batch, sampler, buf) // <|start|>
@@ -376,7 +382,7 @@ func (m *model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.
 	return batch, nil
 }
 
-func (m *model) removeExtraCRLF(reasoning int, completion int, content string) bool {
+func (m *Model) removeExtraCRLF(reasoning int, completion int, content string) bool {
 	// We just started reasoning so remove leading CR.
 	if reasoning == 1 && content == "\x0A" {
 		return true
