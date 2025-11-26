@@ -13,6 +13,7 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
+// Model represents a model and provides a low-level API for working with it.
 type Model struct {
 	modelName string
 	cfg       Config

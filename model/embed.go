@@ -8,6 +8,7 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
+// Embed performs an embedding request and returns the final response.
 func (m *Model) Embed(ctx context.Context, text string) ([]float32, error) {
 	lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 	if err != nil {

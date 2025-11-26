@@ -213,16 +213,21 @@ func (krn *Kronk) Embed(ctx context.Context, text string) ([]float32, error) {
 	return nonStreaming(ctx, krn, &krn.closed, f)
 }
 
-// StreamLogger is a function type for logging.
-type StreamLogger func(ctx context.Context, format string, a ...any)
+// Logger is a function type for logging.
+type Logger func(ctx context.Context, format string, a ...any)
 
-// StreamResponse streams the response to an HTTP client.
-func (krn *Kronk) StreamResponse(ctx context.Context, log StreamLogger, w http.ResponseWriter, ch <-chan model.ChatResponse) error {
+// ChatStreamingHTTP streams the response to an HTTP client.
+func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, cr model.ChatRequest) error {
 	log(ctx, "streamResponse: started")
 
 	f, ok := w.(http.Flusher)
 	if !ok {
 		return fmt.Errorf("streaming not supported")
+	}
+
+	ch, err := krn.ChatStreaming(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("streamResponse: %w", err)
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")

@@ -10,6 +10,7 @@ import (
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
 
+// Vision performs a vision request and returns the final response.
 func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, error) {
 	ch := m.VisionStreaming(ctx, vr)
 
@@ -21,6 +22,7 @@ func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, err
 	return lastMsg, nil
 }
 
+// VisionStreaming performs a vision request and streams the response.
 func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 

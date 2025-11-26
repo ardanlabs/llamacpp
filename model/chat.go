@@ -8,6 +8,7 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
+// Chat performs a chat request and returns the final response.
 func (m *Model) Chat(ctx context.Context, cr ChatRequest) (ChatResponse, error) {
 	ch := m.ChatStreaming(ctx, cr)
 
@@ -19,6 +20,7 @@ func (m *Model) Chat(ctx context.Context, cr ChatRequest) (ChatResponse, error) 
 	return lastMsg, nil
 }
 
+// ChatStreaming performs a chat request and streams the response.
 func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 

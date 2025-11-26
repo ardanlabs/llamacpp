@@ -93,11 +93,9 @@ type ChatMessage struct {
 }
 
 // ChatRequest represents input for chat and vision models.
-// Tool support is coming soon.
 type ChatRequest struct {
 	Messages []ChatMessage
 	Params   Params
-	Tools    []Tool
 }
 
 // VisionRequest represents input for vision models.
