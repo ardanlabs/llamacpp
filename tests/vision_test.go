@@ -37,7 +37,11 @@ func Test_SimpleVisionStreaming(t *testing.T) {
 // =============================================================================
 
 func initVisionTest(t *testing.T, modelFile, projFile string, imageFile string) (*kronk.Kronk, model.VisionRequest) {
-	krn, err := kronk.New(modelInstances, modelFile, projFile, model.Config{})
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile:      modelFile,
+		ProjectionFile: projFile,
+	})
+
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}

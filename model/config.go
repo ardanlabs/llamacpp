@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,17 @@ const (
 // Config represents model level configuration. These values if configured
 // incorrectly can cause the system to panic. The defaults are used when these
 // values are set to 0.
+//
+// ModelInstances is the number of instances of the model to create. Unless
+// you have more than 1 GPU, the recommended number of instances is 1.
+//
+// ModelFile is the path to the model file. This is mandatory to provide.
+//
+// ProjFile is the path to the projection file. This is mandatory for vision
+// models.
+//
+// JinjaFile is the path to the jinja file. This is not required and can be
+// used if you want to override the templated provided by the model metadata.
 //
 // ContextWindow (often referred to as context length) is the maximum number of
 // tokens that a large language model can process and consider at one time when
@@ -51,11 +63,22 @@ const (
 // which will be found where you installed llamacpp.
 // $ llama-bench --list-devices
 type Config struct {
-	ContextWindow int
-	NBatch        int
-	NUBatch       int
-	Embeddings    bool
-	Device        string
+	ModelFile      string
+	ProjectionFile string
+	JinjaFile      string
+	ContextWindow  int
+	NBatch         int
+	NUBatch        int
+	Embeddings     bool
+	Device         string
+}
+
+func validateConfig(cfg Config) error {
+	if cfg.ModelFile == "" {
+		return fmt.Errorf("model file is required")
+	}
+
+	return nil
 }
 
 func adjustConfig(cfg Config, model llama.Model) Config {

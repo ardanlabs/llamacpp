@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,16 +13,20 @@ import (
 
 // Model represents a model and provides a low-level API for working with it.
 type Model struct {
-	modelName string
 	cfg       Config
 	model     llama.Model
 	vocab     llama.Vocab
 	ctxParams llama.ContextParams
 	template  string
 	projFile  string
+	modelInfo ModelInfo
 }
 
-func NewModel(modelFile string, projFile string, cfg Config) (*Model, error) {
+func NewModel(cfg Config) (*Model, error) {
+	if err := validateConfig(cfg); err != nil {
+		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
 	mparams := llama.ModelDefaultParams()
 	if cfg.Device != "" {
 		dev := llama.GGMLBackendDeviceByName(cfg.Device)
@@ -34,44 +36,58 @@ func NewModel(modelFile string, projFile string, cfg Config) (*Model, error) {
 		mparams.SetDevices([]llama.GGMLBackendDevice{dev})
 	}
 
-	mdl, err := llama.ModelLoadFromFile(modelFile, mparams)
+	mdl, err := llama.ModelLoadFromFile(cfg.ModelFile, mparams)
 	if err != nil {
-		return nil, fmt.Errorf("ModelLoadFromFile: %w", err)
+		return nil, fmt.Errorf("unable to load model: %w", err)
 	}
 
 	cfg = adjustConfig(cfg, mdl)
-
 	vocab := llama.ModelGetVocab(mdl)
 
 	// -------------------------------------------------------------------------
 
-	template := llama.ModelChatTemplate(mdl, "")
-	if template == "" {
-		template, _ = llama.ModelMetaValStr(mdl, "tokenizer.chat_template")
+	template, err := retrieveTemplate(cfg, mdl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve model template: %w", err)
 	}
-
-	if template == "" {
-		template = "chatml"
-	}
-
-	// -------------------------------------------------------------------------
-
-	filename := filepath.Base(modelFile)
-	modelName := strings.TrimSuffix(filename, path.Ext(filename))
 
 	// -------------------------------------------------------------------------
 
 	m := Model{
-		modelName: modelName,
 		cfg:       cfg,
 		model:     mdl,
 		vocab:     vocab,
 		ctxParams: modelCtxParams(cfg),
 		template:  template,
-		projFile:  projFile,
+		projFile:  cfg.ProjectionFile,
+		modelInfo: newModelInfo(cfg, mdl),
 	}
 
 	return &m, nil
+}
+
+func retrieveTemplate(cfg Config, mdl llama.Model) (string, error) {
+	var template string
+
+	if cfg.JinjaFile != "" {
+		template, err := readJinjaTemplate(cfg.JinjaFile)
+		if err != nil {
+			return "", fmt.Errorf("failed to read jinja template: %w", err)
+		}
+
+		if template == "" {
+			return "", fmt.Errorf("jinja template is empty")
+		}
+	}
+
+	if template == "" {
+		template = llama.ModelChatTemplate(mdl, "")
+		if template == "" {
+			template, _ = llama.ModelMetaValStr(mdl, "tokenizer.chat_template")
+		}
+	}
+
+	return template, nil
 }
 
 func (m *Model) Unload() {
@@ -84,38 +100,7 @@ func (m *Model) Config() Config {
 }
 
 func (m *Model) ModelInfo() ModelInfo {
-	desc := llama.ModelDesc(m.model)
-	size := llama.ModelSize(m.model)
-	encoder := llama.ModelHasEncoder(m.model)
-	decoder := llama.ModelHasDecoder(m.model)
-	recurrent := llama.ModelIsRecurrent(m.model)
-	hybrid := llama.ModelIsHybrid(m.model)
-	count := llama.ModelMetaCount(m.model)
-	metadata := make(map[string]string)
-
-	for i := range count {
-		key, ok := llama.ModelMetaKeyByIndex(m.model, i)
-		if !ok {
-			continue
-		}
-
-		value, ok := llama.ModelMetaValStrByIndex(m.model, i)
-		if !ok {
-			continue
-		}
-
-		metadata[key] = value
-	}
-
-	return ModelInfo{
-		Desc:        desc,
-		Size:        size,
-		HasEncoder:  encoder,
-		HasDecoder:  decoder,
-		IsRecurrent: recurrent,
-		IsHybrid:    hybrid,
-		Metadata:    metadata,
-	}
+	return m.modelInfo
 }
 
 func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
@@ -123,14 +108,7 @@ func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context
 	var completionTokens int
 
 	params = adjustParams(params)
-	sampler, batch, tokenCount := m.startProcessing(lctx, object, prompt, params)
-
-	switch object {
-	case ObjectChat:
-		inputTokens = tokenCount
-	case ObjectVision:
-		completionTokens = tokenCount
-	}
+	sampler, batch, inputTokens, completionTokens := m.startProcessing(lctx, object, prompt, params)
 
 	totalOutTokens := completionTokens
 
@@ -202,7 +180,7 @@ loop:
 
 		select {
 		case <-ctx.Done():
-			ch <- ChatResponseErr(id, object, m.modelName, index, ctx.Err(), Usage{
+			ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), Usage{
 				InputTokens:      inputTokens,
 				ReasoningTokens:  reasonTokens,
 				CompletionTokens: completionTokens,
@@ -210,7 +188,7 @@ loop:
 				TokensPerSecond:  tokensPerSecond})
 			return
 
-		case ch <- chatResponseDelta(id, object, m.modelName, index, content, reasoning > 0, Usage{
+		case ch <- chatResponseDelta(id, object, m.modelInfo.Name, index, content, reasoning > 0, Usage{
 			InputTokens:      inputTokens,
 			ReasoningTokens:  reasonTokens,
 			CompletionTokens: completionTokens,
@@ -239,7 +217,7 @@ loop:
 
 	// -------------------------------------------------------------------------
 
-	ch <- chatResponseFinal(id, object, m.modelName, index, finalContent.String(), finalReasoning.String(), Usage{
+	ch <- chatResponseFinal(id, object, m.modelInfo.Name, index, finalContent.String(), finalReasoning.String(), Usage{
 		InputTokens:      inputTokens,
 		ReasoningTokens:  reasonTokens,
 		CompletionTokens: completionTokens,
@@ -247,20 +225,21 @@ loop:
 		TokensPerSecond:  tokensPerSecond})
 }
 
-func (m *Model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int) {
+func (m *Model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int, int) {
 	sampler := toSampler(params)
 
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
 	batch := llama.BatchGetOne(tokens)
-	tokenCount := int(batch.NTokens)
+	inpTokenCount := int(batch.NTokens)
 
+	var outTokenCount int
 	switch object {
 	case ObjectVision:
 		batch = m.nextBatch(llama.SamplerSample(sampler, lctx, -1))
-		tokenCount = int(batch.NTokens)
+		outTokenCount = int(batch.NTokens)
 	}
 
-	return sampler, batch, tokenCount
+	return sampler, batch, inpTokenCount, outTokenCount
 }
 
 func (m *Model) nextBatch(token llama.Token) llama.Batch {

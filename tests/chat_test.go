@@ -65,7 +65,10 @@ func Test_GPTChatStreaming(t *testing.T) {
 // =============================================================================
 
 func initChatTest(t *testing.T, modelFile string) (*kronk.Kronk, model.ChatRequest) {
-	krn, err := kronk.New(modelInstances, modelFile, "", model.Config{})
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile: modelFile,
+	})
+
 	if err != nil {
 		t.Fatalf("unable to load model: %v", err)
 	}

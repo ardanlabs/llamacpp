@@ -29,7 +29,7 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 
 		defer func() {
 			if rec := recover(); rec != nil {
-				ch <- ChatResponseErr(id, ObjectChat, m.modelName, 0, fmt.Errorf("%s", rec), Usage{})
+				ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("%s", rec), Usage{})
 			}
 
 			close(ch)
@@ -37,7 +37,7 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectChat, m.modelName, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
+			ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
 			return
 		}
 
@@ -46,21 +46,14 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 			llama.Free(lctx)
 		}()
 
-		prompt := m.applyChatTemplate(cr)
+		prompt, err := m.applyChatRequestJinjaTemplate(cr, true)
+		if err != nil {
+			ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("unable to apply jinja template: %w", err), Usage{})
+			return
+		}
+
 		m.processTokens(ctx, id, lctx, ObjectChat, prompt, cr.Params, ch)
 	}()
 
 	return ch
-}
-
-func (m *Model) applyChatTemplate(cr ChatRequest) string {
-	msgs := make([]llama.ChatMessage, len(cr.Messages))
-	for i, msg := range cr.Messages {
-		msgs[i] = llama.NewChatMessage(msg.Role, msg.Content)
-	}
-
-	buf := make([]byte, m.cfg.ContextWindow)
-	l := llama.ChatApplyTemplate(m.template, msgs, true, buf)
-
-	return string(buf[:l])
 }

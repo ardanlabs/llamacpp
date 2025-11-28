@@ -26,11 +26,11 @@ func testEmbedding(t *testing.T, modelFile string) {
 		t.Parallel()
 	}
 
-	cfg := model.Config{
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile:  modelFile,
 		Embeddings: true,
-	}
+	})
 
-	krn, err := kronk.New(modelInstances, modelFile, "", cfg)
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}

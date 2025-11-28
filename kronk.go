@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -70,17 +68,17 @@ func Init(libPath string, logLevel LogLevel) error {
 // Kronk provides a concurrently safe api for using llamacpp to access models.
 type Kronk struct {
 	cfg       model.Config
-	modelName string
 	models    chan *model.Model
 	wg        sync.WaitGroup
 	closed    uint32
+	modelInfo model.ModelInfo
 }
 
 // New provides the ability to use models in a concurrently safe way.
 //
 // modelInstances represents the number of instances of the model to create. Unless
 // you have more than 1 GPU, the recommended number of instances is 1.
-func New(modelInstances int, modelFile string, projFile string, cfg model.Config) (*Kronk, error) {
+func New(modelInstances int, cfg model.Config) (*Kronk, error) {
 	if libraryLocation == "" {
 		return nil, fmt.Errorf("the Init() function has not been called")
 	}
@@ -93,7 +91,7 @@ func New(modelInstances int, modelFile string, projFile string, cfg model.Config
 	var firstModel *model.Model
 
 	for range modelInstances {
-		m, err := model.NewModel(modelFile, projFile, cfg)
+		m, err := model.NewModel(cfg)
 		if err != nil {
 			close(models)
 			for model := range models {
@@ -110,10 +108,12 @@ func New(modelInstances int, modelFile string, projFile string, cfg model.Config
 		}
 	}
 
+	cfg = firstModel.Config()
+
 	krn := Kronk{
-		cfg:       firstModel.Config(),
-		modelName: strings.TrimSuffix(filepath.Base(modelFile), filepath.Ext(modelFile)),
+		cfg:       cfg,
 		models:    models,
+		modelInfo: firstModel.ModelInfo(),
 	}
 
 	return &krn, nil
@@ -126,14 +126,9 @@ func (krn *Kronk) ModelConfig() model.Config {
 	return krn.cfg
 }
 
-// ModelName returns the model name.
-func (krn *Kronk) ModelName() string {
-	return krn.modelName
-}
-
-// Device returns the device being used.
-func (krn *Kronk) Device() string {
-	return krn.cfg.Device
+// ModelInfo returns the model information.
+func (krn *Kronk) ModelInfo() model.ModelInfo {
+	return krn.modelInfo
 }
 
 // Unload will close down all loaded models. You should call this only when you
@@ -149,15 +144,6 @@ func (krn *Kronk) Unload() {
 	for model := range krn.models {
 		model.Unload()
 	}
-}
-
-// ModelInfo provides support to extract the model card information.
-func (krn *Kronk) ModelInfo(ctx context.Context) (model.ModelInfo, error) {
-	f := func(m *model.Model) (model.ModelInfo, error) {
-		return m.ModelInfo(), nil
-	}
-
-	return nonStreaming(ctx, krn, &krn.closed, f)
 }
 
 // Chat provides support to interact with an inference model.

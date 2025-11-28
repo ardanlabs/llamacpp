@@ -1,6 +1,13 @@
 package model
 
-import "time"
+import (
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/hybridgroup/yzma/pkg/llama"
+)
 
 // Objects represent the different types of data that can be returned.
 const (
@@ -23,13 +30,64 @@ const (
 
 // ModelInfo represents the model's card information.
 type ModelInfo struct {
+	Name        string
 	Desc        string
 	Size        uint64
 	HasEncoder  bool
 	HasDecoder  bool
 	IsRecurrent bool
 	IsHybrid    bool
+	IsGPT       bool
 	Metadata    map[string]string
+}
+
+func newModelInfo(cfg Config, model llama.Model) ModelInfo {
+	desc := llama.ModelDesc(model)
+	size := llama.ModelSize(model)
+	encoder := llama.ModelHasEncoder(model)
+	decoder := llama.ModelHasDecoder(model)
+	recurrent := llama.ModelIsRecurrent(model)
+	hybrid := llama.ModelIsHybrid(model)
+	count := llama.ModelMetaCount(model)
+	metadata := make(map[string]string)
+
+	for i := range count {
+		key, ok := llama.ModelMetaKeyByIndex(model, i)
+		if !ok {
+			continue
+		}
+
+		if key == "tokenizer.chat_template" {
+			continue
+		}
+
+		value, ok := llama.ModelMetaValStrByIndex(model, i)
+		if !ok {
+			continue
+		}
+
+		metadata[key] = value
+	}
+
+	filename := filepath.Base(cfg.ModelFile)
+	modelName := strings.TrimSuffix(filename, path.Ext(filename))
+
+	var isGPTModel bool
+	if strings.Contains(modelName, "gpt") {
+		isGPTModel = true
+	}
+
+	return ModelInfo{
+		Name:        modelName,
+		Desc:        desc,
+		Size:        size,
+		HasEncoder:  encoder,
+		HasDecoder:  decoder,
+		IsRecurrent: recurrent,
+		IsHybrid:    hybrid,
+		IsGPT:       isGPTModel,
+		Metadata:    metadata,
+	}
 }
 
 // =============================================================================
@@ -73,8 +131,8 @@ func (t Tool) AddToolParameter(name string, arg ToolArgument) Tool {
 	return t
 }
 
-// CreateToolFunction creates a new tool function with the given name and description.
-func CreateToolFunction(name string, description string) Tool {
+// NewToolFunction creates a new tool function with the given name and description.
+func NewToolFunction(name string, description string) Tool {
 	return Tool{
 		Type: "function",
 		Function: ToolFunction{
@@ -88,21 +146,21 @@ func CreateToolFunction(name string, description string) Tool {
 
 // ChatMessage represent a single message in a chat.
 type ChatMessage struct {
-	Role    string
-	Content string
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
 // ChatRequest represents input for chat and vision models.
 type ChatRequest struct {
-	Messages []ChatMessage
-	Params   Params
+	Messages []ChatMessage `json:"messages"`
+	Params   Params        `json:"params"`
 }
 
 // VisionRequest represents input for vision models.
 type VisionRequest struct {
-	ImageFile string
-	Message   ChatMessage
-	Params    Params
+	ImageFile string      `json:"image_file"`
+	Message   ChatMessage `json:"message"`
+	Params    Params      `json:"params"`
 }
 
 // =============================================================================
