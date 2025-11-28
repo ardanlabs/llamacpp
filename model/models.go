@@ -23,6 +23,7 @@ const (
 // FinishReasons represent the different reasons a response can be finished.
 const (
 	FinishReasonStop  = "stop"
+	FinishReasonTool  = "tool"
 	FinishReasonError = "error"
 )
 
@@ -159,6 +160,7 @@ type ResponseMessage struct {
 	Role      string `json:"role"`
 	Content   string `json:"content"`
 	Reasoning string `json:"reasoning"`
+	Tooling   string `json:"tooling"`
 }
 
 // Choice represents a single choice in a response.
@@ -198,8 +200,8 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 				Index: index,
 				Delta: ResponseMessage{
 					Role:      RoleAssistant,
-					Content:   hasContent(content, reasoning),
-					Reasoning: hasReasoning(content, reasoning),
+					Content:   forContent(content, reasoning),
+					Reasoning: forReasoning(content, reasoning),
 				},
 				FinishReason: "",
 			},
@@ -208,21 +210,28 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 	}
 }
 
-func hasReasoning(content string, reasoning bool) string {
-	if reasoning {
-		return content
-	}
-	return ""
-}
-
-func hasContent(content string, reasoning bool) string {
+func forContent(content string, reasoning bool) string {
 	if !reasoning {
 		return content
 	}
+
 	return ""
 }
 
-func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, u Usage) ChatResponse {
+func forReasoning(content string, reasoning bool) string {
+	if reasoning {
+		return content
+	}
+
+	return ""
+}
+
+func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, tooling string, u Usage) ChatResponse {
+	finishReason := FinishReasonStop
+	if tooling != "" {
+		finishReason = FinishReasonTool
+	}
+
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -235,8 +244,9 @@ func chatResponseFinal(id string, object string, model string, index int, conten
 					Role:      RoleAssistant,
 					Content:   content,
 					Reasoning: reasoning,
+					Tooling:   tooling,
 				},
-				FinishReason: FinishReasonStop,
+				FinishReason: finishReason,
 			},
 		},
 		Usage: u,

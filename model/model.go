@@ -3,11 +3,13 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
@@ -120,11 +122,13 @@ func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context
 	var index int
 	var reasoning int
 	var completion int
+	var tooling int
 	var reasonTokens int
 	var tokensPerSecond float64
 
-	var finalContent strings.Builder
 	var finalReasoning strings.Builder
+	var finalContent strings.Builder
+	var finalTooling strings.Builder
 
 	now := time.Now()
 
@@ -150,6 +154,14 @@ loop:
 			batch = m.thinkStop(token, &reasoning, &completionTokens)
 			continue
 
+		case "<tool_call>":
+			batch = m.toolCallStart(token, &tooling, &completionTokens)
+			continue
+
+		case "</tool_call>":
+			batch = m.toolCallStop(token, &tooling, &completionTokens)
+			continue
+
 		case "<|channel|>":
 			batch, content, err = m.channelStart(lctx, token, sampler, buf, &reasoning, &reasonTokens, &completionTokens)
 			if err != nil {
@@ -168,7 +180,7 @@ loop:
 			continue
 		}
 
-		if found := m.removeExtraCRLF(reasoning, completion, content); found {
+		if found := m.removeExtraCRLF(reasoning, tooling, completion, content); found {
 			batch = m.nextBatch(token)
 			continue
 		}
@@ -177,6 +189,18 @@ loop:
 
 		elapsedSeconds := time.Since(now).Seconds()
 		tokensPerSecond = float64(totalOutTokens) / elapsedSeconds
+
+		// We want to return the tool calling in a single response to make
+		// it easier for developers to process. We will collect all of
+		// this and this should be the final response.
+		if tooling > 0 {
+			finalTooling.WriteString(content)
+			completionTokens += int(batch.NTokens)
+			totalOutTokens = reasonTokens + completionTokens
+
+			batch = m.nextBatch(token)
+			continue
+		}
 
 		select {
 		case <-ctx.Done():
@@ -198,8 +222,6 @@ loop:
 
 		// ---------------------------------------------------------------------
 
-		batch = m.nextBatch(token)
-
 		switch {
 		case reasoning > 0:
 			finalReasoning.WriteString(content)
@@ -213,16 +235,34 @@ loop:
 		}
 
 		totalOutTokens = reasonTokens + completionTokens
+
+		batch = m.nextBatch(token)
 	}
 
 	// -------------------------------------------------------------------------
 
-	ch <- chatResponseFinal(id, object, m.modelInfo.Name, index, finalContent.String(), finalReasoning.String(), Usage{
-		InputTokens:      inputTokens,
-		ReasoningTokens:  reasonTokens,
-		CompletionTokens: completionTokens,
-		OutputTokens:     reasonTokens + completionTokens,
-		TokensPerSecond:  tokensPerSecond})
+	// We will add an ID to this tool call to help the model when the
+	// user returns the tool call response.
+	var toolingContent string
+	if finalTooling.Len() > 0 {
+		toolingContent = addToolingID(finalTooling)
+	}
+
+	ch <- chatResponseFinal(
+		id,
+		object,
+		m.modelInfo.Name,
+		index,
+		finalContent.String(),
+		finalReasoning.String(),
+		toolingContent,
+		Usage{
+			InputTokens:      inputTokens,
+			ReasoningTokens:  reasonTokens,
+			CompletionTokens: completionTokens,
+			OutputTokens:     reasonTokens + completionTokens,
+			TokensPerSecond:  tokensPerSecond},
+	)
 }
 
 func (m *Model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int, int) {
@@ -276,6 +316,24 @@ func (m *Model) thinkStart(token llama.Token, reasoning *int, reasonTokens *int)
 
 func (m *Model) thinkStop(token llama.Token, reasoning *int, completionTokens *int) llama.Batch {
 	*reasoning = 0
+
+	batch := m.nextBatch(token)
+	*completionTokens += int(batch.NTokens)
+
+	return batch
+}
+
+func (m *Model) toolCallStart(token llama.Token, tooling *int, completionTokens *int) llama.Batch {
+	*tooling = 1
+
+	batch := m.nextBatch(token)
+	*completionTokens += int(batch.NTokens)
+
+	return batch
+}
+
+func (m *Model) toolCallStop(token llama.Token, tooling *int, completionTokens *int) llama.Batch {
+	*tooling = 0
 
 	batch := m.nextBatch(token)
 	*completionTokens += int(batch.NTokens)
@@ -361,16 +419,41 @@ func (m *Model) channelEnd(lctx llama.Context, token llama.Token, sampler llama.
 	return batch, nil
 }
 
-func (m *Model) removeExtraCRLF(reasoning int, completion int, content string) bool {
-	// We just started reasoning so remove leading CR.
-	if reasoning == 1 && content == "\x0A" {
+func (m *Model) removeExtraCRLF(reasoning int, tooling int, completion int, content string) bool {
+	// We just started reasoning or tool calling so remove leading CR.
+	if (reasoning == 1 || tooling == 1) && content == "\x0A" {
 		return true
 	}
 
 	// We just started completion so remove leading CR.
-	if reasoning == 0 && completion == 0 && (content == "\x0A\x0A" || content == "\x0A") {
+	if reasoning == 0 && tooling == 0 && completion == 0 && (content == "\x0A\x0A" || content == "\x0A") {
 		return true
 	}
 
 	return false
+}
+
+// =============================================================================
+
+func addToolingID(tooling strings.Builder) string {
+	var toolCall struct {
+		ID        string         `json:"id"`
+		Name      string         `json:"name"`
+		Arguments map[string]any `json:"arguments"`
+	}
+
+	str := tooling.String()
+
+	if err := json.Unmarshal([]byte(str), &toolCall); err != nil {
+		return str
+	}
+
+	toolCall.ID = uuid.NewString()
+
+	data, err := json.Marshal(toolCall)
+	if err != nil {
+		return str
+	}
+
+	return string(data)
 }
