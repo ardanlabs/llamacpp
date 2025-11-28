@@ -23,6 +23,7 @@ const (
 // FinishReasons represent the different reasons a response can be finished.
 const (
 	FinishReasonStop  = "stop"
+	FinishReasonTool  = "tool"
 	FinishReasonError = "error"
 )
 
@@ -92,23 +93,18 @@ func newModelInfo(cfg Config, model llama.Model) ModelInfo {
 
 // =============================================================================
 
-// ToolArgument represents a single argument of a tool parameter.
-type ToolArgument struct {
+// ToolParameter represents a single parameter for the tool call.
+type ToolParameter struct {
+	Name        string `json:"-"`
 	Type        string `json:"type"`
 	Description string `json:"description"`
 }
 
-// ToolParameter represents a single parameter for a tool function.
-type ToolParameter struct {
-	Type       string                  `json:"type"`
-	Properties map[string]ToolArgument `json:"properties"`
-}
-
 // ToolFunction represents the definition of a function tool.
 type ToolFunction struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Parameters  []ToolParameter `json:"parameters"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
+	Arguments   map[string]ToolParameter `json:"arguments"`
 }
 
 // Tool represents a tool that can be called by the model.
@@ -117,29 +113,22 @@ type Tool struct {
 	Function ToolFunction `json:"function"`
 }
 
-// AddToolParameter adds a new parameter to the tool function.
-func (t Tool) AddToolParameter(name string, arg ToolArgument) Tool {
-	tp := ToolParameter{
-		Type: "object",
-		Properties: map[string]ToolArgument{
-			name: arg,
-		},
-	}
-
-	t.Function.Parameters = append(t.Function.Parameters, tp)
-
-	return t
-}
-
-// NewToolFunction creates a new tool function with the given name and description.
-func NewToolFunction(name string, description string) Tool {
-	return Tool{
+// NewFunctionTool initialized a function tool for the model.
+func NewFunctionTool(name string, description string, params ...ToolParameter) Tool {
+	tool := Tool{
 		Type: "function",
 		Function: ToolFunction{
 			Name:        name,
 			Description: description,
+			Arguments:   map[string]ToolParameter{},
 		},
 	}
+
+	for _, param := range params {
+		tool.Function.Arguments[param.Name] = param
+	}
+
+	return tool
 }
 
 // =============================================================================
@@ -152,15 +141,16 @@ type ChatMessage struct {
 
 // ChatRequest represents input for chat and vision models.
 type ChatRequest struct {
-	Messages []ChatMessage `json:"messages"`
-	Params   Params        `json:"params"`
+	Messages []ChatMessage
+	Tools    []Tool
+	Params   Params
 }
 
 // VisionRequest represents input for vision models.
 type VisionRequest struct {
-	ImageFile string      `json:"image_file"`
-	Message   ChatMessage `json:"message"`
-	Params    Params      `json:"params"`
+	ImageFile string
+	Message   ChatMessage
+	Params    Params
 }
 
 // =============================================================================
@@ -170,6 +160,7 @@ type ResponseMessage struct {
 	Role      string `json:"role"`
 	Content   string `json:"content"`
 	Reasoning string `json:"reasoning"`
+	Tooling   string `json:"tooling"`
 }
 
 // Choice represents a single choice in a response.
@@ -209,8 +200,8 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 				Index: index,
 				Delta: ResponseMessage{
 					Role:      RoleAssistant,
-					Content:   hasContent(content, reasoning),
-					Reasoning: hasReasoning(content, reasoning),
+					Content:   forContent(content, reasoning),
+					Reasoning: forReasoning(content, reasoning),
 				},
 				FinishReason: "",
 			},
@@ -219,21 +210,28 @@ func chatResponseDelta(id string, object string, model string, index int, conten
 	}
 }
 
-func hasReasoning(content string, reasoning bool) string {
-	if reasoning {
-		return content
-	}
-	return ""
-}
-
-func hasContent(content string, reasoning bool) string {
+func forContent(content string, reasoning bool) string {
 	if !reasoning {
 		return content
 	}
+
 	return ""
 }
 
-func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, u Usage) ChatResponse {
+func forReasoning(content string, reasoning bool) string {
+	if reasoning {
+		return content
+	}
+
+	return ""
+}
+
+func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, tooling string, u Usage) ChatResponse {
+	finishReason := FinishReasonStop
+	if tooling != "" {
+		finishReason = FinishReasonTool
+	}
+
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -246,8 +244,9 @@ func chatResponseFinal(id string, object string, model string, index int, conten
 					Role:      RoleAssistant,
 					Content:   content,
 					Reasoning: reasoning,
+					Tooling:   tooling,
 				},
-				FinishReason: FinishReasonStop,
+				FinishReason: finishReason,
 			},
 		},
 		Usage: u,

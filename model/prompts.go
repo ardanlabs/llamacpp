@@ -15,7 +15,7 @@ import (
 )
 
 func (m *Model) applyChatRequestJinjaTemplate(cr ChatRequest, addAssistantPrompt bool) (string, error) {
-	t, err := m.applyJinjaTemplate(cr.Messages, addAssistantPrompt)
+	t, err := m.applyJinjaTemplate(cr.Messages, cr.Tools, addAssistantPrompt)
 	if err != nil {
 		if m.modelInfo.IsGPT {
 			return m.applyDefaultTemplate(cr.Messages), nil
@@ -36,7 +36,7 @@ func (m *Model) applyVisionRequestJinjaTemplate(vr VisionRequest, addAssistantPr
 		},
 	}
 
-	t, err := m.applyJinjaTemplate(messages, addAssistantPrompt)
+	t, err := m.applyJinjaTemplate(messages, nil, addAssistantPrompt)
 	if err != nil {
 		if m.modelInfo.IsGPT {
 			return m.applyDefaultTemplate(messages), nil
@@ -48,7 +48,7 @@ func (m *Model) applyVisionRequestJinjaTemplate(vr VisionRequest, addAssistantPr
 	return t, nil
 }
 
-func (m *Model) applyJinjaTemplate(messages []ChatMessage, addAssistantPrompt bool) (string, error) {
+func (m *Model) applyJinjaTemplate(messages []ChatMessage, tools []Tool, addAssistantPrompt bool) (string, error) {
 	if m.template == "" {
 		return "", errors.New("no template found")
 	}
@@ -65,13 +65,26 @@ func (m *Model) applyJinjaTemplate(messages []ChatMessage, addAssistantPrompt bo
 		return "", fmt.Errorf("failed to marshal messages: %w", err)
 	}
 
-	var obj []map[string]any
-	if err := json.Unmarshal(jsonData, &obj); err != nil {
+	var msgs []map[string]any
+	if err := json.Unmarshal(jsonData, &msgs); err != nil {
 		return "", fmt.Errorf("failed to unmarshal messages: %w", err)
 	}
 
+	var toolCalls []map[string]any
+	if len(tools) > 0 {
+		jsonData, err = json.Marshal(tools)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal tools: %w", err)
+		}
+
+		if err := json.Unmarshal(jsonData, &toolCalls); err != nil {
+			return "", fmt.Errorf("failed to unmarshal tools: %w", err)
+		}
+	}
+
 	data := exec.NewContext(map[string]any{
-		"messages":              obj,
+		"messages":              msgs,
+		"tools":                 toolCalls,
 		"add_generation_prompt": addAssistantPrompt,
 	})
 
