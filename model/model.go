@@ -212,9 +212,11 @@ loop:
 		// processing tokens once the tool call is complete.
 		if toolFlag > 0 {
 			finalTooling.WriteString(content)
+
+			batch = m.nextBatch(token)
 			completionTokens += int(batch.NTokens)
 			outputTokens = reasonTokens + completionTokens
-			batch = m.nextBatch(token)
+
 			continue
 		}
 
@@ -240,27 +242,31 @@ loop:
 		}
 
 		// ---------------------------------------------------------------------
-		// Capture the content and store that into the right bucket. Then
-		// calculate the usage numbers.
+		// Store the content for the final response.
 
 		switch {
 		case reasonFlag > 0:
 			finalReasoning.WriteString(content)
-			reasonTokens += int(batch.NTokens)
-			reasonFlag++
-
 		default:
 			finalContent.WriteString(content)
-			completionTokens += int(batch.NTokens)
-			outputFlag++
 		}
-
-		outputTokens = reasonTokens + completionTokens
 
 		// ---------------------------------------------------------------------
 		// Get the next batch to process the next piece of content.
 
 		batch = m.nextBatch(token)
+
+		switch {
+		case reasonFlag > 0:
+			reasonTokens += int(batch.NTokens)
+			reasonFlag++
+
+		default:
+			completionTokens += int(batch.NTokens)
+			outputFlag++
+		}
+
+		outputTokens = reasonTokens + completionTokens
 	}
 
 	// -------------------------------------------------------------------------
