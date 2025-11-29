@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,7 +20,7 @@ func Test_SimpleVision(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testVision(t, modelSimpleVisionFile, projSimpleVisionFile)
+	testVision(t, krnSimpleVision)
 }
 
 func Test_SimpleStreamingVision(t *testing.T) {
@@ -31,21 +29,12 @@ func Test_SimpleStreamingVision(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testVisionStreaming(t, modelSimpleVisionFile, projSimpleVisionFile)
+	testVisionStreaming(t, krnSimpleVision)
 }
 
 // =============================================================================
 
-func initVisionTest(t *testing.T, modelFile, projFile string, imageFile string) (*kronk.Kronk, model.VisionRequest) {
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:      modelFile,
-		ProjectionFile: projFile,
-	})
-
-	if err != nil {
-		t.Fatalf("unable to create inference model: %v", err)
-	}
-
+func initVisionTest(imageFile string) model.VisionRequest {
 	question := "What is in this picture?"
 
 	vr := model.VisionRequest{
@@ -59,16 +48,15 @@ func initVisionTest(t *testing.T, modelFile, projFile string, imageFile string) 
 		},
 	}
 
-	return krn, vr
+	return vr
 }
 
-func testVision(t *testing.T, modelFile string, profFile string) {
+func testVision(t *testing.T, krn *kronk.Kronk) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, vr := initVisionTest(t, modelFile, profFile, imageFile)
-	defer krn.Unload()
+	vr := initVisionTest(imageFile)
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
@@ -77,9 +65,8 @@ func testVision(t *testing.T, modelFile string, profFile string) {
 		id := uuid.New().String()
 		now := time.Now()
 		defer func() {
-			name := strings.TrimSuffix(modelFile, path.Ext(modelFile))
 			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
 		resp, err := krn.Vision(ctx, vr)
@@ -87,7 +74,7 @@ func testVision(t *testing.T, modelFile string, profFile string) {
 			return fmt.Errorf("vision streaming: %w", err)
 		}
 
-		if err := testVisionResponse(resp, modelFile, "vision", "giraffes"); err != nil {
+		if err := testVisionResponse(resp, krn.ModelInfo().Name, "vision", "giraffes"); err != nil {
 			return err
 		}
 
@@ -104,13 +91,12 @@ func testVision(t *testing.T, modelFile string, profFile string) {
 	}
 }
 
-func testVisionStreaming(t *testing.T, modelFile string, profFile string) {
+func testVisionStreaming(t *testing.T, krn *kronk.Kronk) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, vr := initVisionTest(t, modelFile, profFile, imageFile)
-	defer krn.Unload()
+	vr := initVisionTest(imageFile)
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
@@ -119,9 +105,8 @@ func testVisionStreaming(t *testing.T, modelFile string, profFile string) {
 		id := uuid.New().String()
 		now := time.Now()
 		defer func() {
-			name := strings.TrimSuffix(modelFile, path.Ext(modelFile))
 			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
 		ch, err := krn.VisionStreaming(ctx, vr)
@@ -132,12 +117,12 @@ func testVisionStreaming(t *testing.T, modelFile string, profFile string) {
 		var lastResp model.ChatResponse
 		for resp := range ch {
 			lastResp = resp
-			if err := testChatBasics(resp, modelFile, model.ObjectVision, false); err != nil {
+			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectVision, false); err != nil {
 				return err
 			}
 		}
 
-		if err := testVisionResponse(lastResp, modelFile, model.ObjectVision, "giraffes"); err != nil {
+		if err := testVisionResponse(lastResp, krn.ModelInfo().Name, model.ObjectVision, "giraffes"); err != nil {
 			return err
 		}
 

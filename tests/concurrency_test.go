@@ -1,0 +1,153 @@
+package kronk_test
+
+import (
+	"context"
+	"fmt"
+	"path"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/ardanlabs/kronk/model"
+	"github.com/google/uuid"
+)
+
+func Test_ConTest1(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	defer cancel()
+
+	id := uuid.New().String()
+	now := time.Now()
+	defer func() {
+		name := strings.TrimSuffix(modelThinkToolChatFile, path.Ext(modelThinkToolChatFile))
+		done := time.Now()
+		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+	}()
+
+	cr := initChatTest(false)
+
+	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	if err != nil {
+		t.Fatalf("should not receive an error starting chat streaming: %s", err)
+	}
+
+	t.Log("start processing stream")
+	defer t.Log("end processing stream")
+
+	t.Log("cancel context before channel loop")
+	cancel()
+
+	var lastResp model.ChatResponse
+	for resp := range ch {
+		lastResp = resp
+	}
+
+	t.Log("check conditions")
+
+	if lastResp.Choice[0].FinishReason != model.FinishReasonError {
+		t.Errorf("expected error finish reason, got %s", lastResp.Choice[0].FinishReason)
+	}
+
+	if lastResp.Choice[0].Delta.Content != "context canceled" {
+		t.Errorf("expected error context canceled, got %s", lastResp.Choice[0].Delta.Content)
+	}
+}
+
+func Test_ConTest2(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	defer cancel()
+
+	id := uuid.New().String()
+	now := time.Now()
+	defer func() {
+		name := strings.TrimSuffix(modelThinkToolChatFile, path.Ext(modelThinkToolChatFile))
+		done := time.Now()
+		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+	}()
+
+	cr := initChatTest(false)
+
+	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	if err != nil {
+		t.Fatalf("should not receive an error starting chat streaming: %s", err)
+	}
+
+	t.Log("start processing stream")
+	defer t.Log("end processing stream")
+
+	var lastResp model.ChatResponse
+	var index int
+	for resp := range ch {
+		lastResp = resp
+		index++
+		if index == 5 {
+			t.Log("cancel context inside channel loop")
+			cancel()
+		}
+	}
+
+	t.Log("check conditions")
+
+	if lastResp.Choice[0].FinishReason != model.FinishReasonError {
+		t.Errorf("expected error finish reason, got %s", lastResp.Choice[0].FinishReason)
+	}
+
+	if lastResp.Choice[0].Delta.Content != "context canceled" {
+		t.Errorf("expected error context canceled, got %s", lastResp.Choice[0].Delta.Content)
+	}
+
+	if t.Failed() {
+		fmt.Printf("%#v\n", lastResp)
+	}
+}
+
+func Test_ConTest3(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	defer cancel()
+
+	id := uuid.New().String()
+	now := time.Now()
+	defer func() {
+		name := strings.TrimSuffix(modelThinkToolChatFile, path.Ext(modelThinkToolChatFile))
+		done := time.Now()
+		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+	}()
+
+	cr := initChatTest(false)
+
+	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	if err != nil {
+		t.Fatalf("should not receive an error starting chat streaming: %s", err)
+	}
+
+	t.Log("start processing stream")
+	defer t.Log("end processing stream")
+
+	var index int
+	for range ch {
+		index++
+		if index == 5 {
+			break
+		}
+	}
+
+	t.Log("cancel context after breaking channel loop")
+	cancel()
+
+	t.Log("check if the channel is closed")
+	var closed bool
+	for range 3 {
+		_, open := <-ch
+		if !open {
+			closed = true
+			break
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+
+	t.Log("check conditions")
+
+	if !closed {
+		t.Errorf("expected channel to be closed")
+	}
+}

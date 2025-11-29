@@ -16,7 +16,7 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "0.21.0"
+const Version = "0.22.0"
 
 // =============================================================================
 
@@ -148,6 +148,10 @@ func (krn *Kronk) Unload() {
 
 // Chat provides support to interact with an inference model.
 func (krn *Kronk) Chat(ctx context.Context, cr model.ChatRequest) (model.ChatResponse, error) {
+	if _, exists := ctx.Deadline(); !exists {
+		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	f := func(m *model.Model) (model.ChatResponse, error) {
 		return m.Chat(ctx, cr)
 	}
@@ -157,6 +161,10 @@ func (krn *Kronk) Chat(ctx context.Context, cr model.ChatRequest) (model.ChatRes
 
 // ChatStreaming provides support to interact with an inference model.
 func (krn *Kronk) ChatStreaming(ctx context.Context, cr model.ChatRequest) (<-chan model.ChatResponse, error) {
+	if _, exists := ctx.Deadline(); !exists {
+		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	f := func(m *model.Model) <-chan model.ChatResponse {
 		return m.ChatStreaming(ctx, cr)
 	}
@@ -173,6 +181,10 @@ type Logger func(ctx context.Context, format string, a ...any)
 
 // ChatStreamingHTTP streams the response to an HTTP client.
 func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, cr model.ChatRequest) error {
+	if _, exists := ctx.Deadline(); !exists {
+		return fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	log(ctx, "streamResponse: started")
 
 	f, ok := w.(http.Flusher)
@@ -235,6 +247,10 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 
 // Vision provides support to interact with a vision inference model.
 func (krn *Kronk) Vision(ctx context.Context, vr model.VisionRequest) (model.ChatResponse, error) {
+	if _, exists := ctx.Deadline(); !exists {
+		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	f := func(m *model.Model) (model.ChatResponse, error) {
 		return m.Vision(ctx, vr)
 	}
@@ -243,8 +259,11 @@ func (krn *Kronk) Vision(ctx context.Context, vr model.VisionRequest) (model.Cha
 }
 
 // VisionStreaming provides support to interact with a vision language model.
-// It will block until a model becomes available or the context times out.
 func (krn *Kronk) VisionStreaming(ctx context.Context, vr model.VisionRequest) (<-chan model.ChatResponse, error) {
+	if _, exists := ctx.Deadline(); !exists {
+		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	f := func(m *model.Model) <-chan model.ChatResponse {
 		return m.VisionStreaming(ctx, vr)
 	}
@@ -256,9 +275,12 @@ func (krn *Kronk) VisionStreaming(ctx context.Context, vr model.VisionRequest) (
 	return streaming(ctx, krn, &krn.closed, f, ef)
 }
 
-// Embed provides support to interact with an embedding model. It will block
-// until a model becomes available or the context times out.
+// Embed provides support to interact with an embedding model.
 func (krn *Kronk) Embed(ctx context.Context, text string) ([]float32, error) {
+	if _, exists := ctx.Deadline(); !exists {
+		return []float32{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
+	}
+
 	f := func(m *model.Model) ([]float32, error) {
 		return m.Embed(ctx, text)
 	}
@@ -323,11 +345,7 @@ func streaming[T any](ctx context.Context, krn *Kronk, closed *uint32, f streami
 		go func() {
 			defer func() {
 				if rec := recover(); rec != nil {
-					select {
-					case <-ctx.Done():
-					case ch <- ef(fmt.Errorf("%v", rec)):
-					default:
-					}
+					sendError(ctx, ch, ef, rec)
 				}
 
 				close(ch)
@@ -336,15 +354,42 @@ func streaming[T any](ctx context.Context, krn *Kronk, closed *uint32, f streami
 			}()
 
 			lch := f(llama)
+
 			for msg := range lch {
-				select {
-				case <-ctx.Done():
-					return
-				case ch <- msg:
+				if err := sendMessage(ctx, ch, msg); err != nil {
+					break
 				}
 			}
 		}()
 	}
 
 	return ch, nil
+}
+
+func sendMessage[T any](ctx context.Context, ch chan T, msg T) error {
+	// I want to try and send this message before we check the context.
+	// Remember the user code might not be trying to receive on this
+	// channel anymore.
+	select {
+	case ch <- msg:
+		return nil
+	default:
+	}
+
+	// Now randonly wait for the channel to be ready or the context to be done.
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+
+	case ch <- msg:
+		return nil
+	}
+}
+
+func sendError[T any](ctx context.Context, ch chan T, ef errorFunc[T], rec any) {
+	select {
+	case <-ctx.Done():
+	case ch <- ef(fmt.Errorf("%v", rec)):
+	default:
+	}
 }

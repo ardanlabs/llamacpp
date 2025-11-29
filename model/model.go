@@ -223,26 +223,18 @@ loop:
 		// ---------------------------------------------------------------------
 		// We have reasoning or completion content to return to the client.
 
-		select {
-		case <-ctx.Done():
-			select {
-			case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), Usage{
+		err = m.sendDeltaResponse(ctx, ch, id, object, index, content, reasonFlag,
+			Usage{
 				InputTokens:      inputTokens,
 				ReasoningTokens:  reasonTokens,
 				CompletionTokens: completionTokens,
 				OutputTokens:     outputTokens,
-				TokensPerSecond:  tokensPerSecond}):
-			default:
-			}
+				TokensPerSecond:  tokensPerSecond,
+			},
+		)
 
+		if err != nil {
 			return
-
-		case ch <- chatResponseDelta(id, object, m.modelInfo.Name, index, content, reasonFlag > 0, Usage{
-			InputTokens:      inputTokens,
-			ReasoningTokens:  reasonTokens,
-			CompletionTokens: completionTokens,
-			OutputTokens:     outputTokens,
-			TokensPerSecond:  tokensPerSecond}):
 		}
 
 		// ---------------------------------------------------------------------
@@ -283,33 +275,15 @@ loop:
 
 	// Send the final response that contains eveything we have sent plus
 	// the final usage numbers.
-	select {
-	case <-ctx.Done():
-		select {
-		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), Usage{
-			InputTokens:      inputTokens,
-			ReasoningTokens:  reasonTokens,
-			CompletionTokens: completionTokens,
-			OutputTokens:     outputTokens,
-			TokensPerSecond:  tokensPerSecond}):
-		default:
-		}
-
-	case ch <- chatResponseFinal(
-		id,
-		object,
-		m.modelInfo.Name,
-		index,
-		finalContent.String(),
-		finalReasoning.String(),
-		respToolCall,
+	m.sendFinalResponse(ctx, ch, id, object, index, finalContent.String(), finalReasoning.String(), respToolCall,
 		Usage{
 			InputTokens:      inputTokens,
 			ReasoningTokens:  reasonTokens,
 			CompletionTokens: completionTokens,
-			OutputTokens:     reasonTokens + completionTokens,
-			TokensPerSecond:  tokensPerSecond}):
-	}
+			OutputTokens:     outputTokens,
+			TokensPerSecond:  tokensPerSecond,
+		},
+	)
 }
 
 func (m *Model) startProcessing(lctx llama.Context, object string, prompt string, params Params) (llama.Sampler, llama.Batch, int, int) {
@@ -485,6 +459,38 @@ func (m *Model) isUnncessaryCRLF(reasoning int, tooling int, completion int, con
 	}
 
 	return false
+}
+
+func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, content string, reasonFlag int, usage Usage) error {
+	select {
+	case <-ctx.Done():
+		select {
+		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), usage):
+		default:
+		}
+
+		return ctx.Err()
+
+	case ch <- chatResponseDelta(id, object, m.modelInfo.Name, index, content, reasonFlag > 0, usage):
+	}
+
+	return nil
+}
+
+func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, finalContent string, finalReasoning string, respToolCall ResponseToolCall, usage Usage) {
+	select {
+	case <-ctx.Done():
+		select {
+		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), usage):
+		default:
+		}
+
+	case ch <- chatResponseFinal(id, object, m.modelInfo.Name, index,
+		finalContent,
+		finalReasoning,
+		respToolCall,
+		usage):
+	}
 }
 
 // =============================================================================

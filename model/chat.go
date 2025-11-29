@@ -29,15 +29,14 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 
 		defer func() {
 			if rec := recover(); rec != nil {
-				ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("%s", rec), Usage{})
+				m.sendChatError(ctx, ch, id, fmt.Errorf("%v", rec))
 			}
-
 			close(ch)
 		}()
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
+			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to init from model: %w", err))
 			return
 		}
 
@@ -48,7 +47,7 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 
 		prompt, err := m.applyChatRequestJinjaTemplate(cr, true)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, fmt.Errorf("unable to apply jinja template: %w", err), Usage{})
+			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to apply jinja template: %w", err))
 			return
 		}
 
@@ -56,4 +55,22 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 	}()
 
 	return ch
+}
+
+func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id string, err error) {
+	// I want to try and send this message before we check the context.
+	select {
+	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, err, Usage{}):
+	default:
+	}
+
+	select {
+	case <-ctx.Done():
+		select {
+		case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, ctx.Err(), Usage{}):
+		default:
+		}
+
+	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, err, Usage{}):
+	}
 }

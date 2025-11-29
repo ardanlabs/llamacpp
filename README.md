@@ -56,6 +56,13 @@ https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13
 This is an example from the ArdanLabs AI training repo at [example13-step1](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13/step1/main.go)
 
 ```go
+// This example shows you how to create a simple chat application against an
+// inference model using llamacpp directly via yzma and a native Go application.
+//
+// # Running the example:
+//
+//	$ make example13-step1
+
 package main
 
 import (
@@ -73,6 +80,7 @@ import (
 
 const (
 	modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf?download=true"
+	// modelURL  = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf?download=true"
 	libPath   = "zarf/llamacpp"
 	modelPath = "zarf/models"
 )
@@ -237,7 +245,7 @@ loop:
 
 		case model.FinishReasonTool:
 			fmt.Println()
-			fmt.Printf("\u001b[92mModel Asking For Tool Call:\nToolID[%s]: %s(%s)\u001b[0m\n",
+			fmt.Printf("\u001b[92mModel Asking For Tool Call:\nToolID[%s]: %s(%s)\u001b[0m",
 				resp.Choice[0].Delta.ToolCalls[0].ID,
 				resp.Choice[0].Delta.ToolCalls[0].Name,
 				resp.Choice[0].Delta.ToolCalls[0].Arguments,
@@ -275,7 +283,7 @@ loop:
 	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
 	of := float32(contextWindow) / float32(1024)
 
-	fmt.Printf("\n\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
+	fmt.Printf("\n\n\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
 		lr.Usage.InputTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
 
 	return messages, nil
@@ -291,8 +299,8 @@ $ go run cmd/examples/example13/step1/*.go
 Output:
 
 - check llamacpp installation: ✓
-  - latest version : b7192
-  - current version: b7192
+  - latest version : b7198
+  - current version: b7198
 - check "Qwen3-8B-Q8_0" installation: ✓
 - contextWindow: 40960
 - embeddings   : false
@@ -303,16 +311,17 @@ USER> hello model
 MODEL> Okay, the user said "hello model". I need to respond appropriately. Since there's no specific query here, just a greeting, I should acknowledge their greeting and offer assistance. Let me check if any tools are needed. The available tool is get_weather, but the user didn't ask for weather. So, no function call required. Just a friendly reply.
 
 Hello! How can I assist you today? If you have any questions or need information, feel free to ask!
-Input: 141  Reasoning: 74  Completion: 24  Output: 98  Window: 165 (0% of 40K) TPS: 45.40
+
+Input: 141  Reasoning: 74  Completion: 24  Output: 98  Window: 165 (0% of 40K) TPS: 45.08
 
 USER> what is the weather in NYC
 
-MODEL> Okay, the user is asking for the weather in NYC. Let me check the tools provided. There's a function called get_weather that takes a location parameter. The location needs to be a string like "San Francisco, CA". The user mentioned NYC, which is New York City. I should format the location as "New York City, NY" to match the expected input. I'll call the get_weather function with that location. No other tools are available, so this is the only function needed. Let me make sure the JSON is correctly structured with the name and arguments.
+MODEL> Okay, the user is asking for the weather in NYC. Let me check the tools available. There's a function called get_weather that takes a location parameter. The user mentioned "NYC", which is a location. I need to call that function with the location set to NYC. Let me make sure the arguments are correctly formatted as JSON. The function's arguments should include "location": "NYC". I'll structure the tool_call accordingly.
 
 Model Asking For Tool Call:
-ToolID[8bd768c8-2b23-4c84-8baa-bcf8dcbc4f43]: get_weather(map[location:New York City, NY])
+ToolID[dfe3d6cb-7b57-4d71-95b1-5f78b7ffd85c]: get_weather(map[location:NYC])
 
-Input: 181  Reasoning: 117  Completion: 23  Output: 140  Window: 204 (0% of 40K) TPS: 46.36
+Input: 181  Reasoning: 91  Completion: 20  Output: 110  Window: 201 (0% of 40K) TPS: 45.05
 
 USER>
 ```

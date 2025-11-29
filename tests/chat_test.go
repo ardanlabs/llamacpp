@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,7 +20,7 @@ func Test_ThinkChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelThinkToolChatFile, false)
+	testChat(t, krnThinkToolChat, false)
 }
 
 func Test_ThinkStreamingChat(t *testing.T) {
@@ -31,7 +29,7 @@ func Test_ThinkStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelThinkToolChatFile, false)
+	testChatStreaming(t, krnThinkToolChat, false)
 }
 
 func Test_ToolChat(t *testing.T) {
@@ -40,7 +38,7 @@ func Test_ToolChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelThinkToolChatFile, true)
+	testChat(t, krnThinkToolChat, true)
 }
 
 func Test_ToolStreamingChat(t *testing.T) {
@@ -49,7 +47,7 @@ func Test_ToolStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelThinkToolChatFile, true)
+	testChatStreaming(t, krnThinkToolChat, true)
 }
 
 func Test_GPTChat(t *testing.T) {
@@ -58,7 +56,7 @@ func Test_GPTChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelGPTChatFile, false)
+	testChat(t, krnGPTChat, false)
 }
 
 func Test_GPTStreamingChat(t *testing.T) {
@@ -67,20 +65,12 @@ func Test_GPTStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelGPTChatFile, false)
+	testChatStreaming(t, krnGPTChat, false)
 }
 
 // =============================================================================
 
-func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.ChatRequest) {
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: modelFile,
-	})
-
-	if err != nil {
-		t.Fatalf("unable to load model: %v", err)
-	}
-
+func initChatTest(tooling bool) model.ChatRequest {
 	var tools []model.Tool
 	question := "Echo back the word: Gorilla"
 
@@ -109,16 +99,15 @@ func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, m
 		},
 	}
 
-	return krn, cr
+	return cr
 }
 
-func testChat(t *testing.T, modelFile string, tooling bool) {
+func testChat(t *testing.T, krn *kronk.Kronk, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, req := initChatTest(t, modelFile, tooling)
-	defer krn.Unload()
+	cr := initChatTest(tooling)
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
@@ -127,24 +116,23 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 		id := uuid.New().String()
 		now := time.Now()
 		defer func() {
-			name := strings.TrimSuffix(modelFile, path.Ext(modelFile))
 			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		resp, err := krn.Chat(ctx, req)
+		resp, err := krn.Chat(ctx, cr)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
 
 		if tooling {
-			if err := testChatResponse(resp, modelFile, model.ObjectChat, "London", "get_weather", "location"); err != nil {
+			if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChat, "London", "get_weather", "location"); err != nil {
 				return err
 			}
 			return nil
 		}
 
-		if err := testChatResponse(resp, modelFile, model.ObjectChat, "Gorilla", "", ""); err != nil {
+		if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChat, "Gorilla", "", ""); err != nil {
 			return err
 		}
 
@@ -161,13 +149,12 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 	}
 }
 
-func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
+func testChatStreaming(t *testing.T, krn *kronk.Kronk, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, cr := initChatTest(t, modelFile, tooling)
-	defer krn.Unload()
+	cr := initChatTest(tooling)
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
@@ -176,9 +163,8 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 		id := uuid.New().String()
 		now := time.Now()
 		defer func() {
-			name := strings.TrimSuffix(modelFile, path.Ext(modelFile))
 			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
 		ch, err := krn.ChatStreaming(ctx, cr)
@@ -190,19 +176,19 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 		for resp := range ch {
 			lastResp = resp
 
-			if err := testChatBasics(resp, modelFile, model.ObjectChat, true); err != nil {
+			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectChat, true); err != nil {
 				return err
 			}
 		}
 
 		if tooling {
-			if err := testChatResponse(lastResp, modelFile, model.ObjectChat, "London", "get_weather", "location"); err != nil {
+			if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChat, "London", "get_weather", "location"); err != nil {
 				return err
 			}
 			return nil
 		}
 
-		if err := testChatResponse(lastResp, modelFile, model.ObjectChat, "Gorilla", "", ""); err != nil {
+		if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChat, "Gorilla", "", ""); err != nil {
 			return err
 		}
 

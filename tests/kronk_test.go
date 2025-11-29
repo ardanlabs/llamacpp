@@ -23,6 +23,13 @@ var (
 )
 
 var (
+	krnThinkToolChat *kronk.Kronk
+	krnGPTChat       *kronk.Kronk
+	krnSimpleVision  *kronk.Kronk
+	krnEmbed         *kronk.Kronk
+)
+
+var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
 	libPath        = filepath.Join(gw, "tests/libraries")
 	modelPath      = filepath.Join(gw, "tests/models")
@@ -35,8 +42,50 @@ var (
 func TestMain(m *testing.M) {
 	installer()
 
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+	err := kronk.Init(libPath, kronk.LogSilent)
+	if err != nil {
 		fmt.Printf("Failed to init the llamacpp library: %s: error: %s\n", libPath, err)
+		os.Exit(1)
+	}
+
+	krnThinkToolChat, err = kronk.New(modelInstances, model.Config{
+		ModelFile: modelThinkToolChatFile,
+	})
+	defer krnThinkToolChat.Unload()
+
+	if err != nil {
+		fmt.Printf("unable to load model: %s: %v\n", modelThinkToolChatFile, err)
+		os.Exit(1)
+	}
+
+	krnGPTChat, err = kronk.New(modelInstances, model.Config{
+		ModelFile: modelGPTChatFile,
+	})
+	defer krnGPTChat.Unload()
+
+	if err != nil {
+		fmt.Printf("unable to load model: %s: %v\n", modelGPTChatFile, err)
+		os.Exit(1)
+	}
+
+	krnSimpleVision, err = kronk.New(modelInstances, model.Config{
+		ModelFile:      modelSimpleVisionFile,
+		ProjectionFile: projSimpleVisionFile,
+	})
+	defer krnSimpleVision.Unload()
+
+	if err != nil {
+		fmt.Printf("unable to load model: %s: %v\n", modelSimpleVisionFile, err)
+		os.Exit(1)
+	}
+
+	krnEmbed, err = kronk.New(modelInstances, model.Config{
+		ModelFile: modelEmbedFile,
+	})
+	defer krnEmbed.Unload()
+
+	if err != nil {
+		fmt.Printf("unable to load model: %s: %v\n", modelEmbedFile, err)
 		os.Exit(1)
 	}
 
@@ -114,7 +163,7 @@ func installer() {
 	}
 }
 
-func testChatBasics(resp model.ChatResponse, modelFile string, object string, reasoning bool) error {
+func testChatBasics(resp model.ChatResponse, modelName string, object string, reasoning bool) error {
 	if resp.ID == "" {
 		return fmt.Errorf("expected id")
 	}
@@ -126,9 +175,6 @@ func testChatBasics(resp model.ChatResponse, modelFile string, object string, re
 	if resp.Created == 0 {
 		return fmt.Errorf("expected created time")
 	}
-
-	modelName := filepath.Base(modelFile)
-	modelName = strings.TrimSuffix(modelName, filepath.Ext(modelName))
 
 	if resp.Model != modelName {
 		return fmt.Errorf("basics: expected model to be %s, got %s", modelName, resp.Model)
@@ -163,13 +209,15 @@ func testChatBasics(resp model.ChatResponse, modelFile string, object string, re
 	return nil
 }
 
-func testChatResponse(resp model.ChatResponse, modelFile string, object string, find string, funct string, arg string) error {
-	if err := testChatBasics(resp, modelFile, object, true); err != nil {
+func testChatResponse(resp model.ChatResponse, modelName string, object string, find string, funct string, arg string) error {
+	if err := testChatBasics(resp, modelName, object, true); err != nil {
 		return err
 	}
 
-	if !strings.Contains(resp.Choice[0].Delta.Reasoning, find) {
-		return fmt.Errorf("reasoning: expected %q, got %q", find, resp.Choice[0].Delta.Content)
+	if object == model.ObjectChat {
+		if !strings.Contains(resp.Choice[0].Delta.Reasoning, find) {
+			return fmt.Errorf("reasoning: expected %q, got %q", find, resp.Choice[0].Delta.Content)
+		}
 	}
 
 	if resp.Choice[0].FinishReason == "stop" {
@@ -200,8 +248,8 @@ func testChatResponse(resp model.ChatResponse, modelFile string, object string, 
 	return nil
 }
 
-func testVisionResponse(resp model.ChatResponse, modelFile string, object string, find string) error {
-	if err := testChatBasics(resp, modelFile, object, false); err != nil {
+func testVisionResponse(resp model.ChatResponse, modelName string, object string, find string) error {
+	if err := testChatBasics(resp, modelName, object, false); err != nil {
 		return err
 	}
 

@@ -31,19 +31,19 @@ func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan Ch
 
 		defer func() {
 			if rec := recover(); rec != nil {
-				ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, fmt.Errorf("%s", rec), Usage{})
+				m.sendVisionError(ctx, ch, id, fmt.Errorf("%v", rec))
 			}
 			close(ch)
 		}()
 
 		if m.projFile == "" {
-			ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, fmt.Errorf("projection file not set"), Usage{})
+			m.sendVisionError(ctx, ch, id, fmt.Errorf("projection file not set"))
 			return
 		}
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
+			m.sendVisionError(ctx, ch, id, fmt.Errorf("unable to init from model: %w", err))
 			return
 		}
 
@@ -58,20 +58,20 @@ func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan Ch
 
 		mtmdCtx, err := mtmd.InitFromFile(m.projFile, m.model, mctxParams)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, fmt.Errorf("unable to init from model: %w", err), Usage{})
+			m.sendVisionError(ctx, ch, id, fmt.Errorf("unable to init from model: %w", err))
 			return
 		}
 		defer mtmd.Free(mtmdCtx)
 
 		prompt, err := m.applyVisionRequestJinjaTemplate(vr, true)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{})
+			m.sendVisionError(ctx, ch, id, err)
 			return
 		}
 
 		bitmap, err := m.processBitmap(lctx, mtmdCtx, vr.ImageFile, prompt)
 		if err != nil {
-			ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{})
+			m.sendVisionError(ctx, ch, id, err)
 			return
 		}
 		defer mtmd.BitmapFree(bitmap)
@@ -97,4 +97,22 @@ func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, imageFil
 	mtmd.HelperEvalChunks(mtmdCtx, lctx, output, 0, 0, int32(m.ctxParams.NBatch), true, &n)
 
 	return bitmap, nil
+}
+
+func (m *Model) sendVisionError(ctx context.Context, ch chan<- ChatResponse, id string, err error) {
+	// I want to try and send this message before we check the context.
+	select {
+	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{}):
+	default:
+	}
+
+	select {
+	case <-ctx.Done():
+		select {
+		case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, ctx.Err(), Usage{}):
+		default:
+		}
+
+	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{}):
+	}
 }
