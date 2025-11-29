@@ -24,6 +24,8 @@ func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, err
 
 // VisionStreaming performs a vision request and streams the response.
 func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan ChatResponse {
+	m.activeStreams.Add(1)
+	defer m.activeStreams.Add(-1)
 	ch := make(chan ChatResponse)
 
 	go func() {
@@ -103,6 +105,7 @@ func (m *Model) sendVisionError(ctx context.Context, ch chan<- ChatResponse, id 
 	// I want to try and send this message before we check the context.
 	select {
 	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{}):
+		return
 	default:
 	}
 

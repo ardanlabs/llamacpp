@@ -25,6 +25,9 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 	ch := make(chan ChatResponse)
 
 	go func() {
+		m.activeStreams.Add(1)
+		defer m.activeStreams.Add(-1)
+
 		id := uuid.New().String()
 
 		defer func() {
@@ -61,6 +64,7 @@ func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id st
 	// I want to try and send this message before we check the context.
 	select {
 	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, err, Usage{}):
+		return
 	default:
 	}
 

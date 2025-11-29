@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -133,17 +134,27 @@ func (krn *Kronk) ModelInfo() model.ModelInfo {
 
 // Unload will close down all loaded models. You should call this only when you
 // are completely done using the group.
-func (krn *Kronk) Unload() {
+func (krn *Kronk) Unload() error {
 	if !atomic.CompareAndSwapUint32(&krn.closed, 0, 1) {
-		return
+		return fmt.Errorf("already unloaded")
 	}
 
 	krn.wg.Wait()
 
+	var sb strings.Builder
+
 	close(krn.models)
 	for model := range krn.models {
-		model.Unload()
+		if err := model.Unload(); err != nil {
+			sb.WriteString(fmt.Sprintf("failed to unload model: %s: %v\n", model.ModelInfo().Name, err))
+		}
 	}
+
+	if sb.Len() > 0 {
+		return fmt.Errorf("%s", sb.String())
+	}
+
+	return nil
 }
 
 // Chat provides support to interact with an inference model.

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,13 +16,14 @@ import (
 
 // Model represents a model and provides a low-level API for working with it.
 type Model struct {
-	cfg       Config
-	model     llama.Model
-	vocab     llama.Vocab
-	ctxParams llama.ContextParams
-	template  string
-	projFile  string
-	modelInfo ModelInfo
+	cfg           Config
+	model         llama.Model
+	vocab         llama.Vocab
+	ctxParams     llama.ContextParams
+	template      string
+	projFile      string
+	modelInfo     ModelInfo
+	activeStreams atomic.Int32
 }
 
 func NewModel(cfg Config) (*Model, error) {
@@ -92,9 +94,15 @@ func retrieveTemplate(cfg Config, mdl llama.Model) (string, error) {
 	return template, nil
 }
 
-func (m *Model) Unload() {
+func (m *Model) Unload() error {
+	if m.activeStreams.Load() > 0 {
+		return fmt.Errorf("cannot unload: %d active streams", m.activeStreams.Load())
+	}
+
 	llama.ModelFree(m.model)
 	llama.BackendFree()
+
+	return nil
 }
 
 func (m *Model) Config() Config {
@@ -211,6 +219,12 @@ loop:
 		// it easier for developers to process. We expect the model to stop
 		// processing tokens once the tool call is complete.
 		if toolFlag > 0 {
+			select {
+			case <-ctx.Done():
+				break loop
+			default:
+			}
+
 			finalTooling.WriteString(content)
 
 			batch = m.nextBatch(token)

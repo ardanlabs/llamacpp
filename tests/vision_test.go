@@ -54,7 +54,11 @@ func testVision(t *testing.T, modelFile string, projFile string, imageFile strin
 	}
 
 	krn, vr := initVisionTest(t, modelFile, projFile, imageFile)
-	defer krn.Unload()
+	defer func() {
+		if err := krn.Unload(); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
@@ -95,7 +99,11 @@ func testVisionStreaming(t *testing.T, modelFile string, projFile string, imageF
 	}
 
 	krn, vr := initVisionTest(t, modelFile, projFile, imageFile)
-	defer krn.Unload()
+	defer func() {
+		if err := krn.Unload(); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), testDuration)

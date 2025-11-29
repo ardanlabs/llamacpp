@@ -93,7 +93,11 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 	}
 
 	krn, cr := initChatTest(t, modelFile, tooling)
-	defer krn.Unload()
+	defer func() {
+		if err := krn.Unload(); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
@@ -141,7 +145,11 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 	}
 
 	krn, cr := initChatTest(t, modelFile, tooling)
-	defer krn.Unload()
+	defer func() {
+		if err := krn.Unload(); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
 
 	f := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), testDuration)

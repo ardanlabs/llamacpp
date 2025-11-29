@@ -33,7 +33,11 @@ func testEmbedding(t *testing.T, modelFile string) {
 	if err != nil {
 		t.Fatalf("unable to create inference model: %v", err)
 	}
-	defer krn.Unload()
+	defer func() {
+		if err := krn.Unload(); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
 
 	// -------------------------------------------------------------------------
 
