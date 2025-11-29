@@ -58,14 +58,16 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	krnGPTChat, err = kronk.New(modelInstances, model.Config{
-		ModelFile: modelGPTChatFile,
-	})
-	defer krnGPTChat.Unload()
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		krnGPTChat, err = kronk.New(modelInstances, model.Config{
+			ModelFile: modelGPTChatFile,
+		})
+		defer krnGPTChat.Unload()
 
-	if err != nil {
-		fmt.Printf("unable to load model: %s: %v\n", modelGPTChatFile, err)
-		os.Exit(1)
+		if err != nil {
+			fmt.Printf("unable to load model: %s: %v\n", modelGPTChatFile, err)
+			os.Exit(1)
+		}
 	}
 
 	krnSimpleVision, err = kronk.New(modelInstances, model.Config{
