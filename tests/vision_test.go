@@ -3,8 +3,6 @@ package kronk_test
 import (
 	"context"
 	"fmt"
-	"os"
-	"runtime"
 	"testing"
 	"time"
 
@@ -15,26 +13,25 @@ import (
 )
 
 func Test_SimpleVision(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testVision(t, krnSimpleVision)
+	testVision(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
 }
 
 func Test_SimpleStreamingVision(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testVisionStreaming(t, krnSimpleVision)
+	testVisionStreaming(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
 }
 
 // =============================================================================
 
-func initVisionTest(imageFile string) model.VisionRequest {
+func initVisionTest(t *testing.T, modelFile string, projFile string, imageFile string) (*kronk.Kronk, model.VisionRequest) {
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile:      modelFile,
+		ProjectionFile: projFile,
+	})
+
+	if err != nil {
+		t.Fatalf("unable to load model: %s: %v", modelFile, err)
+	}
+
 	question := "What is in this picture?"
 
 	vr := model.VisionRequest{
@@ -48,18 +45,19 @@ func initVisionTest(imageFile string) model.VisionRequest {
 		},
 	}
 
-	return vr
+	return krn, vr
 }
 
-func testVision(t *testing.T, krn *kronk.Kronk) {
+func testVision(t *testing.T, modelFile string, projFile string, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	vr := initVisionTest(imageFile)
+	krn, vr := initVisionTest(t, modelFile, projFile, imageFile)
+	defer krn.Unload()
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 		defer cancel()
 
 		id := uuid.New().String()
@@ -91,15 +89,16 @@ func testVision(t *testing.T, krn *kronk.Kronk) {
 	}
 }
 
-func testVisionStreaming(t *testing.T, krn *kronk.Kronk) {
+func testVisionStreaming(t *testing.T, modelFile string, projFile string, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	vr := initVisionTest(imageFile)
+	krn, vr := initVisionTest(t, modelFile, projFile, imageFile)
+	defer krn.Unload()
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 		defer cancel()
 
 		id := uuid.New().String()

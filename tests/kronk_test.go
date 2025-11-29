@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/install"
@@ -23,13 +24,6 @@ var (
 )
 
 var (
-	krnThinkToolChat *kronk.Kronk
-	krnGPTChat       *kronk.Kronk
-	krnSimpleVision  *kronk.Kronk
-	krnEmbed         *kronk.Kronk
-)
-
-var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
 	libPath        = filepath.Join(gw, "tests/libraries")
 	modelPath      = filepath.Join(gw, "tests/models")
@@ -37,6 +31,7 @@ var (
 	goroutines     = 1
 	modelInstances = 1
 	runInParallel  = false
+	testDuration   = 60 * 5 * time.Second
 )
 
 func TestMain(m *testing.M) {
@@ -45,49 +40,6 @@ func TestMain(m *testing.M) {
 	err := kronk.Init(libPath, kronk.LogSilent)
 	if err != nil {
 		fmt.Printf("Failed to init the llamacpp library: %s: error: %s\n", libPath, err)
-		os.Exit(1)
-	}
-
-	krnThinkToolChat, err = kronk.New(modelInstances, model.Config{
-		ModelFile: modelThinkToolChatFile,
-	})
-	defer krnThinkToolChat.Unload()
-
-	if err != nil {
-		fmt.Printf("unable to load model: %s: %v\n", modelThinkToolChatFile, err)
-		os.Exit(1)
-	}
-
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		krnGPTChat, err = kronk.New(modelInstances, model.Config{
-			ModelFile: modelGPTChatFile,
-		})
-		defer krnGPTChat.Unload()
-
-		if err != nil {
-			fmt.Printf("unable to load model: %s: %v\n", modelGPTChatFile, err)
-			os.Exit(1)
-		}
-	}
-
-	krnSimpleVision, err = kronk.New(modelInstances, model.Config{
-		ModelFile:      modelSimpleVisionFile,
-		ProjectionFile: projSimpleVisionFile,
-	})
-	defer krnSimpleVision.Unload()
-
-	if err != nil {
-		fmt.Printf("unable to load model: %s: %v\n", modelSimpleVisionFile, err)
-		os.Exit(1)
-	}
-
-	krnEmbed, err = kronk.New(modelInstances, model.Config{
-		ModelFile: modelEmbedFile,
-	})
-	defer krnEmbed.Unload()
-
-	if err != nil {
-		fmt.Printf("unable to load model: %s: %v\n", modelEmbedFile, err)
 		os.Exit(1)
 	}
 
@@ -110,6 +62,7 @@ func installer() {
 	fmt.Println("libpath        :", libPath)
 	fmt.Println("modelPath      :", modelPath)
 	fmt.Println("imageFile      :", imageFile)
+	fmt.Println("testDuration   :", testDuration)
 	fmt.Println("LD_LIBRARY_PATH:", os.Getenv("LD_LIBRARY_PATH"))
 	fmt.Println("MODEL INSTANCES:", modelInstances)
 	fmt.Println("GOROUTINES     :", goroutines)
