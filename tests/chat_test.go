@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"runtime"
 	"testing"
 	"time"
 
@@ -15,62 +14,48 @@ import (
 )
 
 func Test_ThinkChat(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testChat(t, krnThinkToolChat, false)
+	testChat(t, modelThinkToolChatFile, false)
 }
 
 func Test_ThinkStreamingChat(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testChatStreaming(t, krnThinkToolChat, false)
+	testChatStreaming(t, modelThinkToolChatFile, false)
 }
 
 func Test_ToolChat(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testChat(t, krnThinkToolChat, true)
+	testChat(t, modelThinkToolChatFile, true)
 }
 
 func Test_ToolStreamingChat(t *testing.T) {
-	// Run on Linux only in GitHub Actions.
-	if os.Getenv("GITHUB_ACTIONS") == "true" && runtime.GOOS == "darwin" {
-		t.Skip("Skipping test in GitHub Actions")
-	}
-
-	testChatStreaming(t, krnThinkToolChat, true)
+	testChatStreaming(t, modelThinkToolChatFile, true)
 }
 
 func Test_GPTChat(t *testing.T) {
-	// Don't run at all on GitHub Actions.
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, krnGPTChat, false)
+	testChat(t, modelGPTChatFile, false)
 }
 
 func Test_GPTStreamingChat(t *testing.T) {
-	// Don't run at all on GitHub Actions.
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, krnGPTChat, false)
+	testChatStreaming(t, modelGPTChatFile, false)
 }
 
 // =============================================================================
 
-func initChatTest(tooling bool) model.ChatRequest {
+func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.ChatRequest) {
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile: modelFile,
+	})
+
+	if err != nil {
+		t.Fatalf("unable to load model: %s: %v", modelFile, err)
+	}
+
 	var tools []model.Tool
 	question := "Echo back the word: Gorilla"
 
@@ -99,18 +84,19 @@ func initChatTest(tooling bool) model.ChatRequest {
 		},
 	}
 
-	return cr
+	return krn, cr
 }
 
-func testChat(t *testing.T, krn *kronk.Kronk, tooling bool) {
+func testChat(t *testing.T, modelFile string, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	cr := initChatTest(tooling)
+	krn, cr := initChatTest(t, modelFile, tooling)
+	defer krn.Unload()
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 		defer cancel()
 
 		id := uuid.New().String()
@@ -149,15 +135,16 @@ func testChat(t *testing.T, krn *kronk.Kronk, tooling bool) {
 	}
 }
 
-func testChatStreaming(t *testing.T, krn *kronk.Kronk, tooling bool) {
+func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	cr := initChatTest(tooling)
+	krn, cr := initChatTest(t, modelFile, tooling)
+	defer krn.Unload()
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 		defer cancel()
 
 		id := uuid.New().String()

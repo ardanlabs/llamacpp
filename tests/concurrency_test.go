@@ -13,7 +13,7 @@ import (
 )
 
 func Test_ConTest1(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 	defer cancel()
 
 	id := uuid.New().String()
@@ -24,9 +24,10 @@ func Test_ConTest1(t *testing.T) {
 		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 	}()
 
-	cr := initChatTest(false)
+	krn, cr := initChatTest(t, modelThinkToolChatFile, false)
+	defer krn.Unload()
 
-	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	ch, err := krn.ChatStreaming(ctx, cr)
 	if err != nil {
 		t.Fatalf("should not receive an error starting chat streaming: %s", err)
 	}
@@ -54,7 +55,7 @@ func Test_ConTest1(t *testing.T) {
 }
 
 func Test_ConTest2(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 	defer cancel()
 
 	id := uuid.New().String()
@@ -65,9 +66,10 @@ func Test_ConTest2(t *testing.T) {
 		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 	}()
 
-	cr := initChatTest(false)
+	krn, cr := initChatTest(t, modelThinkToolChatFile, false)
+	defer krn.Unload()
 
-	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	ch, err := krn.ChatStreaming(ctx, cr)
 	if err != nil {
 		t.Fatalf("should not receive an error starting chat streaming: %s", err)
 	}
@@ -102,7 +104,7 @@ func Test_ConTest2(t *testing.T) {
 }
 
 func Test_ConTest3(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 	defer cancel()
 
 	id := uuid.New().String()
@@ -113,9 +115,10 @@ func Test_ConTest3(t *testing.T) {
 		t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 	}()
 
-	cr := initChatTest(false)
+	krn, cr := initChatTest(t, modelThinkToolChatFile, false)
+	defer krn.Unload()
 
-	ch, err := krnThinkToolChat.ChatStreaming(ctx, cr)
+	ch, err := krn.ChatStreaming(ctx, cr)
 	if err != nil {
 		t.Fatalf("should not receive an error starting chat streaming: %s", err)
 	}

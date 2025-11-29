@@ -15,7 +15,6 @@ import (
 )
 
 func Test_Embedding(t *testing.T) {
-	// Run on all platforms.
 	testEmbedding(t, modelEmbedFile)
 }
 
@@ -41,7 +40,7 @@ func testEmbedding(t *testing.T, modelFile string) {
 	text := "Embed this sentence"
 
 	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
 		defer cancel()
 
 		id := uuid.New().String()

@@ -32,9 +32,7 @@ llama-bench:
 
 test:
 	export LD_LIBRARY_PATH=tests/libraries && \
-	export MODEL_INSTANCES=1 && \
 	export GOROUTINES=3 && \
-	export RUN_MACOS=1 && \
 	export INSTALL_LLAMA=1 && \
 	export RUN_IN_PARALLEL=1 && \
 	export GITHUB_WORKSPACE=$(shell pwd) && \
