@@ -26,6 +26,7 @@ func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, err
 func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan ChatResponse {
 	m.activeStreams.Add(1)
 	defer m.activeStreams.Add(-1)
+
 	ch := make(chan ChatResponse)
 
 	go func() {
