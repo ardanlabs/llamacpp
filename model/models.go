@@ -117,7 +117,10 @@ type D map[string]any
 type ResponseToolCall struct {
 	ID        string         `json:"id"`
 	Name      string         `json:"name"`
-	Arguments map[string]any `json:"arguments,omitempty"`
+	Arguments map[string]any `json:"arguments"`
+	Status    int            `json:"status"`
+	Raw       string         `json:"raw"`
+	Error     string         `json:"error"`
 }
 
 // ResponseMessage represents a single message in a response.

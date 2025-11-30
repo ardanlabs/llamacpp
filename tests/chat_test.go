@@ -14,19 +14,19 @@ import (
 )
 
 func Test_ThinkChat(t *testing.T) {
-	testChat(t, modelThinkToolChatFile, "", false)
+	testChat(t, modelThinkToolChatFile, false)
 }
 
 func Test_ThinkStreamingChat(t *testing.T) {
-	testChatStreaming(t, modelThinkToolChatFile, "", false)
+	testChatStreaming(t, modelThinkToolChatFile, false)
 }
 
 func Test_ToolChat(t *testing.T) {
-	testChat(t, modelThinkToolChatFile, "", true)
+	testChat(t, modelThinkToolChatFile, true)
 }
 
 func Test_ToolStreamingChat(t *testing.T) {
-	testChatStreaming(t, modelThinkToolChatFile, "", true)
+	testChatStreaming(t, modelThinkToolChatFile, true)
 }
 
 func Test_GPTChat(t *testing.T) {
@@ -34,7 +34,7 @@ func Test_GPTChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelGPTChatFile, modelGPTJinjaFile, false)
+	testChat(t, modelGPTChatFile, false)
 }
 
 func Test_GPTStreamingChat(t *testing.T) {
@@ -42,7 +42,7 @@ func Test_GPTStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelGPTChatFile, modelGPTJinjaFile, false)
+	testChatStreaming(t, modelGPTChatFile, false)
 }
 
 func Test_ToolGPTChat(t *testing.T) {
@@ -50,7 +50,7 @@ func Test_ToolGPTChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelGPTChatFile, modelGPTJinjaFile, true)
+	testChat(t, modelGPTChatFile, true)
 }
 
 func Test_ToolGPTStreamingChat(t *testing.T) {
@@ -58,15 +58,14 @@ func Test_ToolGPTStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelGPTChatFile, modelGPTJinjaFile, true)
+	testChatStreaming(t, modelGPTChatFile, true)
 }
 
 // =============================================================================
 
-func initChatTest(t *testing.T, modelFile string, jinjaFile string, tooling bool) (*kronk.Kronk, model.Params, model.D) {
+func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.Params, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: modelFile,
-		JinjaFile: jinjaFile,
 	})
 
 	if err != nil {
@@ -136,12 +135,12 @@ func initChatTest(t *testing.T, modelFile string, jinjaFile string, tooling bool
 	return krn, params, d
 }
 
-func testChat(t *testing.T, modelFile string, jinjaFile string, tooling bool) {
+func testChat(t *testing.T, modelFile string, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, params, d := initChatTest(t, modelFile, jinjaFile, tooling)
+	krn, params, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -192,12 +191,12 @@ func testChat(t *testing.T, modelFile string, jinjaFile string, tooling bool) {
 	}
 }
 
-func testChatStreaming(t *testing.T, modelFile string, jinjaFile string, tooling bool) {
+func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, params, d := initChatTest(t, modelFile, jinjaFile, tooling)
+	krn, params, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")

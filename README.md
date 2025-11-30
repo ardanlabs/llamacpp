@@ -55,12 +55,7 @@ https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13
 This is an example from the ArdanLabs AI training repo at [example13-step1](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13/step1/main.go)
 
 ```go
-// This example shows you how to create a simple chat application against an
-// inference model using llamacpp directly via yzma and a native Go application.
-//
-// # Running the example:
-//
-//	$ make example13-step1
+// This example comes from the AI training repo at example13-step1.
 
 package main
 
@@ -80,7 +75,8 @@ import (
 )
 
 const (
-	modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf?download=true"
+	//modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf?download=true"
+	modelURL  = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf?download=true"
 	libPath   = "zarf/llamacpp"
 	modelPath = "zarf/models"
 )
@@ -111,9 +107,7 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	tools := tools()
-
-	var messages []model.ChatMessage
+	messages := model.DocumentArray()
 
 	for {
 		messages, err = userInput(messages)
@@ -124,11 +118,16 @@ func run() error {
 			return fmt.Errorf("user input: %w", err)
 		}
 
-		messages, err = func() ([]model.ChatMessage, error) {
+		messages, err = func() ([]model.D, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 			defer cancel()
 
-			ch, err := performChat(ctx, krn, messages, tools)
+			d := model.D{
+				"messages": messages,
+				"tools":    tools(krn.ModelInfo().IsGPT),
+			}
+
+			ch, err := performChat(ctx, krn, d)
 			if err != nil {
 				return nil, fmt.Errorf("unable to perform chat: %w", err)
 			}
@@ -182,7 +181,7 @@ func newKronk(modelFile string) (*kronk.Kronk, error) {
 	return krn, nil
 }
 
-func userInput(messages []model.ChatMessage) ([]model.ChatMessage, error) {
+func userInput(messages []model.D) ([]model.D, error) {
 	fmt.Print("\nUSER> ")
 
 	reader := bufio.NewReader(os.Stdin)
@@ -196,37 +195,59 @@ func userInput(messages []model.ChatMessage) ([]model.ChatMessage, error) {
 		return nil, io.EOF
 	}
 
-	messages = append(messages, model.ChatMessage{
-		Role:    "user",
-		Content: userInput,
-	})
+	messages = append(messages,
+		model.ChatMessage("user", userInput),
+	)
 
 	return messages, nil
 }
 
-func tools() []model.Tool {
-	tool := model.NewToolFunction(
-		"get_weather",
-		"Get the weather for a place",
-		model.ToolParameter{
-			Name:        "location",
-			Type:        "string",
-			Description: "The location to get the weather for, e.g. San Francisco, CA",
-		},
-	)
+func tools(isGPT bool) []model.D {
+	if isGPT {
+		return []model.D{
+			{
+				"type": "function",
+				"function": map[string]any{
+					"name":        "get_weather",
+					"description": "Get the current weather for a location",
+					"parameters": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"location": map[string]any{
+								"type":        "string",
+								"description": "The location to get the weather for, e.g. San Francisco, CA",
+							},
+						},
+						"required": []any{"location"},
+					},
+				},
+			},
+		}
+	}
 
-	return []model.Tool{tool}
+	return []model.D{
+		{
+			"type": "function",
+			"function": model.D{
+				"name":        "get_weather",
+				"description": "Get the current weather for a location",
+				"arguments": model.D{
+					"location": model.D{
+						"type":        "string",
+						"description": "The location to get the weather for, e.g. San Francisco, CA",
+					},
+				},
+			},
+		},
+	}
 }
 
-func performChat(ctx context.Context, krn *kronk.Kronk, messages []model.ChatMessage, tools []model.Tool) (<-chan model.ChatResponse, error) {
-	ch, err := krn.ChatStreaming(ctx, model.ChatRequest{
-		Messages: messages,
-		Tools:    tools,
-		Params: model.Params{
-			MaxTokens: 2048,
-		},
-	})
+func performChat(ctx context.Context, krn *kronk.Kronk, d model.D) (<-chan model.ChatResponse, error) {
+	params := model.Params{
+		MaxTokens: 2048,
+	}
 
+	ch, err := krn.ChatStreaming(ctx, params, d)
 	if err != nil {
 		return nil, fmt.Errorf("chat streaming: %w", err)
 	}
@@ -234,7 +255,7 @@ func performChat(ctx context.Context, krn *kronk.Kronk, messages []model.ChatMes
 	return ch, nil
 }
 
-func modelResponse(krn *kronk.Kronk, messages []model.ChatMessage, ch <-chan model.ChatResponse) ([]model.ChatMessage, error) {
+func modelResponse(krn *kronk.Kronk, messages []model.D, ch <-chan model.ChatResponse) ([]model.D, error) {
 	fmt.Print("\nMODEL> ")
 
 	var reasoning bool
@@ -249,27 +270,27 @@ loop:
 			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
 
 		case model.FinishReasonStop:
-			messages = append(messages, model.ChatMessage{
-				Role:    "assistant",
-				Content: resp.Choice[0].Delta.Content,
-			})
+			messages = append(messages,
+				model.ChatMessage("assistant", resp.Choice[0].Delta.Content),
+			)
 			break loop
 
 		case model.FinishReasonTool:
-			fmt.Println()
+			fmt.Print("\n\n")
+
 			fmt.Printf("\u001b[92mModel Asking For Tool Call:\nToolID[%s]: %s(%s)\u001b[0m",
 				resp.Choice[0].Delta.ToolCalls[0].ID,
 				resp.Choice[0].Delta.ToolCalls[0].Name,
 				resp.Choice[0].Delta.ToolCalls[0].Arguments,
 			)
 
-			messages = append(messages, model.ChatMessage{
-				Role: "tool",
-				Content: fmt.Sprintf("Tool call %s: %s(%v)",
+			messages = append(messages,
+				model.ChatMessage("tool", fmt.Sprintf("Tool call %s: %s(%v)",
 					resp.Choice[0].Delta.ToolCalls[0].ID,
 					resp.Choice[0].Delta.ToolCalls[0].Name,
 					resp.Choice[0].Delta.ToolCalls[0].Arguments),
-			})
+				),
+			)
 			break loop
 
 		default:
@@ -281,7 +302,11 @@ loop:
 
 			if reasoning {
 				reasoning = false
+
 				fmt.Println()
+				if krn.ModelInfo().IsGPT {
+					fmt.Println()
+				}
 			}
 
 			fmt.Printf("%s", resp.Choice[0].Delta.Content)
@@ -311,29 +336,29 @@ $ go run cmd/examples/example13/step1/*.go
 Output:
 
 - check llamacpp installation: ✓
-  - latest version : b7198
-  - current version: b7198
-- check "Qwen3-8B-Q8_0" installation: ✓
-- contextWindow: 40960
+  - latest version : b7209
+  - current version: b7209
+- check "gpt-oss-20b-Q8_0" installation: ✓
+- contextWindow: 131072
 - embeddings   : false
-- isGPT        : false
+- isGPT        : true
 
 USER> hello model
 
-MODEL> Okay, the user said "hello model". I need to respond appropriately. Since there's no specific query here, just a greeting, I should acknowledge their greeting and offer assistance. Let me check if any tools are needed. The available tool is get_weather, but the user didn't ask for weather. So, no function call required. Just a friendly reply.
+MODEL> User says "hello model". We should respond politely. There's no function call needed.
 
-Hello! How can I assist you today? If you have any questions or need information, feel free to ask!
+Hello! How can I help you today?
 
-Input: 141  Reasoning: 74  Completion: 24  Output: 98  Window: 165 (0% of 40K) TPS: 45.08
+Input: 140  Reasoning: 17  Completion: 9  Output: 26  Window: 149 (0% of 128K) TPS: 33.51
 
-USER> what is the weather in NYC
+USER> what is the weather in London, England
 
-MODEL> Okay, the user is asking for the weather in NYC. Let me check the tools available. There's a function called get_weather that takes a location parameter. The user mentioned "NYC", which is a location. I need to call that function with the location set to NYC. Let me make sure the arguments are correctly formatted as JSON. The function's arguments should include "location": "NYC". I'll structure the tool_call accordingly.
+MODEL> We need to use the get_weather function.
 
 Model Asking For Tool Call:
-ToolID[dfe3d6cb-7b57-4d71-95b1-5f78b7ffd85c]: get_weather(map[location:NYC])
+ToolID[d960e0fc-4867-4a30-94aa-421e7e0c73b2]: get_weather(map[location:London, England])
 
-Input: 181  Reasoning: 91  Completion: 20  Output: 110  Window: 201 (0% of 40K) TPS: 45.05
+Input: 168  Reasoning: 9  Completion: 14  Output: 23  Window: 182 (0% of 128K) TPS: 19.07
 
 USER>
 ```
