@@ -47,7 +47,7 @@ func Test_GPTStreamingChat(t *testing.T) {
 
 // =============================================================================
 
-func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.ChatRequest) {
+func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.Params, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: modelFile,
 	})
@@ -56,35 +56,63 @@ func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, m
 		t.Fatalf("unable to load model: %s: %v", modelFile, err)
 	}
 
-	var tools []model.Tool
 	question := "Echo back the word: Gorilla"
 
-	if tooling {
-		question = "What is the weather like in London, England?"
-		tools = []model.Tool{
-			model.NewToolFunction(
-				"get_weather",
-				"Get the weather for a place",
-				model.ToolParameter{
-					Name:        "location",
-					Type:        "string",
-					Description: "The location to get the weather for, e.g. San Francisco, CA",
+	// gptTool := []model.D{
+	// 		{
+	// 			"type": "function",
+	// 			"function": map[string]any{
+	// 				"name":        "get_weather",
+	// 				"description": "Get the current weather for a location",
+	// 				"parameters": map[string]any{
+	// 					"type": "object",
+	// 					"properties": map[string]any{
+	// 						"location": map[string]any{
+	// 							"type":        "string",
+	// 							"description": "The location to get the weather for, e.g. San Francisco, CA",
+	// 						},
+	// 					},
+	// 					"required": []any{"location"},
+	// 				},
+	// 			},
+	// 		},
+	// 	}
+	// }
+
+	regTool := []model.D{
+		{
+			"type": "function",
+			"function": model.D{
+				"name":        "get_weather",
+				"description": "Get the current weather for a location",
+				"arguments": model.D{
+					"location": model.D{
+						"type":        "string",
+						"description": "The location to get the weather for, e.g. San Francisco, CA",
+					},
 				},
-			),
-		}
-	}
-
-	cr := model.ChatRequest{
-		Messages: []model.ChatMessage{
-			{Role: "user", Content: question},
-		},
-		Tools: tools,
-		Params: model.Params{
-			MaxTokens: 4096,
+			},
 		},
 	}
 
-	return krn, cr
+	d := model.D{
+		"messages": []model.D{
+			{
+				"role":    "user",
+				"content": question,
+			},
+		},
+	}
+
+	if tooling {
+		d["tools"] = regTool
+	}
+
+	params := model.Params{
+		MaxTokens: 4096,
+	}
+
+	return krn, params, d
 }
 
 func testChat(t *testing.T, modelFile string, tooling bool) {
@@ -92,7 +120,7 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 		t.Parallel()
 	}
 
-	krn, cr := initChatTest(t, modelFile, tooling)
+	krn, params, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -112,7 +140,7 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		resp, err := krn.Chat(ctx, cr)
+		resp, err := krn.Chat(ctx, params, d)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
@@ -148,7 +176,7 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 		t.Parallel()
 	}
 
-	krn, cr := initChatTest(t, modelFile, tooling)
+	krn, params, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -168,7 +196,7 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		ch, err := krn.ChatStreaming(ctx, cr)
+		ch, err := krn.ChatStreaming(ctx, params, d)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}

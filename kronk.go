@@ -192,26 +192,26 @@ func (krn *Kronk) Unload(ctx context.Context) error {
 }
 
 // Chat provides support to interact with an inference model.
-func (krn *Kronk) Chat(ctx context.Context, cr model.ChatRequest) (model.ChatResponse, error) {
+func (krn *Kronk) Chat(ctx context.Context, params model.Params, d model.D) (model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) (model.ChatResponse, error) {
-		return m.Chat(ctx, cr)
+		return m.Chat(ctx, params, d)
 	}
 
 	return nonStreaming(ctx, krn, f)
 }
 
 // ChatStreaming provides support to interact with an inference model.
-func (krn *Kronk) ChatStreaming(ctx context.Context, cr model.ChatRequest) (<-chan model.ChatResponse, error) {
+func (krn *Kronk) ChatStreaming(ctx context.Context, params model.Params, d model.D) (<-chan model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) <-chan model.ChatResponse {
-		return m.ChatStreaming(ctx, cr)
+		return m.ChatStreaming(ctx, params, d)
 	}
 
 	ef := func(err error) model.ChatResponse {
@@ -225,7 +225,7 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, cr model.ChatRequest) (<-ch
 type Logger func(ctx context.Context, format string, a ...any)
 
 // ChatStreamingHTTP streams the response to an HTTP client.
-func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, cr model.ChatRequest) error {
+func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, params model.Params, d model.D) error {
 	if _, exists := ctx.Deadline(); !exists {
 		return fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
@@ -237,7 +237,7 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 		return fmt.Errorf("streaming not supported")
 	}
 
-	ch, err := krn.ChatStreaming(ctx, cr)
+	ch, err := krn.ChatStreaming(ctx, params, d)
 	if err != nil {
 		return fmt.Errorf("streamResponse: %w", err)
 	}
@@ -291,26 +291,26 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 }
 
 // Vision provides support to interact with a vision inference model.
-func (krn *Kronk) Vision(ctx context.Context, vr model.VisionRequest) (model.ChatResponse, error) {
+func (krn *Kronk) Vision(ctx context.Context, imageFile string, params model.Params, d model.D) (model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) (model.ChatResponse, error) {
-		return m.Vision(ctx, vr)
+		return m.Vision(ctx, imageFile, params, d)
 	}
 
 	return nonStreaming(ctx, krn, f)
 }
 
 // VisionStreaming provides support to interact with a vision language model.
-func (krn *Kronk) VisionStreaming(ctx context.Context, vr model.VisionRequest) (<-chan model.ChatResponse, error) {
+func (krn *Kronk) VisionStreaming(ctx context.Context, imageFile string, params model.Params, d model.D) (<-chan model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) <-chan model.ChatResponse {
-		return m.VisionStreaming(ctx, vr)
+		return m.VisionStreaming(ctx, imageFile, params, d)
 	}
 
 	ef := func(err error) model.ChatResponse {

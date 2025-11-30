@@ -11,8 +11,8 @@ import (
 )
 
 // Vision performs a vision request and returns the final response.
-func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, error) {
-	ch := m.VisionStreaming(ctx, vr)
+func (m *Model) Vision(ctx context.Context, imageFile string, params Params, d D) (ChatResponse, error) {
+	ch := m.VisionStreaming(ctx, imageFile, params, d)
 
 	var lastMsg ChatResponse
 	for msg := range ch {
@@ -23,7 +23,7 @@ func (m *Model) Vision(ctx context.Context, vr VisionRequest) (ChatResponse, err
 }
 
 // VisionStreaming performs a vision request and streams the response.
-func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan ChatResponse {
+func (m *Model) VisionStreaming(ctx context.Context, imageFile string, params Params, d D) <-chan ChatResponse {
 	m.activeStreams.Add(1)
 	defer m.activeStreams.Add(-1)
 
@@ -66,20 +66,20 @@ func (m *Model) VisionStreaming(ctx context.Context, vr VisionRequest) <-chan Ch
 		}
 		defer mtmd.Free(mtmdCtx)
 
-		prompt, err := m.applyVisionRequestJinjaTemplate(vr, true)
+		prompt, err := m.applyVisionRequestJinjaTemplate(d)
 		if err != nil {
 			m.sendVisionError(ctx, ch, id, err)
 			return
 		}
 
-		bitmap, err := m.processBitmap(lctx, mtmdCtx, vr.ImageFile, prompt)
+		bitmap, err := m.processBitmap(lctx, mtmdCtx, imageFile, prompt)
 		if err != nil {
 			m.sendVisionError(ctx, ch, id, err)
 			return
 		}
 		defer mtmd.BitmapFree(bitmap)
 
-		m.processTokens(ctx, id, lctx, ObjectVision, prompt, vr.Params, ch)
+		m.processTokens(ctx, id, lctx, ObjectVision, prompt, params, ch)
 	}()
 
 	return ch

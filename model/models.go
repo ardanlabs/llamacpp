@@ -93,65 +93,24 @@ func newModelInfo(cfg Config, model llama.Model) ModelInfo {
 
 // =============================================================================
 
-// ToolParameter represents a single parameter for the tool call.
-type ToolParameter struct {
-	Name        string `json:"-"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-}
-
-// ToolFunction represents the definition of a function tool.
-type ToolFunction struct {
-	Name        string                   `json:"name"`
-	Description string                   `json:"description"`
-	Arguments   map[string]ToolParameter `json:"arguments"`
-}
-
-// Tool represents a tool that can be called by the model.
-type Tool struct {
-	Type     string       `json:"type"`
-	Function ToolFunction `json:"function"`
-}
-
-// NewToolFunction initialized a function tool for the model.
-func NewToolFunction(name string, description string, params ...ToolParameter) Tool {
-	tool := Tool{
-		Type: "function",
-		Function: ToolFunction{
-			Name:        name,
-			Description: description,
-			Arguments:   map[string]ToolParameter{},
-		},
+// ChatMessage create a new chat message.
+func ChatMessage(role string, content string) D {
+	return D{
+		"role":    role,
+		"content": content,
 	}
-
-	for _, param := range params {
-		tool.Function.Arguments[param.Name] = param
-	}
-
-	return tool
 }
 
-// =============================================================================
-
-// ChatMessage represent a single message in a chat.
-type ChatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+// DocumentArray creates a new document array and can apply the
+// set of documents.
+func DocumentArray(doc ...D) []D {
+	msgs := make([]D, len(doc))
+	copy(msgs, doc)
+	return msgs
 }
 
-// ChatRequest represents input for chat and vision models.
-type ChatRequest struct {
-	Messages []ChatMessage
-	Tools    []Tool
-	Params   Params
-}
-
-// VisionRequest represents input for vision models.
-type VisionRequest struct {
-	ImageFile string
-	Message   ChatMessage
-	Params    Params
-}
+// D represents a generic docment of fields and values.
+type D map[string]any
 
 // =============================================================================
 

@@ -1,98 +1,58 @@
 package model
 
 import (
-	"encoding/json"
+	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"time"
 
-	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 	"github.com/nikolalohinski/gonja/v2"
+	"github.com/nikolalohinski/gonja/v2/builtins"
 	"github.com/nikolalohinski/gonja/v2/exec"
 	"github.com/nikolalohinski/gonja/v2/loaders"
 )
 
-func (m *Model) applyChatRequestJinjaTemplate(cr ChatRequest, addAssistantPrompt bool) (string, error) {
-	// If the call to process the jinja template fails, we fall back to the
-	// default template if we are working with a GPT model. We currently have
-	// a bug processing GPT based jinja templates.
-
-	t, err := m.applyJinjaTemplate(cr.Messages, cr.Tools, addAssistantPrompt)
-	if err != nil {
-		if m.modelInfo.IsGPT {
-			return m.applyDefaultTemplate(cr.Messages), nil
-		}
-
-		return "", err
+func (m *Model) applyVisionRequestJinjaTemplate(d D) (string, error) {
+	messages, exists := d["messages"]
+	if !exists {
+		return "", errors.New("no messages found in vision request")
 	}
 
-	return t, nil
-}
+	msgs, ok := messages.([]D)
+	if !ok {
+		return "", errors.New("messages is not a slice of ChatMessage")
+	}
 
-func (m *Model) applyVisionRequestJinjaTemplate(vr VisionRequest, addAssistantPrompt bool) (string, error) {
 	// If we don't add the mtmd marker, the model will not be able to understand
 	// the vision request.
-	messages := []ChatMessage{
-		vr.Message,
-		{
-			Role:    "user",
-			Content: mtmd.DefaultMarker(),
-		},
-	}
+	msgs = append(msgs, D{
+		"role":    "user",
+		"content": mtmd.DefaultMarker(),
+	})
 
-	t, err := m.applyJinjaTemplate(messages, nil, addAssistantPrompt)
-	if err != nil {
-		if m.modelInfo.IsGPT {
-			return m.applyDefaultTemplate(messages), nil
-		}
+	d["messages"] = msgs
 
-		return "", err
-	}
-
-	return t, nil
+	return m.applyJinjaTemplate(d)
 }
 
-func (m *Model) applyJinjaTemplate(messages []ChatMessage, tools []Tool, addAssistantPrompt bool) (string, error) {
+func (m *Model) applyJinjaTemplate(d D) (string, error) {
 	if m.template == "" {
 		return "", errors.New("no template found")
 	}
 
 	gonja.DefaultLoader = &noFSLoader{}
 
-	t, err := gonja.FromString(m.template)
+	t, err := newTemplateWithFixedItems(m.template)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	jsonData, err := json.Marshal(messages)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal messages: %w", err)
-	}
-
-	var msgs []map[string]any
-	if err := json.Unmarshal(jsonData, &msgs); err != nil {
-		return "", fmt.Errorf("failed to unmarshal messages: %w", err)
-	}
-
-	var toolCalls []map[string]any
-	if len(tools) > 0 {
-		jsonData, err = json.Marshal(tools)
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal tools: %w", err)
-		}
-
-		if err := json.Unmarshal(jsonData, &toolCalls); err != nil {
-			return "", fmt.Errorf("failed to unmarshal tools: %w", err)
-		}
-	}
-
-	data := exec.NewContext(map[string]any{
-		"messages":              msgs,
-		"tools":                 toolCalls,
-		"add_generation_prompt": addAssistantPrompt,
-	})
+	data := exec.NewContext(d)
 
 	s, err := t.ExecuteToString(data)
 	if err != nil {
@@ -100,18 +60,6 @@ func (m *Model) applyJinjaTemplate(messages []ChatMessage, tools []Tool, addAssi
 	}
 
 	return s, nil
-}
-
-func (m *Model) applyDefaultTemplate(messages []ChatMessage) string {
-	msgs := make([]llama.ChatMessage, len(messages))
-	for i, msg := range messages {
-		msgs[i] = llama.NewChatMessage(msg.Role, msg.Content)
-	}
-
-	buf := make([]byte, m.cfg.ContextWindow)
-	l := llama.ChatApplyTemplate(m.template, msgs, true, buf)
-
-	return string(buf[:l])
 }
 
 // =============================================================================
@@ -128,6 +76,75 @@ func (nl *noFSLoader) Resolve(path string) (string, error) {
 
 func (nl *noFSLoader) Inherit(from string) (loaders.Loader, error) {
 	return nil, errors.New("filesystem access disabled")
+}
+
+// =============================================================================
+
+// newTemplateWithFixedItems creates a gonja template with a fixed items() method
+// that properly returns key-value pairs (the built-in one only returns values).
+func newTemplateWithFixedItems(source string) (*exec.Template, error) {
+	rootID := fmt.Sprintf("root-%s", string(sha256.New().Sum([]byte(source))))
+
+	loader, err := loaders.NewFileSystemLoader("")
+	if err != nil {
+		return nil, err
+	}
+
+	shiftedLoader, err := loaders.NewShiftedLoader(rootID, bytes.NewReader([]byte(source)), loader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create custom environment with fixed items() method
+	customContext := builtins.GlobalFunctions.Inherit()
+	customContext.Set("add_generation_prompt", true)
+	customContext.Set("strftime_now", func(format string) string {
+		return time.Now().Format("2006-01-02")
+	})
+	customContext.Set("raise_exception", func(msg string) (string, error) {
+		return "", errors.New(msg)
+	})
+
+	env := exec.Environment{
+		Context:           customContext,
+		Filters:           builtins.Filters,
+		Tests:             builtins.Tests,
+		ControlStructures: builtins.ControlStructures,
+		Methods: exec.Methods{
+			Dict: exec.NewMethodSet(map[string]exec.Method[map[string]any]{
+				"keys": func(self map[string]any, selfValue *exec.Value, arguments *exec.VarArgs) (any, error) {
+					if err := arguments.Take(); err != nil {
+						return nil, err
+					}
+					keys := make([]string, 0, len(self))
+					for key := range self {
+						keys = append(keys, key)
+					}
+					sort.Strings(keys)
+					return keys, nil
+				},
+				"items": func(self map[string]any, selfValue *exec.Value, arguments *exec.VarArgs) (any, error) {
+					if err := arguments.Take(); err != nil {
+						return nil, err
+					}
+					// Return [][]any where each inner slice is [key, value]
+					// This allows gonja to unpack: for k, v in dict.items()
+					items := make([][]any, 0, len(self))
+					for key, value := range self {
+						items = append(items, []any{key, value})
+					}
+					return items, nil
+				},
+			}),
+			Str:   builtins.Methods.Str,
+			List:  builtins.Methods.List,
+			Bool:  builtins.Methods.Bool,
+			Float: builtins.Methods.Float,
+			Int:   builtins.Methods.Int,
+		},
+	}
+
+	return exec.NewTemplate(rootID, gonja.DefaultConfig, shiftedLoader, &env)
 }
 
 // =============================================================================

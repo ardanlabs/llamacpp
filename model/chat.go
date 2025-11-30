@@ -9,8 +9,8 @@ import (
 )
 
 // Chat performs a chat request and returns the final response.
-func (m *Model) Chat(ctx context.Context, cr ChatRequest) (ChatResponse, error) {
-	ch := m.ChatStreaming(ctx, cr)
+func (m *Model) Chat(ctx context.Context, params Params, d D) (ChatResponse, error) {
+	ch := m.ChatStreaming(ctx, params, d)
 
 	var lastMsg ChatResponse
 	for msg := range ch {
@@ -21,7 +21,7 @@ func (m *Model) Chat(ctx context.Context, cr ChatRequest) (ChatResponse, error) 
 }
 
 // ChatStreaming performs a chat request and streams the response.
-func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatResponse {
+func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 
 	go func() {
@@ -48,13 +48,13 @@ func (m *Model) ChatStreaming(ctx context.Context, cr ChatRequest) <-chan ChatRe
 			llama.Free(lctx)
 		}()
 
-		prompt, err := m.applyChatRequestJinjaTemplate(cr, true)
+		prompt, err := m.applyJinjaTemplate(d)
 		if err != nil {
 			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to apply jinja template: %w", err))
 			return
 		}
 
-		m.processTokens(ctx, id, lctx, ObjectChat, prompt, cr.Params, ch)
+		m.processTokens(ctx, id, lctx, ObjectChat, prompt, params, ch)
 	}()
 
 	return ch
