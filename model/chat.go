@@ -63,7 +63,7 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id string, err error) {
 	// I want to try and send this message before we check the context.
 	select {
-	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", err, Usage{}):
 		return
 	default:
 	}
@@ -71,10 +71,10 @@ func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id st
 	select {
 	case <-ctx.Done():
 		select {
-		case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, ctx.Err(), Usage{}):
+		case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", ctx.Err(), Usage{}):
 		default:
 		}
 
-	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", err, Usage{}):
 	}
 }

@@ -1,4 +1,4 @@
-// Package install provides functions for installing and upgrading llamacpp.
+// Package install provides functions for installing and upgrading llama.cpp.
 package install
 
 import (
@@ -19,20 +19,20 @@ type tag struct {
 }
 
 // Version provides information about what is installed and what is the
-// latest version of llamacpp available.
+// latest version of llama.cpp available.
 type Version struct {
 	Latest  string
 	Current string
 }
 
-// VersionInformation retrieves the version information for the llamacpp
+// VersionInformation retrieves the version information for the llama.cpp
 // libs and the current version installed.
 func VersionInformation(libPath string) (Version, error) {
 	versionInfoPath := filepath.Join(libPath, versionFile)
 
 	version, err := download.LlamaLatestVersion()
 	if err != nil {
-		return Version{}, fmt.Errorf("unable to get latest version of llamacpp: %w", err)
+		return Version{}, fmt.Errorf("unable to get latest version of llama.cpp: %w", err)
 	}
 
 	d, err := os.ReadFile(versionInfoPath)
@@ -48,7 +48,7 @@ func VersionInformation(libPath string) (Version, error) {
 	return Version{Latest: version, Current: tag.TagName}, nil
 }
 
-// Llama installs or upgrades to the latest version of llamacpp at the
+// Llama installs or upgrades to the latest version of llama.cpp at the
 // specified libPath.
 func Llama(libPath string, processor download.Processor, allowUpgrade bool) (Version, error) {
 	if err := download.InstallLibraries(libPath, processor, allowUpgrade); err != nil {
@@ -58,7 +58,7 @@ func Llama(libPath string, processor download.Processor, allowUpgrade bool) (Ver
 			return Version{}, nil
 		}
 
-		return Version{}, fmt.Errorf("unable to install llamacpp: %w", err)
+		return Version{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
 	return VersionInformation(libPath)

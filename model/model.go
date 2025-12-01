@@ -174,6 +174,7 @@ func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context
 
 	// Process the prompt and get the first batch for the response.
 	sampler, batch, inputTokens, outputTokens := m.startProcessing(lctx, object, prompt, params)
+	defer llama.SamplerFree(sampler)
 
 	// -------------------------------------------------------------------------
 
@@ -191,7 +192,7 @@ loop:
 				break loop
 			}
 
-			m.sendErrorResponse(ctx, ch, id, object, index, err, Usage{})
+			m.sendErrorResponse(ctx, ch, id, object, index, prompt, err, Usage{})
 			return
 		}
 
@@ -210,7 +211,7 @@ loop:
 		case "<tool_call>":
 			content, err = m.toolCall(lctx, token, sampler, buf)
 			if err != nil {
-				m.sendErrorResponse(ctx, ch, id, object, index, err, Usage{})
+				m.sendErrorResponse(ctx, ch, id, object, index, prompt, err, Usage{})
 				return
 			}
 
@@ -221,7 +222,7 @@ loop:
 		case "<|channel|>":
 			batch, content, err = m.gptChannel(lctx, token, sampler, buf)
 			if err != nil {
-				m.sendErrorResponse(ctx, ch, id, object, index, err, Usage{})
+				m.sendErrorResponse(ctx, ch, id, object, index, prompt, err, Usage{})
 				return
 			}
 
@@ -243,7 +244,7 @@ loop:
 		case "<|end|>":
 			batch, err = m.gptEnd(lctx, token, sampler, buf)
 			if err != nil {
-				m.sendErrorResponse(ctx, ch, id, object, index, err, Usage{})
+				m.sendErrorResponse(ctx, ch, id, object, index, prompt, err, Usage{})
 				return
 			}
 			continue
@@ -267,7 +268,7 @@ loop:
 		// We have reasoning or completion content to return to the client and
 		// store for the final response.
 
-		err = m.sendDeltaResponse(ctx, ch, id, object, index, content, reasonFlag,
+		err = m.sendDeltaResponse(ctx, ch, id, object, index, prompt, content, reasonFlag,
 			Usage{
 				InputTokens:      inputTokens,
 				ReasoningTokens:  reasonTokens,
@@ -324,7 +325,7 @@ loop:
 
 	// Send the final response that contains eveything we have sent plus
 	// the final usage numbers.
-	m.sendFinalResponse(ctx, ch, id, object, index, &finalContent, &finalReasoning, respToolCall,
+	m.sendFinalResponse(ctx, ch, id, object, index, prompt, &finalContent, &finalReasoning, respToolCall,
 		Usage{
 			InputTokens:      inputTokens,
 			ReasoningTokens:  reasonTokens,
@@ -405,11 +406,11 @@ func (m *Model) storeFinalContent(finalReasoning *strings.Builder, finalContent 
 	}
 }
 
-func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, content string, reasonFlag int, usage Usage) error {
+func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, content string, reasonFlag int, usage Usage) error {
 	select {
 	case <-ctx.Done():
 		select {
-		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), usage):
+		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, prompt, ctx.Err(), usage):
 		default:
 		}
 
@@ -421,15 +422,15 @@ func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, i
 	return nil
 }
 
-func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, finalContent *strings.Builder, finalReasoning *strings.Builder, respToolCall ResponseToolCall, usage Usage) {
+func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, finalContent *strings.Builder, finalReasoning *strings.Builder, respToolCall ResponseToolCall, usage Usage) {
 	select {
 	case <-ctx.Done():
 		select {
-		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, ctx.Err(), usage):
+		case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, prompt, ctx.Err(), usage):
 		default:
 		}
 
-	case ch <- chatResponseFinal(id, object, m.modelInfo.Name, index,
+	case ch <- chatResponseFinal(id, object, m.modelInfo.Name, index, prompt,
 		finalContent.String(),
 		finalReasoning.String(),
 		respToolCall,
@@ -437,11 +438,11 @@ func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, i
 	}
 }
 
-func (m *Model) sendErrorResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, err error, usage Usage) {
+func (m *Model) sendErrorResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, err error, usage Usage) {
 	select {
 	case <-ctx.Done():
 
-	case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index,
+	case ch <- ChatResponseErr(id, object, m.modelInfo.Name, index, prompt,
 		err,
 		usage):
 

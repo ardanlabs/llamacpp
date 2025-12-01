@@ -1,4 +1,4 @@
-// Package install provides helper functions to install llamacpp libraries
+// Package install provides helper functions to install llama.cpp libraries
 // and models.
 package install
 
@@ -14,14 +14,14 @@ import (
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
-func LlamaCPP(libPath string, processor download.Processor, allowUpgrade bool) error {
+func Libraries(libPath string, processor download.Processor, allowUpgrade bool) error {
 	orgVI, err := install.VersionInformation(libPath)
 	if err != nil {
 		return fmt.Errorf("error retrieving version info: %w", err)
 	}
 
 	fmt.Println()
-	fmt.Print("- check llamacpp installation: ")
+	fmt.Print("- check llama.cpp installation: ")
 
 	if orgVI.Current == orgVI.Latest {
 		fmt.Println("✓")
@@ -51,7 +51,7 @@ func LlamaCPP(libPath string, processor download.Processor, allowUpgrade bool) e
 		return fmt.Errorf("error walking model path: %v", err)
 	}
 
-	fmt.Print("- updated llamacpp installation: ")
+	fmt.Print("- updated llama.cpp installation: ")
 	fmt.Println("✓")
 	fmt.Printf("  - old version    : %s\n  - current version: %s\n", orgVI.Current, vi.Current)
 	return nil
