@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 
 	err := kronk.Init(libPath, kronk.LogSilent)
 	if err != nil {
-		fmt.Printf("Failed to init the llamacpp library: %s: error: %s\n", libPath, err)
+		fmt.Printf("Failed to init the llama.cpp library: %s: error: %s\n", libPath, err)
 		os.Exit(1)
 	}
 

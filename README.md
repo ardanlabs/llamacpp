@@ -26,13 +26,13 @@ Twitter: goinggodotnet
 
 ## Models
 
-Kronk uses models in the GGUF format supported by llamacpp. You can find many models in GGUF format on Hugging Face (over 147k at last count):
+Kronk uses models in the GGUF format supported by llama.cpp. You can find many models in GGUF format on Hugging Face (over 147k at last count):
 
 https://huggingface.co/models?library=gguf&sort=trending
 
 ## Support
 
-Kronk currently has support for over 94% of llamacpp functionality thanks to yzma. See the yzma [ROADMAP.md](https://github.com/ardanlabs/yzma/blob/main/ROADMAP.md) for the complete list.
+Kronk currently has support for over 94% of llama.cpp functionality thanks to yzma. See the yzma [ROADMAP.md](https://github.com/ardanlabs/yzma/blob/main/ROADMAP.md) for the complete list.
 
 You can use multimodal models (image/audio) and text language models with full hardware acceleration on Linux, on macOS, and on Windows.
 
@@ -42,7 +42,7 @@ You can use multimodal models (image/audio) and text language models with full h
 | macOS   | arm64        | Metal                           |
 | Windows | amd64        | CUDA, Vulkan, HIP, SYCL, OpenCL |
 
-Whenever there is a new release of llamacpp, the tests for yzma are run automatically. Kronk runs tests once a day and will check for updates to llamacpp. This helps us stay up to date with the latest code and models.
+Whenever there is a new release of llama.cpp, the tests for yzma are run automatically. Kronk runs tests once a day and will check for updates to llama.cpp. This helps us stay up to date with the latest code and models.
 
 ## Examples
 
@@ -185,8 +185,8 @@ func run() error {
 }
 
 func installSystem() (string, error) {
-	if err := install.LlamaCPP(libPath, download.CPU, true); err != nil {
-		return "", fmt.Errorf("unable to install llamacpp: %w", err)
+	if err := install.llama.cpp(libPath, download.CPU, true); err != nil {
+		return "", fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
 	modelFile, err := install.Model(modelURL, modelPath)
@@ -207,7 +207,7 @@ export LD_LIBRARY_PATH=:tests/libraries && \
 
 Output:
 
-- check llamacpp installation: ✓
+- check llama.cpp installation: ✓
   - latest version : b7211
   - current version: b7211
 - check "Qwen3-8B-Q8_0" installation: ✓

@@ -100,7 +100,7 @@ func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, image []
 func (m *Model) sendVisionError(ctx context.Context, ch chan<- ChatResponse, id string, err error) {
 	// I want to try and send this message before we check the context.
 	select {
-	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, "", err, Usage{}):
 		return
 	default:
 	}
@@ -108,10 +108,10 @@ func (m *Model) sendVisionError(ctx context.Context, ch chan<- ChatResponse, id 
 	select {
 	case <-ctx.Done():
 		select {
-		case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, ctx.Err(), Usage{}):
+		case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, "", ctx.Err(), Usage{}):
 		default:
 		}
 
-	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectVision, m.modelInfo.Name, 0, "", err, Usage{}):
 	}
 }

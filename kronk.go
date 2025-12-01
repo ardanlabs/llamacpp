@@ -1,4 +1,4 @@
-// Package kronk provides support for working with models using llamacpp via yzma.
+// Package kronk provides support for working with models using llama.cpp via yzma.
 package kronk
 
 import (
@@ -18,14 +18,14 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "0.27.0"
+const Version = "0.28.0"
 
 // =============================================================================
 
 // LogLevel represents the logging level.
 type LogLevel int
 
-// Set of logging levels supported by llamacpp.
+// Set of logging levels supported by llama.cpp.
 const (
 	LogSilent LogLevel = iota + 1
 	LogNormal
@@ -67,7 +67,7 @@ func Init(libPath string, logLevel LogLevel) error {
 	return initErr
 }
 
-// Kronk provides a concurrently safe api for using llamacpp to access models.
+// Kronk provides a concurrently safe api for using llama.cpp to access models.
 type Kronk struct {
 	cfg           model.Config
 	models        chan *model.Model
@@ -245,7 +245,7 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, params model.Params, d mode
 	}
 
 	ef := func(err error) model.ChatResponse {
-		return model.ChatResponseErr("panic", model.ObjectChat, "", 0, err, model.Usage{})
+		return model.ChatResponseErr("panic", model.ObjectChat, krn.ModelInfo().Name, 0, "", err, model.Usage{})
 	}
 
 	return streaming(ctx, krn, f, ef)
@@ -344,7 +344,7 @@ func (krn *Kronk) VisionStreaming(ctx context.Context, image []byte, params mode
 	}
 
 	ef := func(err error) model.ChatResponse {
-		return model.ChatResponseErr("panic", model.ObjectVision, "", 0, err, model.Usage{})
+		return model.ChatResponseErr("panic", model.ObjectVision, krn.ModelInfo().Name, 0, "", err, model.Usage{})
 	}
 
 	return streaming(ctx, krn, f, ef)

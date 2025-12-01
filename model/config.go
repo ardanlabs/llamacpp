@@ -55,12 +55,18 @@ const (
 // processing times depending on the memory architecture.
 // When set to 0, the default value is 512.
 //
+// NThreads is the number of threads to use for generation. When set to 0, the
+// default llama.cpp value is used.
+//
+// NThreadsBatch is the number of threads to use for batch processing. When set
+// to 0, the default llama.cpp value is used.
+//
 // Embeddings is a boolean that determines if the model you are using is an
 // embedding model. This must be true when using an embedding model.
 //
 // Device is the device to use for the model. If not set, the default device
 // will be used. To see what devices are available, run the following command
-// which will be found where you installed llamacpp.
+// which will be found where you installed llama.cpp.
 // $ llama-bench --list-devices
 type Config struct {
 	ModelFile      string
@@ -69,6 +75,8 @@ type Config struct {
 	ContextWindow  int
 	NBatch         int
 	NUBatch        int
+	NThreads       int
+	NThreadsBatch  int
 	Embeddings     bool
 	Device         string
 }
@@ -90,6 +98,14 @@ func adjustConfig(cfg Config, model llama.Model) Config {
 
 	if cfg.NUBatch <= 0 {
 		cfg.NUBatch = defNUBatch
+	}
+
+	if cfg.NThreads < 0 {
+		cfg.NThreads = 0
+	}
+
+	if cfg.NThreadsBatch < 0 {
+		cfg.NThreadsBatch = 0
 	}
 
 	// NBatch is generally greater than or equal to NUBatch. The entire
@@ -129,6 +145,8 @@ func modelCtxParams(cfg Config) llama.ContextParams {
 		ctxParams.NBatch = uint32(cfg.NBatch)
 		ctxParams.NUbatch = uint32(cfg.NUBatch)
 		ctxParams.NCtx = uint32(cfg.ContextWindow)
+		ctxParams.NThreads = int32(cfg.NThreads)
+		ctxParams.NThreadsBatch = int32(cfg.NThreadsBatch)
 	}
 
 	return ctxParams

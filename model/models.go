@@ -159,6 +159,7 @@ type ChatResponse struct {
 	Model   string   `json:"model"`
 	Choice  []Choice `json:"choices"`
 	Usage   Usage    `json:"usage"`
+	Prompt  string   `json:"prompt"`
 }
 
 func chatResponseDelta(id string, object string, model string, index int, content string, reasoning bool, u Usage) ChatResponse {
@@ -198,7 +199,7 @@ func forReasoning(content string, reasoning bool) string {
 	return ""
 }
 
-func chatResponseFinal(id string, object string, model string, index int, content string, reasoning string, respToolCall ResponseToolCall, u Usage) ChatResponse {
+func chatResponseFinal(id string, object string, model string, index int, prompt string, content string, reasoning string, respToolCall ResponseToolCall, u Usage) ChatResponse {
 	finishReason := FinishReasonStop
 	if respToolCall.ID != "" {
 		finishReason = FinishReasonTool
@@ -221,11 +222,12 @@ func chatResponseFinal(id string, object string, model string, index int, conten
 				FinishReason: finishReason,
 			},
 		},
-		Usage: u,
+		Usage:  u,
+		Prompt: prompt,
 	}
 }
 
-func ChatResponseErr(id string, object string, model string, index int, err error, u Usage) ChatResponse {
+func ChatResponseErr(id string, object string, model string, index int, prompt string, err error, u Usage) ChatResponse {
 	return ChatResponse{
 		ID:      id,
 		Object:  object,
@@ -241,6 +243,7 @@ func ChatResponseErr(id string, object string, model string, index int, err erro
 				FinishReason: FinishReasonError,
 			},
 		},
-		Usage: u,
+		Usage:  u,
+		Prompt: prompt,
 	}
 }

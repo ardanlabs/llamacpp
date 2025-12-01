@@ -29,12 +29,12 @@ func run() error {
 	fmt.Println()
 
 	if vi.Current == vi.Latest {
-		fmt.Println("Llamacpp is up to date")
+		fmt.Println("llama.cpp is up to date")
 		fmt.Printf("Latest version: %s\nCurrent version: %s\n", vi.Latest, vi.Current)
 		return nil
 	}
 
-	fmt.Println("Installing Llamacpp")
+	fmt.Println("Installing llama.cpp")
 
 	vi, err = install.Llama(libPath, download.CPU, true)
 	if err != nil {
