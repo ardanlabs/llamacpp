@@ -67,7 +67,7 @@ _The first time you run these programs the system will download and install the 
 
 You can find more examples in the ArdanLabs AI training repo at [Example13](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13).
 
-## Sample (Question)
+## Sample - Question Example
 
 ```go
 package main
