@@ -67,7 +67,7 @@ _The first time you run these programs the system will download and install the 
 
 You can find more examples in the ArdanLabs AI training repo at [Example13](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13).
 
-## Sample Example (Chat)
+## Sample (Question)
 
 ```go
 package main
@@ -208,29 +208,14 @@ $ go run cmd/examples/example13/step1/*.go
 Output:
 
 - check llamacpp installation: ✓
-  - latest version : b7209
-  - current version: b7209
-- check "gpt-oss-20b-Q8_0" installation: ✓
-- contextWindow: 131072
-- embeddings   : false
-- isGPT        : false
+  - latest version : b7211
+  - current version: b7211
+- check "Qwen3-8B-Q8_0" installation: ✓
 
-USER> hello model
+QUESTION: Hello model
 
-MODEL> User says "hello model". We should respond politely. There's no function call needed.
+Okay, the user said "Hello model." I need to respond appropriately. First, I should acknowledge their greeting. Since they mentioned "model," maybe they're referring to me as a language model. I should clarify that I'm Qwen, a large language model developed by Alibaba Cloud. I should keep the response friendly and open-ended to encourage them to ask questions or share what they need help with. Let me make sure the tone is welcoming and not too formal. Also, check for any possible misunderstandings. They might be testing if I recognize the term "model," so confirming my identity as Qwen is important. Alright, time to put it all together in a concise and friendly manner.
 
-Hello! How can I help you today?
-
-Input: 140  Reasoning: 17  Completion: 9  Output: 26  Window: 149 (0% of 128K) TPS: 33.51
-
-USER> what is the weather in London, England
-
-MODEL> We need to use the get_weather function.
-
-Model Asking For Tool Call:
-ToolID[d960e0fc-4867-4a30-94aa-421e7e0c73b2]: get_weather(map[location:London, England])
-
-Input: 168  Reasoning: 9  Completion: 14  Output: 23  Window: 182 (0% of 128K) TPS: 19.07
-
-USER>
+! I'm Qwen, a large language model developed by Alibaba Cloud. How can I assist you today? 😊
+Unloading Kronk
 ```
