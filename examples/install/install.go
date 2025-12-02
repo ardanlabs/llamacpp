@@ -31,7 +31,7 @@ func Libraries(libPath string, processor download.Processor, allowUpgrade bool) 
 
 	fmt.Println("✓")
 
-	vi, err := install.Llama(libPath, download.CPU, true)
+	vi, err := install.Libraries(libPath, download.CPU, true)
 	if err != nil {
 		fmt.Println("x")
 		return fmt.Errorf("failed to install llama: %q: error: %w", libPath, err)

@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	modelURL       = "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/Qwen2.5-VL-3B-Instruct-Q8_0.gguf?download=true"
-	projURL        = "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf?download=true"
-	imageFile      = "examples/samples/giraffe.jpg"
+	modelURL       = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.Q8_0.gguf?download=true"
+	projURL        = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.mmproj-Q8_0.gguf?download=true"
+	audioFile      = "examples/samples/jfk.wav"
 	libPath        = "tests/libraries"
 	modelPath      = "tests/models"
 	modelInstances = 1
@@ -55,12 +55,12 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	question := "What is in this picture?"
+	question := "Please describe what you hear in the following audio clip."
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	ch, err := performChat(ctx, krn, question, imageFile)
+	ch, err := performChat(ctx, krn, question, audioFile)
 	if err != nil {
 		return fmt.Errorf("perform chat: %w", err)
 	}
@@ -138,7 +138,7 @@ func performChat(ctx context.Context, krn *kronk.Kronk, question string, imageFi
 
 	ch, err := krn.ChatStreaming(ctx, params, d)
 	if err != nil {
-		return nil, fmt.Errorf("vision streaming: %w", err)
+		return nil, fmt.Errorf("chat streaming: %w", err)
 	}
 
 	return ch, nil

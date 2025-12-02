@@ -36,9 +36,9 @@ func run() error {
 
 	fmt.Println("Installing llama.cpp")
 
-	vi, err = install.Llama(libPath, download.CPU, true)
+	vi, err = install.Libraries(libPath, download.CPU, true)
 	if err != nil {
-		return fmt.Errorf("failed to install llama: %q: error: %w", libPath, err)
+		return fmt.Errorf("failed to install libraries: %q: error: %w", libPath, err)
 	}
 
 	f := func(path string, info os.FileInfo, err error) error {

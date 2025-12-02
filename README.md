@@ -50,6 +50,9 @@ There are examples in the examples direction:
 
 _The first time you run these programs the system will download and install the model and libraries._
 
+[AUDIO](examples/audio/main.go) - This example shows you how to execute a simple prompt against an audio model.  
+**$ make example-audio**
+
 [CHAT](examples/chat/main.go) - This example shows you how to create a simple chat application against an inference model using kronk. Thanks to Kronk and yzma, reasoning and tool calling is enabled.  
 **$ make example-chat**
 
@@ -109,7 +112,7 @@ func run() error {
 	}
 
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:  modelFile,
+		ModelFile: modelFile,
 	})
 
 	if err != nil {
@@ -136,7 +139,7 @@ func run() error {
 
 	d := model.D{
 		"messages": model.DocumentArray(
-			model.ChatMessage("user", question),
+			model.TextMessage("user", question),
 		),
 	}
 
@@ -185,7 +188,7 @@ func run() error {
 }
 
 func installSystem() (string, error) {
-	if err := install.llama.cpp(libPath, download.CPU, true); err != nil {
+	if err := install.Libraries(libPath, download.CPU, true); err != nil {
 		return "", fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 

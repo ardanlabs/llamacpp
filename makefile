@@ -19,6 +19,9 @@ install-models:
 	curl -Lo tests/models/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf?download=true"
 	curl -Lo tests/models/embeddinggemma-300m-qat-Q8_0.gguf "https://huggingface.co/ggml-org/embeddinggemma-300m-qm-q8_0-GGUF/resolve/main/embeddinggemma-300m-qat-Q8_0.gguf?download=true"
 
+	curl -Lo tests/models/Qwen2-Audio-7B.Q8_0.gguf "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.Q8_0.gguf?download=true"
+	curl -Lo tests/models/Qwen2-Audio-7B.mmproj-Q8_0.gguf "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.mmproj-Q8_0.gguf?download=true"
+
 # Use this to see what devices are available on your machine. You need to
 # install llama first.
 llama-bench:
@@ -55,6 +58,10 @@ yzma-latest:
 
 # ==============================================================================
 # Examples
+
+example-audio:
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:tests/libraries && \
+	CGO_ENABLED=0 go run examples/audio/main.go
 
 example-chat:
 	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:tests/libraries && \

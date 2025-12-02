@@ -9,10 +9,11 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-// Objects represent the different types of data that can be returned.
+// Objects represent the different types of data that is being processed.
 const (
-	ObjectChat   = "chat"
-	ObjectVision = "vision"
+	ObjectChatUnknown = "chat.unknown"
+	ObjectChatText    = "chat.text"
+	ObjectChatMedia   = "chat.media"
 )
 
 // Roles represent the different roles that can be used in a chat.
@@ -97,11 +98,18 @@ func newModelInfo(cfg Config, model llama.Model) ModelInfo {
 
 // =============================================================================
 
-// ChatMessage create a new chat message.
-func ChatMessage(role string, content string) D {
+// TextMessage create a new text message.
+func TextMessage(role string, content string) D {
 	return D{
 		"role":    role,
 		"content": content,
+	}
+}
+
+// MediaMessage create a new media message.
+func MediaMessage(media []byte) D {
+	return D{
+		"content": media,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hybridgroup/yzma/pkg/llama"
+	"github.com/hybridgroup/yzma/pkg/mtmd"
 )
 
 // Chat performs a chat request and returns the final response.
@@ -39,7 +40,7 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
-			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to init from model: %w", err))
+			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to init model: %w", err))
 			return
 		}
 
@@ -48,22 +49,72 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 			llama.Free(lctx)
 		}()
 
-		prompt, err := m.applyJinjaTemplate(d)
+		var mtmdCtx mtmd.Context
+
+		if m.projFile != "" {
+			mctxParams := mtmd.ContextParamsDefault()
+			mctxParams.UseGPU = true
+			mctxParams.FlashAttentionType = llama.FlashAttentionTypeAuto
+
+			mtmdCtx, err = mtmd.InitFromFile(m.projFile, m.model, mctxParams)
+			if err != nil {
+				m.sendChatError(ctx, ch, id, fmt.Errorf("unable to init projection: %w", err))
+				return
+			}
+			defer mtmd.Free(mtmdCtx)
+		}
+
+		prompt, media, err := m.applyRequestJinjaTemplate(d)
 		if err != nil {
 			m.sendChatError(ctx, ch, id, fmt.Errorf("unable to apply jinja template: %w", err))
 			return
 		}
 
-		m.processTokens(ctx, id, lctx, ObjectChat, prompt, params, ch)
+		object := ObjectChatText
+
+		if len(media) > 0 {
+			object = ObjectChatMedia
+
+			bitmap, err := m.processBitmap(lctx, mtmdCtx, prompt, media)
+			if err != nil {
+				m.sendChatError(ctx, ch, id, err)
+				return
+			}
+
+			defer func() {
+				for _, b := range bitmap {
+					mtmd.BitmapFree(b)
+				}
+			}()
+		}
+
+		m.processTokens(ctx, id, lctx, object, prompt, params, ch)
 	}()
 
 	return ch
 }
 
+func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, prompt string, media [][]byte) ([]mtmd.Bitmap, error) {
+	bitmaps := make([]mtmd.Bitmap, len(media))
+	for i, med := range media {
+		bitmaps[i] = mtmd.BitmapInitFromBuf(mtmdCtx, &med[0], uint64(len(med)))
+	}
+
+	output := mtmd.InputChunksInit()
+	input := mtmd.NewInputText(prompt, true, true)
+
+	mtmd.Tokenize(mtmdCtx, output, input, bitmaps)
+
+	var n llama.Pos
+	mtmd.HelperEvalChunks(mtmdCtx, lctx, output, 0, 0, int32(m.ctxParams.NBatch), true, &n)
+
+	return bitmaps, nil
+}
+
 func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id string, err error) {
 	// I want to try and send this message before we check the context.
 	select {
-	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectChatUnknown, m.modelInfo.Name, 0, "", err, Usage{}):
 		return
 	default:
 	}
@@ -71,10 +122,10 @@ func (m *Model) sendChatError(ctx context.Context, ch chan<- ChatResponse, id st
 	select {
 	case <-ctx.Done():
 		select {
-		case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", ctx.Err(), Usage{}):
+		case ch <- ChatResponseErr(id, ObjectChatUnknown, m.modelInfo.Name, 0, "", ctx.Err(), Usage{}):
 		default:
 		}
 
-	case ch <- ChatResponseErr(id, ObjectChat, m.modelInfo.Name, 0, "", err, Usage{}):
+	case ch <- ChatResponseErr(id, ObjectChatUnknown, m.modelInfo.Name, 0, "", err, Usage{}):
 	}
 }
