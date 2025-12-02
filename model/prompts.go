@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"sort"
 	"time"
@@ -18,42 +19,27 @@ import (
 )
 
 func (m *Model) applyRequestJinjaTemplate(d D) (string, [][]byte, error) {
-	messages, exists := d["messages"]
-	if !exists {
-		return "", nil, errors.New("no messages found in request")
-	}
+	dCopy := make(D, len(d))
+	maps.Copy(dCopy, d)
 
-	msgs, ok := messages.([]D)
-	if !ok {
-		return "", nil, errors.New("messages is not a slice of documents")
-	}
+	// We need to identify if there is media in the request. If there is
+	// we want to replace the actual media with a media marker `<__media__>`.
+	// We will move the media to it's own slice. The next call that will happen
+	// is `processBitmap` which will process the prompt and media.
 
-	var contentMsgs []D
 	var media [][]byte
 
-	for _, msg := range msgs {
-		if content, exists := msg["content"]; exists {
+	for _, doc := range dCopy["messages"].([]D) {
+		if content, exists := doc["content"]; exists {
 			switch value := content.(type) {
-			case string:
-				contentMsgs = append(contentMsgs, msg)
-
 			case []byte:
-				if len(contentMsgs) == 0 {
-					continue
-				}
-
 				media = append(media, value)
-
-				l := len(contentMsgs) - 1
-				v := contentMsgs[l]["content"].(string)
-				contentMsgs[l]["content"] = fmt.Sprintf("%s\n%s\n", v, mtmd.DefaultMarker())
+				doc["content"] = fmt.Sprintf("%s\n", mtmd.DefaultMarker())
 			}
 		}
 	}
 
-	d["messages"] = contentMsgs
-
-	prompt, err := m.applyJinjaTemplate(d)
+	prompt, err := m.applyJinjaTemplate(dCopy)
 	if err != nil {
 		return "", nil, err
 	}

@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -28,6 +29,12 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 	go func() {
 		m.activeStreams.Add(1)
 		defer m.activeStreams.Add(-1)
+
+		_, err := m.validateDocument(d)
+		if err != nil {
+			m.sendChatError(ctx, ch, "", err)
+			return
+		}
 
 		id := uuid.New().String()
 
@@ -92,6 +99,19 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 	}()
 
 	return ch
+}
+
+func (m *Model) validateDocument(d D) (Params, error) {
+	messages, exists := d["messages"]
+	if !exists {
+		return Params{}, errors.New("no messages found in request")
+	}
+
+	if _, ok := messages.([]D); !ok {
+		return Params{}, errors.New("messages is not a slice of documents")
+	}
+
+	return Params{}, nil
 }
 
 func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, prompt string, media [][]byte) ([]mtmd.Bitmap, error) {
