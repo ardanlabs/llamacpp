@@ -347,12 +347,12 @@ func (m *Model) startProcessing(lctx llama.Context, object string, prompt string
 	batch := llama.BatchGetOne(tokens)
 	inputTokens := int(batch.NTokens)
 
-	// If this is a vision call, then input processing has already happened
+	// If this is a chat with media, then input processing has already happened
 	// using the mtmd package. This will provide the initial batch for the
 	// model response.
 
 	var outputTokens int
-	if object == ObjectVision {
+	if object == ObjectChatMedia {
 		batch = m.nextBatch(llama.SamplerSample(sampler, lctx, -1))
 		outputTokens = int(batch.NTokens)
 	}

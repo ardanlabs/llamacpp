@@ -72,7 +72,7 @@ func run() error {
 
 	d := model.D{
 		"messages": model.DocumentArray(
-			model.ChatMessage("user", question),
+			model.TextMessage("user", question),
 		),
 	}
 

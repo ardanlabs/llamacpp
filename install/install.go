@@ -48,9 +48,9 @@ func VersionInformation(libPath string) (Version, error) {
 	return Version{Latest: version, Current: tag.TagName}, nil
 }
 
-// Llama installs or upgrades to the latest version of llama.cpp at the
+// Libraries installs or upgrades to the latest version of llama.cpp at the
 // specified libPath.
-func Llama(libPath string, processor download.Processor, allowUpgrade bool) (Version, error) {
+func Libraries(libPath string, processor download.Processor, allowUpgrade bool) (Version, error) {
 	if err := download.InstallLibraries(libPath, processor, allowUpgrade); err != nil {
 		file := filepath.Join(libPath, "libmtmd.dylib")
 

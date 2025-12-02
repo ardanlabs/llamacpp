@@ -63,6 +63,128 @@ func Test_ToolGPTStreamingChat(t *testing.T) {
 
 // =============================================================================
 
+func testChat(t *testing.T, modelFile string, tooling bool) {
+	if runInParallel {
+		t.Parallel()
+	}
+
+	krn, params, d := initChatTest(t, modelFile, tooling)
+	defer func() {
+		t.Logf("active streams: %d", krn.ActiveStreams())
+		t.Log("unload Kronk")
+		if err := krn.Unload(context.Background()); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
+
+	f := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
+		defer cancel()
+
+		id := uuid.New().String()
+		now := time.Now()
+		defer func() {
+			done := time.Now()
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+		}()
+
+		resp, err := krn.Chat(ctx, params, d)
+		if err != nil {
+			return fmt.Errorf("chat streaming: %w", err)
+		}
+
+		if tooling {
+			if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChatText, "London", "get_weather", "location"); err != nil {
+				t.Logf("%#v", resp)
+				return err
+			}
+			return nil
+		}
+
+		if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChatText, "Gorilla", "", ""); err != nil {
+			t.Logf("%#v", resp)
+			return err
+		}
+
+		return nil
+	}
+
+	var g errgroup.Group
+	for range goroutines {
+		g.Go(f)
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Errorf("error: %v", err)
+	}
+}
+
+func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
+	if runInParallel {
+		t.Parallel()
+	}
+
+	krn, params, d := initChatTest(t, modelFile, tooling)
+	defer func() {
+		t.Logf("active streams: %d", krn.ActiveStreams())
+		t.Log("unload Kronk")
+		if err := krn.Unload(context.Background()); err != nil {
+			t.Errorf("failed to unload model: %v", err)
+		}
+	}()
+
+	f := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
+		defer cancel()
+
+		id := uuid.New().String()
+		now := time.Now()
+		defer func() {
+			done := time.Now()
+			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
+		}()
+
+		ch, err := krn.ChatStreaming(ctx, params, d)
+		if err != nil {
+			return fmt.Errorf("chat streaming: %w", err)
+		}
+
+		var lastResp model.ChatResponse
+		for resp := range ch {
+			lastResp = resp
+
+			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectChatText, true); err != nil {
+				t.Logf("%#v", resp)
+				return err
+			}
+		}
+
+		if tooling {
+			if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChatText, "London", "get_weather", "location"); err != nil {
+				t.Logf("%#v", lastResp)
+				return err
+			}
+			return nil
+		}
+
+		if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChatText, "Gorilla", "", ""); err != nil {
+			t.Logf("%#v", lastResp)
+			return err
+		}
+
+		return nil
+	}
+
+	var g errgroup.Group
+	for range goroutines {
+		g.Go(f)
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Errorf("error: %v", err)
+	}
+}
+
 func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.Params, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: modelFile,
@@ -133,126 +255,4 @@ func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, m
 	}
 
 	return krn, params, d
-}
-
-func testChat(t *testing.T, modelFile string, tooling bool) {
-	if runInParallel {
-		t.Parallel()
-	}
-
-	krn, params, d := initChatTest(t, modelFile, tooling)
-	defer func() {
-		t.Logf("active streams: %d", krn.ActiveStreams())
-		t.Log("unload Kronk")
-		if err := krn.Unload(context.Background()); err != nil {
-			t.Errorf("failed to unload model: %v", err)
-		}
-	}()
-
-	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
-		defer cancel()
-
-		id := uuid.New().String()
-		now := time.Now()
-		defer func() {
-			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
-		}()
-
-		resp, err := krn.Chat(ctx, params, d)
-		if err != nil {
-			return fmt.Errorf("chat streaming: %w", err)
-		}
-
-		if tooling {
-			if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChat, "London", "get_weather", "location"); err != nil {
-				t.Logf("%#v", resp)
-				return err
-			}
-			return nil
-		}
-
-		if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChat, "Gorilla", "", ""); err != nil {
-			t.Logf("%#v", resp)
-			return err
-		}
-
-		return nil
-	}
-
-	var g errgroup.Group
-	for range goroutines {
-		g.Go(f)
-	}
-
-	if err := g.Wait(); err != nil {
-		t.Errorf("error: %v", err)
-	}
-}
-
-func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
-	if runInParallel {
-		t.Parallel()
-	}
-
-	krn, params, d := initChatTest(t, modelFile, tooling)
-	defer func() {
-		t.Logf("active streams: %d", krn.ActiveStreams())
-		t.Log("unload Kronk")
-		if err := krn.Unload(context.Background()); err != nil {
-			t.Errorf("failed to unload model: %v", err)
-		}
-	}()
-
-	f := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), testDuration)
-		defer cancel()
-
-		id := uuid.New().String()
-		now := time.Now()
-		defer func() {
-			done := time.Now()
-			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
-		}()
-
-		ch, err := krn.ChatStreaming(ctx, params, d)
-		if err != nil {
-			return fmt.Errorf("chat streaming: %w", err)
-		}
-
-		var lastResp model.ChatResponse
-		for resp := range ch {
-			lastResp = resp
-
-			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectChat, true); err != nil {
-				t.Logf("%#v", resp)
-				return err
-			}
-		}
-
-		if tooling {
-			if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChat, "London", "get_weather", "location"); err != nil {
-				t.Logf("%#v", lastResp)
-				return err
-			}
-			return nil
-		}
-
-		if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChat, "Gorilla", "", ""); err != nil {
-			t.Logf("%#v", lastResp)
-			return err
-		}
-
-		return nil
-	}
-
-	var g errgroup.Group
-	for range goroutines {
-		g.Go(f)
-	}
-
-	if err := g.Wait(); err != nil {
-		t.Errorf("error: %v", err)
-	}
 }

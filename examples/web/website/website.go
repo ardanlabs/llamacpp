@@ -128,16 +128,16 @@ func (h *handlers) compileChatMessages(traceID string, req Request) []model.D {
 	msgs := make([]model.D, 0, len(req.Messages)+2)
 
 	// Add the system prompt.
-	msgs = append(msgs, model.ChatMessage("system", systemPrompt))
+	msgs = append(msgs, model.TextMessage("system", systemPrompt))
 
 	// Add all but the very last message in the history.
 	for _, msg := range req.Messages[:len(req.Messages)-1] {
-		msgs = append(msgs, model.ChatMessage(msg.Role, msg.Content))
+		msgs = append(msgs, model.TextMessage(msg.Role, msg.Content))
 	}
 
 	// Add the final message from the history. We expect this to be a question.
 	question := req.Messages[len(req.Messages)-1].Content
-	msgs = append(msgs, model.ChatMessage("user", fmt.Sprintf("Question:\n%s\n\n", question)))
+	msgs = append(msgs, model.TextMessage("user", fmt.Sprintf("Question:\n%s\n\n", question)))
 
 	fmt.Printf("traceID: %s: compileChatMessages: ended: msgs: %d\n", traceID, len(msgs))
 

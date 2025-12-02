@@ -18,7 +18,7 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "0.28.0"
+const Version = "0.29.0"
 
 // =============================================================================
 
@@ -245,7 +245,7 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, params model.Params, d mode
 	}
 
 	ef := func(err error) model.ChatResponse {
-		return model.ChatResponseErr("panic", model.ObjectChat, krn.ModelInfo().Name, 0, "", err, model.Usage{})
+		return model.ChatResponseErr("panic", model.ObjectChatUnknown, krn.ModelInfo().Name, 0, "", err, model.Usage{})
 	}
 
 	return streaming(ctx, krn, f, ef)
@@ -318,36 +318,6 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 		lr.Usage.InputTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
 
 	return nil
-}
-
-// Vision provides support to interact with a vision inference model.
-func (krn *Kronk) Vision(ctx context.Context, image []byte, params model.Params, d model.D) (model.ChatResponse, error) {
-	if _, exists := ctx.Deadline(); !exists {
-		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
-	}
-
-	f := func(m *model.Model) (model.ChatResponse, error) {
-		return m.Vision(ctx, image, params, d)
-	}
-
-	return nonStreaming(ctx, krn, f)
-}
-
-// VisionStreaming provides support to interact with a vision language model.
-func (krn *Kronk) VisionStreaming(ctx context.Context, image []byte, params model.Params, d model.D) (<-chan model.ChatResponse, error) {
-	if _, exists := ctx.Deadline(); !exists {
-		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
-	}
-
-	f := func(m *model.Model) <-chan model.ChatResponse {
-		return m.VisionStreaming(ctx, image, params, d)
-	}
-
-	ef := func(err error) model.ChatResponse {
-		return model.ChatResponseErr("panic", model.ObjectVision, krn.ModelInfo().Name, 0, "", err, model.Usage{})
-	}
-
-	return streaming(ctx, krn, f, ef)
 }
 
 // Embed provides support to interact with an embedding model.

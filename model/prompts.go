@@ -17,27 +17,48 @@ import (
 	"github.com/nikolalohinski/gonja/v2/loaders"
 )
 
-func (m *Model) applyVisionRequestJinjaTemplate(d D) (string, error) {
+func (m *Model) applyRequestJinjaTemplate(d D) (string, [][]byte, error) {
 	messages, exists := d["messages"]
 	if !exists {
-		return "", errors.New("no messages found in vision request")
+		return "", nil, errors.New("no messages found in request")
 	}
 
 	msgs, ok := messages.([]D)
 	if !ok {
-		return "", errors.New("messages is not a slice of ChatMessage")
+		return "", nil, errors.New("messages is not a slice of documents")
 	}
 
-	// If we don't add the mtmd marker, the model will not be able to understand
-	// the vision request.
-	msgs = append(msgs, D{
-		"role":    "user",
-		"content": mtmd.DefaultMarker(),
-	})
+	var contentMsgs []D
+	var media [][]byte
 
-	d["messages"] = msgs
+	for _, msg := range msgs {
+		if content, exists := msg["content"]; exists {
+			switch value := content.(type) {
+			case string:
+				contentMsgs = append(contentMsgs, msg)
 
-	return m.applyJinjaTemplate(d)
+			case []byte:
+				if len(contentMsgs) == 0 {
+					continue
+				}
+
+				media = append(media, value)
+
+				l := len(contentMsgs) - 1
+				v := contentMsgs[l]["content"].(string)
+				contentMsgs[l]["content"] = fmt.Sprintf("%s\n%s\n", v, mtmd.DefaultMarker())
+			}
+		}
+	}
+
+	d["messages"] = contentMsgs
+
+	prompt, err := m.applyJinjaTemplate(d)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return prompt, media, nil
 }
 
 func (m *Model) applyJinjaTemplate(d D) (string, error) {

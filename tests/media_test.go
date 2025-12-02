@@ -13,61 +13,22 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_SimpleVision(t *testing.T) {
-	testVision(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
+func Test_SimpleMedia(t *testing.T) {
+	testMedia(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
 }
 
-func Test_SimpleStreamingVision(t *testing.T) {
-	testVisionStreaming(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
+func Test_SimpleMediaStreaming(t *testing.T) {
+	testMediaStreaming(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
 }
 
 // =============================================================================
 
-func initVisionTest(t *testing.T, modelFile string, projFile string, imageFile string) (*kronk.Kronk, model.Params, model.D, []byte) {
-	if _, err := os.Stat(imageFile); err != nil {
-		t.Fatalf("error accessing file %q: %s", imageFile, err)
-	}
-
-	image, err := os.ReadFile(imageFile)
-	if err != nil {
-		t.Fatalf("error reading file %q: %s", imageFile, err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:      modelFile,
-		ProjectionFile: projFile,
-	})
-
-	if err != nil {
-		t.Fatalf("unable to load model: %s: %v", modelFile, err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	d := model.D{
-		"messages": []model.D{
-			{
-				"role":    "user",
-				"content": "What is in this picture?",
-			},
-		},
-	}
-
-	params := model.Params{
-		MaxTokens: 4096,
-	}
-
-	return krn, params, d, image
-}
-
-func testVision(t *testing.T, modelFile string, projFile string, imageFile string) {
+func testMedia(t *testing.T, modelFile string, projFile string, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, params, d, image := initVisionTest(t, modelFile, projFile, imageFile)
+	krn, params, d := initMediaTest(t, modelFile, projFile, imageFile)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -87,12 +48,12 @@ func testVision(t *testing.T, modelFile string, projFile string, imageFile strin
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		resp, err := krn.Vision(ctx, image, params, d)
+		resp, err := krn.Chat(ctx, params, d)
 		if err != nil {
-			return fmt.Errorf("vision streaming: %w", err)
+			return fmt.Errorf("chat streaming: %w", err)
 		}
 
-		if err := testVisionResponse(resp, krn.ModelInfo().Name, "vision", "giraffes"); err != nil {
+		if err := testChatResponse(resp, krn.ModelInfo().Name, model.ObjectChatMedia, "giraffes", "", ""); err != nil {
 			t.Logf("%#v", resp)
 			return err
 		}
@@ -110,12 +71,12 @@ func testVision(t *testing.T, modelFile string, projFile string, imageFile strin
 	}
 }
 
-func testVisionStreaming(t *testing.T, modelFile string, projFile string, imageFile string) {
+func testMediaStreaming(t *testing.T, modelFile string, projFile string, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, params, d, image := initVisionTest(t, modelFile, projFile, imageFile)
+	krn, params, d := initMediaTest(t, modelFile, projFile, imageFile)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -135,22 +96,22 @@ func testVisionStreaming(t *testing.T, modelFile string, projFile string, imageF
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		ch, err := krn.VisionStreaming(ctx, image, params, d)
+		ch, err := krn.ChatStreaming(ctx, params, d)
 		if err != nil {
-			return fmt.Errorf("vision streaming: %w", err)
+			return fmt.Errorf("chat streaming: %w", err)
 		}
 
 		var lastResp model.ChatResponse
 		for resp := range ch {
 			lastResp = resp
 
-			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectVision, false); err != nil {
+			if err := testChatBasics(resp, krn.ModelInfo().Name, model.ObjectChatMedia, false); err != nil {
 				t.Logf("%#v", resp)
 				return err
 			}
 		}
 
-		if err := testVisionResponse(lastResp, krn.ModelInfo().Name, model.ObjectVision, "giraffes"); err != nil {
+		if err := testChatResponse(lastResp, krn.ModelInfo().Name, model.ObjectChatMedia, "giraffes", "", ""); err != nil {
 			t.Logf("%#v", lastResp)
 			return err
 		}
@@ -166,4 +127,41 @@ func testVisionStreaming(t *testing.T, modelFile string, projFile string, imageF
 	if err := g.Wait(); err != nil {
 		t.Errorf("error: %v", err)
 	}
+}
+
+func initMediaTest(t *testing.T, modelFile string, projFile string, mediaFile string) (*kronk.Kronk, model.Params, model.D) {
+	if _, err := os.Stat(mediaFile); err != nil {
+		t.Fatalf("error accessing file %q: %s", mediaFile, err)
+	}
+
+	media, err := os.ReadFile(mediaFile)
+	if err != nil {
+		t.Fatalf("error reading file %q: %s", mediaFile, err)
+	}
+
+	// -------------------------------------------------------------------------
+
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile:      modelFile,
+		ProjectionFile: projFile,
+	})
+
+	if err != nil {
+		t.Fatalf("unable to load model: %s: %v", modelFile, err)
+	}
+
+	// -------------------------------------------------------------------------
+
+	d := model.D{
+		"messages": model.DocumentArray(
+			model.TextMessage("user", "What is in this picture?"),
+			model.MediaMessage(media),
+		),
+	}
+
+	params := model.Params{
+		MaxTokens: 4096,
+	}
+
+	return krn, params, d
 }

@@ -27,7 +27,7 @@ var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
 	libPath        = filepath.Join(gw, "tests/libraries")
 	modelPath      = filepath.Join(gw, "tests/models")
-	imageFile      = filepath.Join(gw, "images/samples", "giraffe.jpg")
+	imageFile      = filepath.Join(gw, "examples/samples/giraffe.jpg")
 	goroutines     = 1
 	modelInstances = 1
 	runInParallel  = false
@@ -80,9 +80,9 @@ func installer() {
 
 		if vi.Current != vi.Latest {
 			fmt.Printf("LIBRARIES      : Installing at %s\n", libPath)
-			_, err := install.Llama(libPath, download.CPU, true)
+			_, err := install.Libraries(libPath, download.CPU, true)
 			if err != nil {
-				fmt.Printf("Failed to install llama: %s: error: %s\n", libPath, err)
+				fmt.Printf("Failed to install libraries: %s: error: %s\n", libPath, err)
 				os.Exit(1)
 			}
 
@@ -93,7 +93,7 @@ func installer() {
 				fmt.Println("lib:", path)
 				return nil
 			}); err != nil {
-				fmt.Printf("error walking model path: %v\n", err)
+				fmt.Printf("error walking library path: %v\n", err)
 			}
 		}
 	}
@@ -157,11 +157,11 @@ func testChatBasics(resp model.ChatResponse, modelName string, object string, re
 }
 
 func testChatResponse(resp model.ChatResponse, modelName string, object string, find string, funct string, arg string) error {
-	if err := testChatBasics(resp, modelName, object, true); err != nil {
+	if err := testChatBasics(resp, modelName, object, object == model.ObjectChatText); err != nil {
 		return err
 	}
 
-	if object == model.ObjectChat {
+	if object == model.ObjectChatText {
 		switch {
 		case funct == "":
 			if !strings.Contains(resp.Choice[0].Delta.Reasoning, find) {
@@ -198,18 +198,6 @@ func testChatResponse(resp model.ChatResponse, modelName string, object string, 
 		if !strings.Contains(location.(string), find) {
 			return fmt.Errorf("tooling: expected %q, got %q", find, location.(string))
 		}
-	}
-
-	return nil
-}
-
-func testVisionResponse(resp model.ChatResponse, modelName string, object string, find string) error {
-	if err := testChatBasics(resp, modelName, object, false); err != nil {
-		return err
-	}
-
-	if !strings.Contains(resp.Choice[0].Delta.Content, find) {
-		return fmt.Errorf("expected %q, got %q", find, resp.Choice[0].Delta.Content)
 	}
 
 	return nil
