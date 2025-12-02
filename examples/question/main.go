@@ -74,16 +74,13 @@ func run() error {
 		"messages": model.DocumentArray(
 			model.TextMessage("user", question),
 		),
+		"temperature": 0.7,
+		"top_p":       0.9,
+		"top_k":       40,
+		"max_tokens":  2048,
 	}
 
-	params := model.Params{
-		Temperature: 0.7,
-		TopP:        0.9,
-		TopK:        40,
-		MaxTokens:   2048,
-	}
-
-	ch, err := krn.ChatStreaming(ctx, params, d)
+	ch, err := krn.ChatStreaming(ctx, d)
 	if err != nil {
 		return fmt.Errorf("chat streaming: %w", err)
 	}

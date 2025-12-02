@@ -11,8 +11,8 @@ import (
 )
 
 // Chat performs a chat request and returns the final response.
-func (m *Model) Chat(ctx context.Context, params Params, d D) (ChatResponse, error) {
-	ch := m.ChatStreaming(ctx, params, d)
+func (m *Model) Chat(ctx context.Context, d D) (ChatResponse, error) {
+	ch := m.ChatStreaming(ctx, d)
 
 	var lastMsg ChatResponse
 	for msg := range ch {
@@ -23,18 +23,12 @@ func (m *Model) Chat(ctx context.Context, params Params, d D) (ChatResponse, err
 }
 
 // ChatStreaming performs a chat request and streams the response.
-func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan ChatResponse {
+func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 	ch := make(chan ChatResponse)
 
 	go func() {
 		m.activeStreams.Add(1)
 		defer m.activeStreams.Add(-1)
-
-		_, err := m.validateDocument(d)
-		if err != nil {
-			m.sendChatError(ctx, ch, "", err)
-			return
-		}
 
 		id := uuid.New().String()
 
@@ -44,6 +38,12 @@ func (m *Model) ChatStreaming(ctx context.Context, params Params, d D) <-chan Ch
 			}
 			close(ch)
 		}()
+
+		params, err := m.validateDocument(d)
+		if err != nil {
+			m.sendChatError(ctx, ch, "", err)
+			return
+		}
 
 		lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 		if err != nil {
@@ -111,7 +111,12 @@ func (m *Model) validateDocument(d D) (Params, error) {
 		return Params{}, errors.New("messages is not a slice of documents")
 	}
 
-	return Params{}, nil
+	params, err := parseParams(d)
+	if err != nil {
+		return Params{}, err
+	}
+
+	return params, nil
 }
 
 func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, prompt string, media [][]byte) ([]mtmd.Bitmap, error) {

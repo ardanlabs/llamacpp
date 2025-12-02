@@ -222,26 +222,26 @@ func (krn *Kronk) Unload(ctx context.Context) error {
 }
 
 // Chat provides support to interact with an inference model.
-func (krn *Kronk) Chat(ctx context.Context, params model.Params, d model.D) (model.ChatResponse, error) {
+func (krn *Kronk) Chat(ctx context.Context, d model.D) (model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return model.ChatResponse{}, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) (model.ChatResponse, error) {
-		return m.Chat(ctx, params, d)
+		return m.Chat(ctx, d)
 	}
 
 	return nonStreaming(ctx, krn, f)
 }
 
 // ChatStreaming provides support to interact with an inference model.
-func (krn *Kronk) ChatStreaming(ctx context.Context, params model.Params, d model.D) (<-chan model.ChatResponse, error) {
+func (krn *Kronk) ChatStreaming(ctx context.Context, d model.D) (<-chan model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return nil, fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
 
 	f := func(m *model.Model) <-chan model.ChatResponse {
-		return m.ChatStreaming(ctx, params, d)
+		return m.ChatStreaming(ctx, d)
 	}
 
 	ef := func(err error) model.ChatResponse {
@@ -255,7 +255,7 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, params model.Params, d mode
 type Logger func(ctx context.Context, format string, a ...any)
 
 // ChatStreamingHTTP streams the response to an HTTP client.
-func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, params model.Params, d model.D) error {
+func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, d model.D) error {
 	if _, exists := ctx.Deadline(); !exists {
 		return fmt.Errorf("context has no deadline, provide a reasonable timeout")
 	}
@@ -267,7 +267,7 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 		return fmt.Errorf("streaming not supported")
 	}
 
-	ch, err := krn.ChatStreaming(ctx, params, d)
+	ch, err := krn.ChatStreaming(ctx, d)
 	if err != nil {
 		return fmt.Errorf("streamResponse: %w", err)
 	}

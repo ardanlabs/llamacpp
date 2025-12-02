@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/hybridgroup/yzma v1.0.0-beta2
+	github.com/hybridgroup/yzma v1.0.0-beta.3
 	github.com/nikolalohinski/gonja/v2 v2.4.2
 	golang.org/x/sync v0.18.0
 )

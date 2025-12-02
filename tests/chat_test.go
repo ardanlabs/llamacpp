@@ -68,7 +68,7 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 		t.Parallel()
 	}
 
-	krn, params, d := initChatTest(t, modelFile, tooling)
+	krn, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -88,7 +88,7 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		resp, err := krn.Chat(ctx, params, d)
+		resp, err := krn.Chat(ctx, d)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
@@ -124,7 +124,7 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 		t.Parallel()
 	}
 
-	krn, params, d := initChatTest(t, modelFile, tooling)
+	krn, d := initChatTest(t, modelFile, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -144,7 +144,7 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, krn.ModelInfo().Name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()
 
-		ch, err := krn.ChatStreaming(ctx, params, d)
+		ch, err := krn.ChatStreaming(ctx, d)
 		if err != nil {
 			return fmt.Errorf("chat streaming: %w", err)
 		}
@@ -185,17 +185,13 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 	}
 }
 
-func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.Params, model.D) {
+func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: modelFile,
 	})
 
 	if err != nil {
 		t.Fatalf("unable to load model: %s: %v", modelFile, err)
-	}
-
-	params := model.Params{
-		MaxTokens: 4096,
 	}
 
 	question := "Echo back the word: Gorilla"
@@ -210,6 +206,7 @@ func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, m
 				"content": question,
 			},
 		},
+		"max_tokens": 2048,
 	}
 
 	if tooling {
@@ -254,5 +251,5 @@ func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, m
 		}
 	}
 
-	return krn, params, d
+	return krn, d
 }

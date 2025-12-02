@@ -125,18 +125,18 @@ func performChat(ctx context.Context, krn *kronk.Kronk, question string, imageFi
 
 	fmt.Printf("\nQuestion: %s\n", question)
 
-	params := model.Params{
-		MaxTokens: 2048,
-	}
-
 	d := model.D{
 		"messages": model.DocumentArray(
 			model.TextMessage("user", question),
 			model.MediaMessage(image),
 		),
+		"max_tokens":  2048,
+		"temperature": 0.7,
+		"top_p":       0.9,
+		"top_k":       40,
 	}
 
-	ch, err := krn.ChatStreaming(ctx, params, d)
+	ch, err := krn.ChatStreaming(ctx, d)
 	if err != nil {
 		return nil, fmt.Errorf("chat streaming: %w", err)
 	}

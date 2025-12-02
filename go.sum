@@ -126,8 +126,8 @@ github.com/hashicorp/go-getter v1.8.3 h1:gIS+oTNv3kyYAvlUVgMR46MiG0bM0KuSON/KZEv
 github.com/hashicorp/go-getter v1.8.3/go.mod h1:CUTt9x2bCtJ/sV8ihgrITL3IUE+0BE1j/e4n5P/GIM4=
 github.com/hashicorp/go-version v1.8.0 h1:KAkNb1HAiZd1ukkxDFGmokVZe1Xy9HG6NUp+bPle2i4=
 github.com/hashicorp/go-version v1.8.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
-github.com/hybridgroup/yzma v1.0.0-beta2 h1:yBh9P1qDpO3xkPVHBqS/gaOpmbI5BQOKmEXiaJUWIwk=
-github.com/hybridgroup/yzma v1.0.0-beta2/go.mod h1:kmBU2Nj94d/4lVY/eZ63dQkwPP9n7k/tTJ0BP3t/FV8=
+github.com/hybridgroup/yzma v1.0.0-beta.3 h1:abx4Aw6JYE7YULPbAquZfBLHerjZoCH1NpgCq2XQmE0=
+github.com/hybridgroup/yzma v1.0.0-beta.3/go.mod h1:a37EZPtxf8+97hnrxKtUnUmvGPJzRFMVGlKKa387aRA=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jupiterrider/ffi v0.5.1 h1:l7ANXU+Ex33LilVa283HNaf/sTzCrrht7D05k6T6nlc=

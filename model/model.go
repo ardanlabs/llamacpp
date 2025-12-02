@@ -169,9 +169,6 @@ func (m *Model) processTokens(ctx context.Context, id string, lctx llama.Context
 
 	// -------------------------------------------------------------------------
 
-	// Adjust the parameters for defaults that need to be applied.
-	params = adjustParams(params)
-
 	// Process the prompt and get the first batch for the response.
 	sampler, batch, inputTokens, outputTokens := m.startProcessing(lctx, object, prompt, params)
 	defer llama.SamplerFree(sampler)

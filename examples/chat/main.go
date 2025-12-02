@@ -75,8 +75,12 @@ func run() error {
 			defer cancel()
 
 			d := model.D{
-				"messages": messages,
-				"tools":    tools(krn.ModelInfo().IsGPT),
+				"messages":    messages,
+				"tools":       tools(krn.ModelInfo().IsGPT),
+				"max_tokens":  2048,
+				"temperature": 0.7,
+				"top_p":       0.9,
+				"top_k":       40,
 			}
 
 			ch, err := performChat(ctx, krn, d)
@@ -199,11 +203,7 @@ func tools(isGPT bool) []model.D {
 }
 
 func performChat(ctx context.Context, krn *kronk.Kronk, d model.D) (<-chan model.ChatResponse, error) {
-	params := model.Params{
-		MaxTokens: 2048,
-	}
-
-	ch, err := krn.ChatStreaming(ctx, params, d)
+	ch, err := krn.ChatStreaming(ctx, d)
 	if err != nil {
 		return nil, fmt.Errorf("chat streaming: %w", err)
 	}

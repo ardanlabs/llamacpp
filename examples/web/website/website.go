@@ -74,7 +74,9 @@ func (h *handlers) chat(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if err := h.krnChat.ChatStreamingHTTP(ctx, log, w, params, d); err != nil {
+	model.AddParams(params, d)
+
+	if err := h.krnChat.ChatStreamingHTTP(ctx, log, w, d); err != nil {
 		sendError(w, traceID, "streamResponse", err)
 		return
 	}
