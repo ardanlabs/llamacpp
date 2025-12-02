@@ -31,12 +31,12 @@ func InstalledVersion(libPath string) (string, error) {
 
 	d, err := os.ReadFile(versionInfoPath)
 	if err != nil {
-		return "", fmt.Errorf("unable to read version info file: %w", err)
+		return "unknown", fmt.Errorf("unable to read version info file: %w", err)
 	}
 
 	var tag tag
 	if err := json.Unmarshal(d, &tag); err != nil {
-		return "", fmt.Errorf("unable to parse version info file: %w", err)
+		return "unknown", fmt.Errorf("unable to parse version info file: %w", err)
 	}
 
 	return tag.TagName, nil
@@ -45,10 +45,7 @@ func InstalledVersion(libPath string) (string, error) {
 // VersionInformation retrieves the current version of llama.cpp that is
 // published on GitHub and the current installed version.
 func VersionInformation(libPath string) (Version, error) {
-	currentVersion, err := InstalledVersion(libPath)
-	if err != nil {
-		return Version{}, fmt.Errorf("unable to get current version of llama.cpp: %w", err)
-	}
+	currentVersion, _ := InstalledVersion(libPath)
 
 	version, err := download.LlamaLatestVersion()
 	if err != nil {
