@@ -1,25 +1,9 @@
-// This example shows you a web service that provides a chat endpoint for asking
-// questions to a model with a browser based chat UI.
-//
-// The first time you run this program the system will download and install
-// the model and libraries.
-//
-// Run the example like this from the root of the project:
-// $ make example-web
-//
-// Run the website by navigation to his URL:
-// http://localhost:8080
-//
-// Use curl to see the raw output:
-// $ make example-web-curl1
-// $ make example-web-curl2
-
-package main
+// Package website provides api.
+package website
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,7 +12,6 @@ import (
 
 	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/examples/install"
-	"github.com/ardanlabs/kronk/examples/web/website"
 	"github.com/ardanlabs/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
@@ -45,16 +28,7 @@ const (
 	WebAPIHost         = "0.0.0.0:8080"
 )
 
-func main() {
-	log.Default().SetOutput(os.Stdout)
-
-	if err := run(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func run() error {
+func Run() error {
 	if err := install.Libraries(libPath, download.CPU, true); err != nil {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
@@ -102,14 +76,14 @@ func run() error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	cfg := website.Config{
+	cfg := Config{
 		KRNChat:    krnChat,
 		KRNTimeout: WebWriteTimeout,
 	}
 
 	api := http.Server{
 		Addr:         WebAPIHost,
-		Handler:      website.WebAPI(cfg),
+		Handler:      WebAPI(cfg),
 		ReadTimeout:  WebReadTimeout,
 		WriteTimeout: WebWriteTimeout,
 		IdleTimeout:  WebIdleTimeout,
