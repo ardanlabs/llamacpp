@@ -32,6 +32,12 @@ dev-gotooling:
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 
 # ==============================================================================
+# Server
+
+server-build:
+	go build -o bin/kronk cmd/server/main.go
+
+# ==============================================================================
 # Tests
 
 test:
