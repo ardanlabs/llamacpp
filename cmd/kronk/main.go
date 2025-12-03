@@ -1,10 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
-	"github.com/ardanlabs/kronk/install"
+	"github.com/ardanlabs/kronk/cmd/kronk/pull"
 	"github.com/spf13/cobra"
 )
 
@@ -116,26 +117,15 @@ func runServe(cmd *cobra.Command, args []string) {
 }
 
 func runPull(cmd *cobra.Command, args []string) {
-	f := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {
-		fmt.Printf("\r\x1b[KDownloading %s... %d MiB of %d MiB (%.2f MiB/s)", src, currentSize/(1024*1024), totalSize/(1024*1024), mibPerSec)
-		if complete {
-			fmt.Println()
+	if err := pull.Run(args); err != nil {
+		if errors.Is(err, pull.ErrInvalidArguments) {
+			cmd.Help()
+			os.Exit(1)
 		}
-	}
 
-	url := args[0]
-	_, downloaded, err := install.ModelWithProgress(url, "./models", f)
-	if err != nil {
 		fmt.Println("ERROR:", err)
 		os.Exit(1)
 	}
-
-	if !downloaded {
-		fmt.Println("Already downloaded")
-		return
-	}
-
-	fmt.Println("Download Completed")
 }
 
 func runList(cmd *cobra.Command, args []string) {
