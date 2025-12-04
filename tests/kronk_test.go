@@ -13,16 +13,26 @@ import (
 	"github.com/ardanlabs/kronk/defaults"
 	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
-	"github.com/hybridgroup/yzma/pkg/download"
 )
 
 var (
-	modelThinkToolChatFile = install.MustFindModel(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
-	modelGPTChatFile       = install.MustFindModel(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
-	modelSimpleVisionFile  = install.MustFindModel(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	projSimpleVisionFile   = install.MustFindModel(defaults.ModelsDir(), "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	modelEmbedFile         = install.MustFindModel(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
+	modelThinkToolChatFile string
+	modelGPTChatFile       string
+	modelSimpleVisionFile  string
+	projSimpleVisionFile   string
+	modelEmbedFile         string
 )
+
+func init() {
+	modelThinkToolChatFile = install.MustFindModel(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
+	modelSimpleVisionFile = install.MustFindModel(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
+	projSimpleVisionFile = install.MustFindModel(defaults.ModelsDir(), "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
+	modelEmbedFile = install.MustFindModel(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
+
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		modelGPTChatFile = install.MustFindModel(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
+	}
+}
 
 var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
@@ -36,7 +46,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	installer()
+	printInfo()
 
 	err := kronk.Init(libPath, kronk.LogSilent)
 	if err != nil {
@@ -47,7 +57,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func installer() {
+func printInfo() {
 	if os.Getenv("GOROUTINES") != "" {
 		var err error
 		goroutines, err = strconv.Atoi(os.Getenv("GOROUTINES"))
@@ -67,38 +77,15 @@ func installer() {
 	fmt.Println("testDuration   :", testDuration)
 	fmt.Println("MODEL INSTANCES:", modelInstances)
 	fmt.Println("GOROUTINES     :", goroutines)
-	fmt.Println("INSTALL_LLAMA  :", os.Getenv("INSTALL_LLAMA"))
 	fmt.Println("RUN_IN_PARALLEL:", runInParallel)
 
-	if os.Getenv("INSTALL_LLAMA") == "1" {
-		vi, err := install.VersionInformation(libPath)
-		if err != nil {
-			fmt.Printf("Failed to retrieve version info: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Latest version : %s, Current version: %s\n", vi.Latest, vi.Current)
-
-		if vi.Current != vi.Latest {
-			fmt.Printf("LIBRARIES      : Installing at %s\n", libPath)
-			_, err := install.Libraries(libPath, download.CPU, true)
-			if err != nil {
-				fmt.Printf("Failed to install libraries: %s: error: %s\n", libPath, err)
-				os.Exit(1)
-			}
-		}
+	currentVersion, err := install.InstalledVersion(libPath)
+	if err != nil {
+		fmt.Printf("Failed to retrieve version info: %v\n", err)
+		os.Exit(1)
 	}
 
-	fmt.Println("MODELS:")
-	if err := filepath.Walk(modelPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		fmt.Println("Model:", path)
-		return nil
-	}); err != nil {
-		fmt.Printf("error walking model path: %v\n", err)
-	}
+	fmt.Printf("Current version: %s\n", currentVersion)
 }
 
 func testChatBasics(resp model.ChatResponse, modelName string, object string, reasoning bool) error {

@@ -31,6 +31,10 @@ jobs:
         run: |
           cd cmd/kronk
           go install .
+      - name: Install Libs
+        run: |
+          mkdir -p $HOME/kronk/libraries
+          kronk libs
       - name: Download test models
         if: steps.cache-models.outputs.cache-hit != 'true'
         run: |
@@ -42,6 +46,4 @@ jobs:
         run: |
           export GOROUTINES=1
           export RUN_IN_PARALLEL=0
-          export INSTALL_LLAMA=1
-          mkdir -p $HOME/kronk/libraries
           CGO_ENABLED=0 go test -v -count=1 ./tests
