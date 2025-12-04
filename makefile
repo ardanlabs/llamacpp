@@ -8,7 +8,7 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 # Use this to install or update llama.cpp to the latest version. Needed to
 # run tests locally.
 install-llamacpp:
-	go run cmd/installer/main.go
+	go run cmd/kronk/main.go libs
 
 # Use this to install models. Needed to run tests locally.
 install-models:
@@ -37,8 +37,7 @@ dev-gotooling:
 kronk-build:
 	go build -o bin/kronk cmd/kronk/main.go
 
-kronk-libs:
-	go run cmd/kronk/main.go libs
+kronk-libs: install-llamacpp
 
 # make kronk-pull URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
 kronk-pull:
@@ -49,6 +48,7 @@ kronk-list:
 
 # make kronk-show FILE="Qwen3-8B-Q8_0.gguf"
 kronk-show:
+	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$$HOME/kronk/libraries && \
 	go run cmd/kronk/main.go show "$(FILE)"
 
 # ==============================================================================
