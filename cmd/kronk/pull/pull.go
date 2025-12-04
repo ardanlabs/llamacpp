@@ -23,7 +23,6 @@ func Run(args []string) error {
 		return fmt.Errorf("invalid URL: %s", modelURL)
 	}
 
-	fmt.Println()
 	fmt.Println("ModelURL :", modelURL)
 	fmt.Println("ProjURL  :", projURL)
 	fmt.Println("ModelPath:", modelPath)

@@ -1,6 +1,6 @@
-// Package install provides helper functions to install llama.cpp libraries
+// Package installer provides helper functions to install llama.cpp libraries
 // and models.
-package install
+package installer
 
 import (
 	"fmt"
