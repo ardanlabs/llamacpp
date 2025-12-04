@@ -48,11 +48,6 @@ func InstalledVersion(libPath string) (string, error) {
 func VersionInformation(libPath string) (Version, error) {
 	currentVersion, _ := InstalledVersion(libPath)
 
-	// We found out that when this variable is set the download fails.
-	if os.Getenv("GITHUB_TOKEN") != "" {
-		os.Unsetenv("GITHUB_TOKEN")
-	}
-
 	version, err := download.LlamaLatestVersion()
 	if err != nil {
 		return Version{}, fmt.Errorf("unable to get latest version of llama.cpp: %w", err)
@@ -65,11 +60,6 @@ func VersionInformation(libPath string) (Version, error) {
 // specified libPath.
 func Libraries(libPath string, processor download.Processor, allowUpgrade bool) (Version, error) {
 	tempPath := filepath.Join(libPath, "temp")
-
-	// We found out that when this variable is set the download fails.
-	if os.Getenv("GITHUB_TOKEN") != "" {
-		os.Unsetenv("GITHUB_TOKEN")
-	}
 
 	if err := download.InstallLibraries(tempPath, processor, allowUpgrade); err != nil {
 		os.RemoveAll(tempPath)
