@@ -110,7 +110,7 @@ func swapTempForLib(libPath string, tempPath string) error {
 // =============================================================================
 
 // FindModel locates the physical location on disk and returns the full path.
-func FindModel(modelName string, modelPath string) (string, error) {
+func FindModel(modelPath string, modelName string) (string, error) {
 	entries, err := os.ReadDir(modelPath)
 	if err != nil {
 		return "", fmt.Errorf("reading models directory: %w", err)
@@ -156,6 +156,15 @@ func FindModel(modelName string, modelPath string) (string, error) {
 	}
 
 	return "", fmt.Errorf("model %q not found", modelName)
+}
+
+func MustFindModel(modelPath string, modelName string) string {
+	modelFile, err := FindModel(modelPath, modelName)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return modelFile
 }
 
 // =============================================================================

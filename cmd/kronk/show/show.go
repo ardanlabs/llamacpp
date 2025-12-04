@@ -16,7 +16,7 @@ func Run(args []string) error {
 	modelPath := defaults.ModelsDir()
 	modelName := args[0]
 
-	modelFile, err := install.FindModel(modelName, modelPath)
+	modelFile, err := install.FindModel(modelPath, modelName)
 	if err != nil {
 		return err
 	}

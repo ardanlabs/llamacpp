@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	modelThinkToolChatFile = filepath.Join(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
-	modelGPTChatFile       = filepath.Join(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
-	modelSimpleVisionFile  = filepath.Join(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	projSimpleVisionFile   = filepath.Join(defaults.ModelsDir(), "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	modelEmbedFile         = filepath.Join(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
+	modelThinkToolChatFile = install.MustFindModel(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
+	modelGPTChatFile       = install.MustFindModel(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
+	modelSimpleVisionFile  = install.MustFindModel(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
+	projSimpleVisionFile   = install.MustFindModel(defaults.ModelsDir(), "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
+	modelEmbedFile         = install.MustFindModel(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
 )
 
 var (
