@@ -22,10 +22,7 @@ func Run(args []string) error {
 		return fmt.Errorf("reading models directory: %w", err)
 	}
 
-	fmt.Println()
-
-	// ORG         /MODEL              /FILE
-	// mradermacher/Qwen2-Audio-7B-GGUF/Qwen2-Audio-7B.Q8_0.gguf
+	fmt.Printf("Model Path: %s\n\n", modelPath)
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ORG\tMODEL\tFILE\tSIZE\tMODIFIED")

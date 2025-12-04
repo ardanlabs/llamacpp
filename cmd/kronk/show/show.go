@@ -39,7 +39,8 @@ func Run(args []string) error {
 
 	mi := krn.ModelInfo()
 
-	fmt.Println()
+	fmt.Printf("Model Path: %s\n\n", modelPath)
+
 	fmt.Printf("Name:        %s\n", mi.Name)
 	fmt.Printf("Desc:        %s\n", mi.Desc)
 	fmt.Printf("Size:        %.2f MiB\n", float64(mi.Size)/(1024*1024))
