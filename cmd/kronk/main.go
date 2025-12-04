@@ -23,7 +23,8 @@ func main() {
 
 var rootCmd = &cobra.Command{
 	Use:   "kronk",
-	Short: "Large language model runner",
+	Short: "Go for hardware accelerated local inference",
+	Long:  "Go for hardware accelerated local inference with llama.cpp directly integrated into your applications via the yzma. Kronk provides a high-level API that feels similar to using an OpenAI compatible API.",
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},

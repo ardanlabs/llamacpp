@@ -5,6 +5,10 @@ SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 # ==============================================================================
 # Install
 
+# Install the kronk cli.
+install-kronk:
+	go install ./cmd/kronk
+
 # Use this to install or update llama.cpp to the latest version. Needed to
 # run tests locally.
 install-llamacpp:

@@ -2,10 +2,6 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 
-libraries/
-models/
-bin/
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
