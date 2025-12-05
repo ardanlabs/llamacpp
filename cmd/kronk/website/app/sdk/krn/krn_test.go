@@ -356,8 +356,8 @@ func initKronk(t *testing.T) *logger.Logger {
 
 	t.Logf("installing/updating libraries: libsPath[%s], processor[%s]", libsPath, processor)
 
-	vi, err := install.Libraries(libsPath, processor, true)
-	if vi.Current == "unknown" && err != nil {
+	vi, err := install.DownloadLibraries(context.Background(), install.FmtLogger, libsPath, processor, true)
+	if err != nil {
 		t.Fatalf("unable to install llama.cpp: %s", err)
 	}
 

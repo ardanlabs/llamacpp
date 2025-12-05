@@ -2,6 +2,7 @@
 package pull
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -23,27 +24,10 @@ func Run(args []string) error {
 		return fmt.Errorf("invalid URL: %s", modelURL)
 	}
 
-	fmt.Println("ModelURL :", modelURL)
-	fmt.Println("ProjURL  :", projURL)
-	fmt.Println("ModelPath:", modelPath)
-
-	f := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {
-		fmt.Printf("\r\x1b[KDownloading %s... %d MiB of %d MiB (%.2f MiB/s)", src, currentSize/(1024*1024), totalSize/(1024*1024), mibPerSec)
-		if complete {
-			fmt.Println()
-		}
-	}
-
-	info, err := install.Model(modelURL, projURL, modelPath, f)
+	_, err := install.DownloadModel(context.Background(), install.FmtLogger, modelURL, projURL, modelPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to install model: %w", err)
 	}
 
-	if !info.Downloaded {
-		fmt.Println("Already downloaded")
-		return nil
-	}
-
-	fmt.Println("Download Completed")
 	return nil
 }

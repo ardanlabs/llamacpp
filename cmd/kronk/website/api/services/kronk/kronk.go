@@ -220,8 +220,8 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	log.Info(ctx, "startup", "status", "installing/updating libraries", "libsPath", cfg.LibsPath, "processor", processor)
 
-	vi, err := install.Libraries(cfg.LibsPath, processor, true)
-	if vi.Current == "unknown" && err != nil {
+	vi, err := install.DownloadLibraries(context.Background(), install.FmtLogger, cfg.LibsPath, processor, true)
+	if err != nil {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 

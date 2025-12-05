@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk"
-	"github.com/ardanlabs/kronk/cmd/kronk/installer"
 	"github.com/ardanlabs/kronk/defaults"
+	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
@@ -45,12 +45,12 @@ func main() {
 }
 
 func run() error {
-	modelFile, err := installSystem()
+	info, err := installSystem()
 	if err != nil {
 		return fmt.Errorf("unable to installation system: %w", err)
 	}
 
-	krn, err := newKronk(libPath, modelFile)
+	krn, err := newKronk(libPath, info)
 	if err != nil {
 		return fmt.Errorf("unable to init kronk: %w", err)
 	}
@@ -106,26 +106,27 @@ func run() error {
 	}
 }
 
-func installSystem() (string, error) {
-	if err := installer.Libraries(libPath, download.CPU, true); err != nil {
-		return "", fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	info, err := installer.Model(modelURL, "", modelPath)
+func installSystem() (install.Info, error) {
+	_, err := install.DownloadLibraries(context.Background(), install.FmtLogger, libPath, download.CPU, true)
 	if err != nil {
-		return "", fmt.Errorf("unable to install model: %w", err)
+		return install.Info{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	return info.ModelFile, nil
+	info, err := install.DownloadModel(context.Background(), install.FmtLogger, modelURL, "", modelPath)
+	if err != nil {
+		return install.Info{}, fmt.Errorf("unable to install model: %w", err)
+	}
+
+	return info, nil
 }
 
-func newKronk(libPath string, modelFile string) (*kronk.Kronk, error) {
+func newKronk(libPath string, info install.Info) (*kronk.Kronk, error) {
 	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
 		return nil, fmt.Errorf("unable to init kronk: %w", err)
 	}
 
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: modelFile,
+		ModelFile: info.ModelFile,
 	})
 
 	if err != nil {
