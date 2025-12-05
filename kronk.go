@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/ardanlabs/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
+	"github.com/nikolalohinski/gonja/v2"
 )
 
 // Version contains the current version of the kronk package.
@@ -67,6 +69,8 @@ func Init(libPath string, logLevel LogLevel) error {
 			llama.LogSet(llama.LogNormal)
 			mtmd.LogSet(llama.LogNormal)
 		}
+
+		gonja.SetLoggerOutput(io.Discard)
 	})
 
 	return initErr

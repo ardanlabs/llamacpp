@@ -174,6 +174,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 		Log:       log,
 		KeyLookup: ks,
 		Issuer:    cfg.Auth.Issuer,
+		Enabled:   cfg.Auth.Enabled,
 	}
 
 	ath := auth.New(authCfg)
@@ -192,16 +193,22 @@ func run(ctx context.Context, log *logger.Logger) error {
 		},
 		Probability: cfg.Tempo.Probability,
 	})
+
 	if err != nil {
 		return fmt.Errorf("starting tracing: %w", err)
 	}
 
-	defer teardown(context.Background())
+	defer func() {
+		log.Info(ctx, "shutdown", "status", "teardown otel")
+		teardown(context.Background())
+	}()
 
 	tracer := traceProvider.Tracer(cfg.Tempo.ServiceName)
 
 	// -------------------------------------------------------------------------
 	// Init Kronk
+
+	log.Info(ctx, "startup", "status", "initializing kronk")
 
 	processor := download.CPU
 	if cfg.Processor != "" {
@@ -224,14 +231,31 @@ func run(ctx context.Context, log *logger.Logger) error {
 		return fmt.Errorf("installation invalid: %w", err)
 	}
 
-	krn.NewManager(krn.Config{
+	krnMngr, err := krn.NewManager(krn.Config{
 		Log:            log,
+		LibsPath:       cfg.LibsPath,
+		Processor:      processor,
 		ModelPath:      cfg.Model.Path,
 		Device:         cfg.Model.Device,
 		MaxInCache:     cfg.Model.MaxInCache,
 		ModelInstances: cfg.Model.MaxInstances,
 		ContextWindow:  cfg.Model.ContextWindow,
 	})
+
+	if err != nil {
+		return fmt.Errorf("initializing kronk manager: %w", err)
+	}
+
+	defer func() {
+		log.Info(ctx, "shutdown", "status", "shutting down kronk")
+
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		if err := krnMngr.Shutdown(ctx); err != nil {
+			log.Error(ctx, "kronk manager", "ERROR", err)
+		}
+	}()
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service
@@ -253,10 +277,11 @@ func run(ctx context.Context, log *logger.Logger) error {
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	cfgMux := mux.Config{
-		Build:  build,
-		Log:    log,
-		Auth:   ath,
-		Tracer: tracer,
+		Build:   build,
+		Log:     log,
+		Auth:    ath,
+		Tracer:  tracer,
+		KrnMngr: krnMngr,
 	}
 
 	webAPI := mux.WebAPI(cfgMux,

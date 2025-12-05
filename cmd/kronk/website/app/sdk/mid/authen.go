@@ -30,6 +30,10 @@ func Bearer(ath *auth.Auth) web.MidFunc {
 }
 
 func HandleAuthentication(ctx context.Context, ath *auth.Auth, authorizationHeader string) (context.Context, *errs.Error) {
+	if !ath.Enabled() {
+		return ctx, nil
+	}
+
 	claims, err := ath.Authenticate(ctx, authorizationHeader)
 	if err != nil {
 		return ctx, errs.New(errs.Unauthenticated, err)

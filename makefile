@@ -135,8 +135,11 @@ example-web-curl2:
 # ==============================================================================
 # Kronk Endpoints
 
-liveness:
+curl-liveness:
 	curl -i http://localhost:3000/v1/liveness
 
-readiness:
+curl-readiness:
 	curl -i http://localhost:3000/v1/readiness
+
+curl-libs:
+	curl -i http://localhost:3000/v1/mngt/libs

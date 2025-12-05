@@ -27,7 +27,6 @@ var (
 // Claims represents the authorization claims transmitted via a JWT.
 type Claims struct {
 	jwt.RegisteredClaims
-	Roles []string `json:"roles"`
 }
 
 // KeyLookup declares a method set of behavior for looking up
@@ -43,6 +42,7 @@ type Config struct {
 	Log       *logger.Logger
 	KeyLookup KeyLookup
 	Issuer    string
+	Enabled   bool
 }
 
 // Auth is used to authenticate clients. It can generate a token for a
@@ -53,6 +53,7 @@ type Auth struct {
 	method    jwt.SigningMethod
 	parser    *jwt.Parser
 	issuer    string
+	enabled   bool
 }
 
 // New creates an Auth to support authentication/authorization.
@@ -63,12 +64,18 @@ func New(cfg Config) *Auth {
 		method:    jwt.GetSigningMethod(jwt.SigningMethodRS256.Name),
 		parser:    jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Name})),
 		issuer:    cfg.Issuer,
+		enabled:   cfg.Enabled,
 	}
 }
 
 // Issuer provides the configured issuer used to authenticate tokens.
 func (a *Auth) Issuer() string {
 	return a.issuer
+}
+
+// Enabled provides the configured issuer used to authenticate tokens.
+func (a *Auth) Enabled() bool {
+	return a.enabled
 }
 
 // GenerateToken generates a signed JWT token string representing the user Claims.

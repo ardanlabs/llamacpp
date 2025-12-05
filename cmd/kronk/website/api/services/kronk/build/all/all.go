@@ -3,6 +3,7 @@ package all
 
 import (
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/checkapp"
+	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/mngtapp"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/mux"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/foundation/web"
 )
@@ -20,5 +21,11 @@ func (add) Add(app *web.App, cfg mux.Config) {
 	checkapp.Routes(app, checkapp.Config{
 		Build: cfg.Build,
 		Log:   cfg.Log,
+	})
+
+	mngtapp.Routes(app, mngtapp.Config{
+		Log:     cfg.Log,
+		Auth:    cfg.Auth,
+		KrnMngr: cfg.KrnMngr,
 	})
 }

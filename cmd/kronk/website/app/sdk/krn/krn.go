@@ -13,6 +13,7 @@ import (
 	"github.com/ardanlabs/kronk/defaults"
 	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
+	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/maypok86/otter/v2"
 )
 
@@ -38,6 +39,8 @@ import (
 // being used.
 type Config struct {
 	Log            *logger.Logger
+	LibsPath       string
+	Processor      download.Processor
 	ModelPath      string
 	Device         string
 	MaxInCache     int
@@ -70,6 +73,8 @@ func validateConfig(cfg Config) Config {
 // APIs and will unload over time if not in use.
 type Manager struct {
 	log           *logger.Logger
+	libsPath      string
+	processor     download.Processor
 	modelPath     string
 	device        string
 	instances     int
@@ -84,6 +89,8 @@ func NewManager(cfg Config) (*Manager, error) {
 
 	mgr := Manager{
 		log:           cfg.Log,
+		processor:     cfg.Processor,
+		libsPath:      cfg.LibsPath,
 		modelPath:     cfg.ModelPath,
 		device:        cfg.Device,
 		instances:     cfg.ModelInstances,
@@ -126,6 +133,16 @@ func (mgr *Manager) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// LibsPath returns the location of the llama.cpp libraries.
+func (mgr *Manager) LibsPath() string {
+	return mgr.libsPath
+}
+
+// Processor returns the processor being used.
+func (mgr *Manager) Processor() download.Processor {
+	return mgr.processor
 }
 
 // AquireModel will provide a kronk API for the specified model. If the model
