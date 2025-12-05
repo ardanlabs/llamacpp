@@ -35,7 +35,7 @@ install-models: install-kronk
 # Use this to see what devices are available on your machine. You need to
 # install llama first.
 llama-bench:
-	libraries/llama-bench --list-devices
+	$$HOME/kronk/libraries/llama-bench --list-devices
 
 # Use this to rebuild tooling when new versions of Go are released.
 install-gotooling:

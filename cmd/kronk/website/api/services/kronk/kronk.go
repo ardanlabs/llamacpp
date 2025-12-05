@@ -14,13 +14,18 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
+	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/api/services/kronk/build/all"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/auth"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/debug"
+	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/krn"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/mux"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/foundation/keystore"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/foundation/otel"
+	"github.com/ardanlabs/kronk/defaults"
+	"github.com/ardanlabs/kronk/install"
+	"github.com/hybridgroup/yzma/pkg/download"
 )
 
 var build = "develop"
@@ -65,9 +70,9 @@ func run(ctx context.Context, log *logger.Logger) error {
 		conf.Version
 		Web struct {
 			ReadTimeout        time.Duration `conf:"default:5s"`
-			WriteTimeout       time.Duration `conf:"default:10s"`
-			IdleTimeout        time.Duration `conf:"default:120s"`
-			ShutdownTimeout    time.Duration `conf:"default:20s"`
+			WriteTimeout       time.Duration `conf:"default:180s"`
+			IdleTimeout        time.Duration `conf:"default:180s"`
+			ShutdownTimeout    time.Duration `conf:"default:45s"`
 			APIHost            string        `conf:"default:0.0.0.0:3000"`
 			DebugHost          string        `conf:"default:0.0.0.0:3010"`
 			CORSAllowedOrigins []string      `conf:"default:*"`
@@ -87,6 +92,17 @@ func run(ctx context.Context, log *logger.Logger) error {
 			// 0.05 should be enough for most systems. Some might want to have
 			// this even lower.
 		}
+		Model struct {
+			Path          string
+			Device        string
+			MaxInstances  int           `conf:"default:1"`
+			MaxInCache    int           `conf:"default:3"`
+			ContextWindow int           `conf:"default:0"`
+			CacheTTL      time.Duration `conf:"default:5m"`
+		}
+		LlamaLog  int    `conf:"default:1"`
+		Processor string `conf:"default:cpu"`
+		LibsPath  string
 	}{
 		Version: conf.Version{
 			Build: build,
@@ -102,6 +118,14 @@ func run(ctx context.Context, log *logger.Logger) error {
 			return nil
 		}
 		return fmt.Errorf("parsing config: %w", err)
+	}
+
+	if cfg.LibsPath == "" {
+		cfg.LibsPath = defaults.LibsDir()
+	}
+
+	if cfg.Model.Path == "" {
+		cfg.Model.Path = defaults.ModelsDir()
 	}
 
 	// -------------------------------------------------------------------------
@@ -175,6 +199,39 @@ func run(ctx context.Context, log *logger.Logger) error {
 	defer teardown(context.Background())
 
 	tracer := traceProvider.Tracer(cfg.Tempo.ServiceName)
+
+	// -------------------------------------------------------------------------
+	// Init Kronk
+
+	processor := download.CPU
+	if cfg.Processor != "" {
+		processor, err = download.ParseProcessor(cfg.Processor)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Info(ctx, "startup", "status", "installing/updating libraries", "libsPath", cfg.LibsPath, "processor", processor)
+
+	vi, err := install.Libraries(cfg.LibsPath, processor, true)
+	if vi.Current == "unknown" && err != nil {
+		return fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	log.Info(ctx, "startup", "status", "libraries installed", "current", vi.Current, "latest", vi.Latest)
+
+	if err := kronk.Init(cfg.LibsPath, kronk.LogLevel(cfg.LlamaLog)); err != nil {
+		return fmt.Errorf("installation invalid: %w", err)
+	}
+
+	krn.NewManager(krn.Config{
+		Log:            log,
+		ModelPath:      cfg.Model.Path,
+		Device:         cfg.Model.Device,
+		MaxInCache:     cfg.Model.MaxInCache,
+		ModelInstances: cfg.Model.MaxInstances,
+		ContextWindow:  cfg.Model.ContextWindow,
+	})
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service

@@ -16,21 +16,19 @@ import (
 )
 
 var (
-	modelThinkToolChatFile string
-	modelGPTChatFile       string
-	modelSimpleVisionFile  string
-	projSimpleVisionFile   string
-	modelEmbedFile         string
+	fiThinkToolChatFile install.FileInfo
+	fiGPTChatFile       install.FileInfo
+	fiSimpleVisionFile  install.FileInfo
+	fiEmbedFile         install.FileInfo
 )
 
 func init() {
-	modelThinkToolChatFile = install.MustFindModel(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
-	modelSimpleVisionFile = install.MustFindModel(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	projSimpleVisionFile = install.MustFindModel(defaults.ModelsDir(), "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
-	modelEmbedFile = install.MustFindModel(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
+	fiThinkToolChatFile = install.MustFindModel(defaults.ModelsDir(), "Qwen3-8B-Q8_0.gguf")
+	fiSimpleVisionFile = install.MustFindModel(defaults.ModelsDir(), "Qwen2.5-VL-3B-Instruct-Q8_0.gguf")
+	fiEmbedFile = install.MustFindModel(defaults.ModelsDir(), "embeddinggemma-300m-qat-Q8_0.gguf")
 
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		modelGPTChatFile = install.MustFindModel(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
+		fiGPTChatFile = install.MustFindModel(defaults.ModelsDir(), "gpt-oss-20b-Q8_0.gguf")
 	}
 }
 

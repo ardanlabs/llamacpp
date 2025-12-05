@@ -47,29 +47,30 @@ func InstalledVersion(libPath string) (string, error) {
 // VersionInformation retrieves the current version of llama.cpp that is
 // published on GitHub and the current installed version.
 func VersionInformation(libPath string) (Version, error) {
-	currentVersion, _ := InstalledVersion(libPath)
+	cv, _ := InstalledVersion(libPath)
 
 	version, err := download.LlamaLatestVersion()
 	if err != nil {
-		return Version{}, fmt.Errorf("unable to get latest version of llama.cpp: %w", err)
+		return Version{Latest: "unknown", Current: cv}, fmt.Errorf("unable to get latest version of llama.cpp: %w", err)
 	}
 
-	return Version{Latest: version, Current: currentVersion}, nil
+	return Version{Latest: version, Current: cv}, nil
 }
 
 // Libraries installs or upgrades to the latest version of llama.cpp at the
 // specified libPath.
 func Libraries(libPath string, processor download.Processor, allowUpgrade bool) (Version, error) {
+	cv, _ := InstalledVersion(libPath)
 	tempPath := filepath.Join(libPath, "temp")
 
 	if err := download.InstallLibraries(tempPath, processor, allowUpgrade); err != nil {
 		os.RemoveAll(tempPath)
-		return Version{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+		return Version{Latest: "unknown", Current: cv}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
 	if err := swapTempForLib(libPath, tempPath); err != nil {
 		os.RemoveAll(tempPath)
-		return Version{}, fmt.Errorf("unable to swap temp for lib: %w", err)
+		return Version{Latest: "unknown", Current: cv}, fmt.Errorf("unable to swap temp for lib: %w", err)
 	}
 
 	return VersionInformation(libPath)
@@ -109,12 +110,21 @@ func swapTempForLib(libPath string, tempPath string) error {
 
 // =============================================================================
 
+type FileInfo struct {
+	ModelFile string
+	ProjFile  string
+}
+
 // FindModel locates the physical location on disk and returns the full path.
-func FindModel(modelPath string, modelName string) (string, error) {
+func FindModel(modelPath string, modelName string) (FileInfo, error) {
 	entries, err := os.ReadDir(modelPath)
 	if err != nil {
-		return "", fmt.Errorf("reading models directory: %w", err)
+		return FileInfo{}, fmt.Errorf("reading models directory: %w", err)
 	}
+
+	projName := fmt.Sprintf("mmproj-%s", modelName)
+
+	var fi FileInfo
 
 	for _, orgEntry := range entries {
 		if !orgEntry.IsDir() {
@@ -149,22 +159,32 @@ func FindModel(modelPath string, modelName string) (string, error) {
 				}
 
 				if fileEntry.Name() == modelName {
-					return filepath.Join(modelPath, org, model, fileEntry.Name()), nil
+					fi.ModelFile = filepath.Join(modelPath, org, model, fileEntry.Name())
+					continue
+				}
+
+				if fileEntry.Name() == projName {
+					fi.ProjFile = filepath.Join(modelPath, org, model, fileEntry.Name())
+					continue
 				}
 			}
 		}
 	}
 
-	return "", fmt.Errorf("model %q not found", modelName)
+	if fi.ModelFile == "" {
+		return FileInfo{}, fmt.Errorf("model %q not found", modelName)
+	}
+
+	return fi, nil
 }
 
-func MustFindModel(modelPath string, modelName string) string {
-	modelFile, err := FindModel(modelPath, modelName)
+func MustFindModel(modelPath string, modelName string) FileInfo {
+	fi, err := FindModel(modelPath, modelName)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	return modelFile
+	return fi
 }
 
 // =============================================================================

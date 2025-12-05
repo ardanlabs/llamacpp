@@ -8,27 +8,28 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_SimpleMedia(t *testing.T) {
-	testMedia(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
+	testMedia(t, fiSimpleVisionFile, imageFile)
 }
 
 func Test_SimpleMediaStreaming(t *testing.T) {
-	testMediaStreaming(t, modelSimpleVisionFile, projSimpleVisionFile, imageFile)
+	testMediaStreaming(t, fiSimpleVisionFile, imageFile)
 }
 
 // =============================================================================
 
-func testMedia(t *testing.T, modelFile string, projFile string, imageFile string) {
+func testMedia(t *testing.T, fi install.FileInfo, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, d := initMediaTest(t, modelFile, projFile, imageFile)
+	krn, d := initMediaTest(t, fi, imageFile)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -71,12 +72,12 @@ func testMedia(t *testing.T, modelFile string, projFile string, imageFile string
 	}
 }
 
-func testMediaStreaming(t *testing.T, modelFile string, projFile string, imageFile string) {
+func testMediaStreaming(t *testing.T, fi install.FileInfo, imageFile string) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, d := initMediaTest(t, modelFile, projFile, imageFile)
+	krn, d := initMediaTest(t, fi, imageFile)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -129,7 +130,7 @@ func testMediaStreaming(t *testing.T, modelFile string, projFile string, imageFi
 	}
 }
 
-func initMediaTest(t *testing.T, modelFile string, projFile string, mediaFile string) (*kronk.Kronk, model.D) {
+func initMediaTest(t *testing.T, fi install.FileInfo, mediaFile string) (*kronk.Kronk, model.D) {
 	if _, err := os.Stat(mediaFile); err != nil {
 		t.Fatalf("error accessing file %q: %s", mediaFile, err)
 	}
@@ -142,12 +143,12 @@ func initMediaTest(t *testing.T, modelFile string, projFile string, mediaFile st
 	// -------------------------------------------------------------------------
 
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:      modelFile,
-		ProjectionFile: projFile,
+		ModelFile:      fi.ModelFile,
+		ProjectionFile: fi.ProjFile,
 	})
 
 	if err != nil {
-		t.Fatalf("unable to load model: %s: %v", modelFile, err)
+		t.Fatalf("unable to load model: %s: %v", fi.ModelFile, err)
 	}
 
 	// -------------------------------------------------------------------------

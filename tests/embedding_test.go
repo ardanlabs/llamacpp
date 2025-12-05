@@ -9,24 +9,25 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_Embedding(t *testing.T) {
-	testEmbedding(t, modelEmbedFile)
+	testEmbedding(t, fiEmbedFile)
 }
 
 // =============================================================================
 
-func testEmbedding(t *testing.T, modelFile string) {
+func testEmbedding(t *testing.T, fi install.FileInfo) {
 	if runInParallel {
 		t.Parallel()
 	}
 
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:  modelFile,
+		ModelFile:  fi.ModelFile,
 		Embeddings: true,
 	})
 
@@ -52,7 +53,7 @@ func testEmbedding(t *testing.T, modelFile string) {
 		id := uuid.New().String()
 		now := time.Now()
 		defer func() {
-			name := strings.TrimSuffix(modelFile, path.Ext(modelFile))
+			name := strings.TrimSuffix(fi.ModelFile, path.Ext(fi.ModelFile))
 			done := time.Now()
 			t.Logf("%s: %s, st: %v, en: %v, Duration: %s", id, name, now.Format("15:04:05.000"), done.Format("15:04:05.000"), done.Sub(now))
 		}()

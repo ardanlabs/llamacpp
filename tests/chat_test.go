@@ -8,25 +8,26 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/install"
 	"github.com/ardanlabs/kronk/model"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_ThinkChat(t *testing.T) {
-	testChat(t, modelThinkToolChatFile, false)
+	testChat(t, fiThinkToolChatFile, false)
 }
 
 func Test_ThinkStreamingChat(t *testing.T) {
-	testChatStreaming(t, modelThinkToolChatFile, false)
+	testChatStreaming(t, fiThinkToolChatFile, false)
 }
 
 func Test_ToolChat(t *testing.T) {
-	testChat(t, modelThinkToolChatFile, true)
+	testChat(t, fiThinkToolChatFile, true)
 }
 
 func Test_ToolStreamingChat(t *testing.T) {
-	testChatStreaming(t, modelThinkToolChatFile, true)
+	testChatStreaming(t, fiThinkToolChatFile, true)
 }
 
 func Test_GPTChat(t *testing.T) {
@@ -34,7 +35,7 @@ func Test_GPTChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelGPTChatFile, false)
+	testChat(t, fiGPTChatFile, false)
 }
 
 func Test_GPTStreamingChat(t *testing.T) {
@@ -42,7 +43,7 @@ func Test_GPTStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelGPTChatFile, false)
+	testChatStreaming(t, fiGPTChatFile, false)
 }
 
 func Test_ToolGPTChat(t *testing.T) {
@@ -50,7 +51,7 @@ func Test_ToolGPTChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChat(t, modelGPTChatFile, true)
+	testChat(t, fiGPTChatFile, true)
 }
 
 func Test_ToolGPTStreamingChat(t *testing.T) {
@@ -58,17 +59,17 @@ func Test_ToolGPTStreamingChat(t *testing.T) {
 		t.Skip("Skipping test in GitHub Actions")
 	}
 
-	testChatStreaming(t, modelGPTChatFile, true)
+	testChatStreaming(t, fiGPTChatFile, true)
 }
 
 // =============================================================================
 
-func testChat(t *testing.T, modelFile string, tooling bool) {
+func testChat(t *testing.T, fi install.FileInfo, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, d := initChatTest(t, modelFile, tooling)
+	krn, d := initChatTest(t, fi, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -119,12 +120,12 @@ func testChat(t *testing.T, modelFile string, tooling bool) {
 	}
 }
 
-func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
+func testChatStreaming(t *testing.T, fi install.FileInfo, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
 
-	krn, d := initChatTest(t, modelFile, tooling)
+	krn, d := initChatTest(t, fi, tooling)
 	defer func() {
 		t.Logf("active streams: %d", krn.ActiveStreams())
 		t.Log("unload Kronk")
@@ -185,13 +186,13 @@ func testChatStreaming(t *testing.T, modelFile string, tooling bool) {
 	}
 }
 
-func initChatTest(t *testing.T, modelFile string, tooling bool) (*kronk.Kronk, model.D) {
+func initChatTest(t *testing.T, fi install.FileInfo, tooling bool) (*kronk.Kronk, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: modelFile,
+		ModelFile: fi.ModelFile,
 	})
 
 	if err != nil {
-		t.Fatalf("unable to load model: %s: %v", modelFile, err)
+		t.Fatalf("unable to load model: %s: %v", fi.ModelFile, err)
 	}
 
 	question := "Echo back the word: Gorilla"

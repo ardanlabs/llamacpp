@@ -19,12 +19,12 @@ func Run(args []string) error {
 	fmt.Println("Model Path: ", modelPath)
 	fmt.Println("Model Name: ", modelName)
 
-	modelFile, err := install.FindModel(modelPath, modelName)
+	fi, err := install.FindModel(modelPath, modelName)
 	if err != nil {
 		return err
 	}
 
-	modelFileName := filepath.Base(modelFile)
+	modelFileName := filepath.Base(fi.ModelFile)
 
 	fmt.Printf("\nAre you sure you want to remove %q? (y/n): ", modelFileName)
 	var response string
@@ -34,13 +34,13 @@ func Run(args []string) error {
 		return nil
 	}
 
-	if err := os.Remove(modelFile); err != nil {
-		return fmt.Errorf("unable to remove %q", modelFile)
+	if err := os.Remove(fi.ModelFile); err != nil {
+		return fmt.Errorf("unable to remove %q", fi.ModelFile)
 	}
 
 	// This file may not exist, so deleting it blindly.
 	projFileName := fmt.Sprintf("mmproj-%s", modelFileName)
-	projFile := strings.Replace(modelFile, modelFileName, projFileName, 1)
+	projFile := strings.Replace(fi.ModelFile, modelFileName, projFileName, 1)
 	os.Remove(projFile)
 
 	fmt.Println("Remove complete")
