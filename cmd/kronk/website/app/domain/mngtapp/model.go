@@ -2,15 +2,16 @@ package mngtapp
 
 import (
 	"encoding/json"
+	"time"
 
-	"github.com/ardanlabs/kronk/install"
+	"github.com/ardanlabs/kronk/tools"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
 // Version returns information about the installed libraries.
 type Version struct {
 	Status    string `json:"status"`
-	LibsPath  string `json:"libs_paths"`
+	LibPath   string `json:"libs_paths"`
 	Processor string `json:"processor"`
 	Latest    string `json:"latest"`
 	Current   string `json:"current"`
@@ -22,12 +23,61 @@ func (app Version) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toAppVersion(status string, libsPath string, processor download.Processor, krn install.Version) Version {
+func toAppVersion(status string, libPath string, processor download.Processor, krn tools.LibVersion) Version {
 	return Version{
 		Status:    status,
-		LibsPath:  libsPath,
+		LibPath:   libPath,
 		Processor: processor.String(),
 		Latest:    krn.Latest,
 		Current:   krn.Current,
 	}
+}
+
+// =============================================================================
+
+// ListModelsInfo represents a collection of model information.
+type ListModelsInfo []ListModelInfo
+
+// Encode implements the encoder interface.
+func (app ListModelsInfo) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(app)
+	return data, "application/json", err
+}
+
+// ListModelInfo provides information about a model.
+type ListModelInfo struct {
+	Organization string    `json:"organization"`
+	ModelName    string    `json:"model_name"`
+	ModelFile    string    `json:"model_file"`
+	Size         int64     `json:"size"`
+	Modified     time.Time `json:"modified"`
+}
+
+func toListModelsInfo(models []tools.ListModelInfo) ListModelsInfo {
+	var list ListModelsInfo
+
+	for _, model := range models {
+		list = append(list, ListModelInfo{
+			Organization: model.Organization,
+			ModelName:    model.ModelName,
+			ModelFile:    model.ModelFile,
+			Size:         model.Size,
+			Modified:     model.Modified,
+		})
+	}
+
+	return list
+}
+
+// =============================================================================
+
+// PullRequest represents the input for the pull command.
+type PullRequest struct {
+	ModelURL string `json:"model_url"`
+	ProjURL  string `json:"proj_url"`
+}
+
+// Decode implements the decoder interface.
+func (pr *PullRequest) Decode(data []byte) error {
+	return json.Unmarshal(data, pr)
 }

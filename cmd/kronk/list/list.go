@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/defaults"
+	"github.com/ardanlabs/kronk/tools"
 )
 
 var ErrInvalidArguments = errors.New("invalid arguments")
@@ -17,64 +18,28 @@ var ErrInvalidArguments = errors.New("invalid arguments")
 func Run(args []string) error {
 	modelPath := defaults.ModelsDir()
 
-	entries, err := os.ReadDir(modelPath)
+	models, err := tools.ListModels(modelPath)
 	if err != nil {
-		return fmt.Errorf("reading models directory: %w", err)
+		return err
 	}
 
-	fmt.Printf("Model Path: %s\n\n", modelPath)
+	print(models)
 
+	return nil
+}
+
+func print(models []tools.ListModelInfo) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ORG\tMODEL\tFILE\tSIZE\tMODIFIED")
 
-	for _, orgEntry := range entries {
-		if !orgEntry.IsDir() {
-			continue
-		}
+	for _, model := range models {
+		size := formatSize(model.Size)
+		modified := formatTime(model.Modified)
 
-		org := orgEntry.Name()
-
-		modelEntries, err := os.ReadDir(fmt.Sprintf("%s/%s", modelPath, org))
-		if err != nil {
-			continue
-		}
-
-		for _, modelEntry := range modelEntries {
-			if !modelEntry.IsDir() {
-				continue
-			}
-			model := modelEntry.Name()
-
-			fileEntries, err := os.ReadDir(fmt.Sprintf("%s/%s/%s", modelPath, org, model))
-			if err != nil {
-				continue
-			}
-
-			for _, fileEntry := range fileEntries {
-				if fileEntry.IsDir() {
-					continue
-				}
-
-				if fileEntry.Name() == ".DS_Store" {
-					continue
-				}
-
-				info, err := fileEntry.Info()
-				if err != nil {
-					continue
-				}
-
-				size := formatSize(info.Size())
-				modified := formatTime(info.ModTime())
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", org, model, fileEntry.Name(), size, modified)
-			}
-		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", model.Organization, model.ModelName, model.ModelFile, size, modified)
 	}
 
 	w.Flush()
-
-	return nil
 }
 
 func formatSize(bytes int64) string {
