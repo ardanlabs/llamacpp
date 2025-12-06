@@ -143,3 +143,6 @@ curl-readiness:
 
 curl-libs:
 	curl -i http://localhost:3000/v1/mngt/libs
+
+curl-model-list:
+	curl -i http://localhost:3000/v1/mngt/model/list

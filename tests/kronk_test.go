@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	fiThinkToolChatFile tools.ModelFileInfo
-	fiGPTChatFile       tools.ModelFileInfo
-	fiSimpleVisionFile  tools.ModelFileInfo
-	fiEmbedFile         tools.ModelFileInfo
+	fiThinkToolChatFile tools.FindModelInfo
+	fiGPTChatFile       tools.FindModelInfo
+	fiSimpleVisionFile  tools.FindModelInfo
+	fiEmbedFile         tools.FindModelInfo
 )
 
 func init() {

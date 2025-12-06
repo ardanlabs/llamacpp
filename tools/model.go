@@ -8,24 +8,26 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
+	"time"
 )
 
-// ModelFileInfo returns file information about a model.
-type ModelFileInfo struct {
+// FindModelInfo returns file information about a model.
+type FindModelInfo struct {
 	ModelFile string
 	ProjFile  string
 }
 
 // FindModel locates the physical location on disk and returns the full path.
-func FindModel(modelPath string, modelName string) (ModelFileInfo, error) {
+func FindModel(modelPath string, modelName string) (FindModelInfo, error) {
 	entries, err := os.ReadDir(modelPath)
 	if err != nil {
-		return ModelFileInfo{}, fmt.Errorf("reading models directory: %w", err)
+		return FindModelInfo{}, fmt.Errorf("reading models directory: %w", err)
 	}
 
 	projName := fmt.Sprintf("mmproj-%s", modelName)
 
-	var fi ModelFileInfo
+	var fi FindModelInfo
 
 	for _, orgEntry := range entries {
 		if !orgEntry.IsDir() {
@@ -73,13 +75,13 @@ func FindModel(modelPath string, modelName string) (ModelFileInfo, error) {
 	}
 
 	if fi.ModelFile == "" {
-		return ModelFileInfo{}, fmt.Errorf("model %q not found", modelName)
+		return FindModelInfo{}, fmt.Errorf("model %q not found", modelName)
 	}
 
 	return fi, nil
 }
 
-func MustFindModel(modelPath string, modelName string) ModelFileInfo {
+func MustFindModel(modelPath string, modelName string) FindModelInfo {
 	fi, err := FindModel(modelPath, modelName)
 	if err != nil {
 		panic(err.Error())
@@ -90,8 +92,8 @@ func MustFindModel(modelPath string, modelName string) ModelFileInfo {
 
 // =============================================================================
 
-// ModelDownloadInfo provides information about the models that were downloaded.
-type ModelDownloadInfo struct {
+// DownloadModelInfo provides information about the models that were downloaded.
+type DownloadModelInfo struct {
 	ModelFile  string
 	ProjFile   string
 	Downloaded bool
@@ -99,7 +101,7 @@ type ModelDownloadInfo struct {
 
 // DownloadModel performs a complete workflow for downloading and installing
 // the specified model.
-func DownloadModel(ctx context.Context, log Logger, modelURL string, projURL string, modelPath string) (ModelDownloadInfo, error) {
+func DownloadModel(ctx context.Context, log Logger, modelURL string, projURL string, modelPath string) (DownloadModelInfo, error) {
 	u, _ := url.Parse(modelURL)
 	filename := path.Base(u.Path)
 	name := strings.TrimSuffix(filename, path.Ext(filename))
@@ -114,7 +116,7 @@ func DownloadModel(ctx context.Context, log Logger, modelURL string, projURL str
 
 	info, err := downloadModel(modelURL, projURL, modelPath, f)
 	if err != nil {
-		return ModelDownloadInfo{}, fmt.Errorf("unable to download model: %w", err)
+		return DownloadModelInfo{}, fmt.Errorf("unable to download model: %w", err)
 	}
 
 	switch info.Downloaded {
@@ -128,16 +130,14 @@ func DownloadModel(ctx context.Context, log Logger, modelURL string, projURL str
 	return info, nil
 }
 
-// =============================================================================
-
-func downloadModel(modelURL string, projURL string, modelPath string, progress ProgressFunc) (ModelDownloadInfo, error) {
-	modelFile, downloadedMF, err := pull(modelURL, modelPath, progress)
+func downloadModel(modelURL string, projURL string, modelPath string, progress ProgressFunc) (DownloadModelInfo, error) {
+	modelFile, downloadedMF, err := pullModel(modelURL, modelPath, progress)
 	if err != nil {
-		return ModelDownloadInfo{}, err
+		return DownloadModelInfo{}, err
 	}
 
 	if projURL == "" {
-		return ModelDownloadInfo{ModelFile: modelFile, Downloaded: downloadedMF}, nil
+		return DownloadModelInfo{ModelFile: modelFile, Downloaded: downloadedMF}, nil
 	}
 
 	modelFileName := filepath.Base(modelFile)
@@ -145,7 +145,7 @@ func downloadModel(modelURL string, projURL string, modelPath string, progress P
 	newProjFile := strings.Replace(modelFile, modelFileName, profFileName, 1)
 
 	if _, err := os.Stat(newProjFile); err == nil {
-		inf := ModelDownloadInfo{
+		inf := DownloadModelInfo{
 			ModelFile:  modelFile,
 			ProjFile:   newProjFile,
 			Downloaded: downloadedMF || false,
@@ -154,16 +154,16 @@ func downloadModel(modelURL string, projURL string, modelPath string, progress P
 		return inf, nil
 	}
 
-	projFile, downloadedPF, err := pull(projURL, modelPath, progress)
+	projFile, downloadedPF, err := pullModel(projURL, modelPath, progress)
 	if err != nil {
-		return ModelDownloadInfo{}, err
+		return DownloadModelInfo{}, err
 	}
 
 	if err := os.Rename(projFile, newProjFile); err != nil {
-		return ModelDownloadInfo{}, fmt.Errorf("unable to rename projector file: %w", err)
+		return DownloadModelInfo{}, fmt.Errorf("unable to rename projector file: %w", err)
 	}
 
-	inf := ModelDownloadInfo{
+	inf := DownloadModelInfo{
 		ModelFile:  modelFile,
 		ProjFile:   newProjFile,
 		Downloaded: downloadedMF || downloadedPF,
@@ -172,7 +172,7 @@ func downloadModel(modelURL string, projURL string, modelPath string, progress P
 	return inf, nil
 }
 
-func pull(fileURL string, filePath string, progress ProgressFunc) (string, bool, error) {
+func pullModel(fileURL string, filePath string, progress ProgressFunc) (string, bool, error) {
 	mURL, err := url.Parse(fileURL)
 	if err != nil {
 		return "", false, fmt.Errorf("unable to parse fileURL: %w", err)
@@ -202,4 +202,148 @@ func pull(fileURL string, filePath string, progress ProgressFunc) (string, bool,
 	}
 
 	return mFile, downloaded, nil
+}
+
+// =============================================================================
+
+// ListModelInfo provides information about a model.
+type ListModelInfo struct {
+	Organization string
+	ModelName    string
+	ModelFile    string
+	Size         int64
+	Modified     time.Time
+}
+
+// ListModels lists all the models in the given directory.
+func ListModels(modelPath string) ([]ListModelInfo, error) {
+	entries, err := os.ReadDir(modelPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading models directory: %w", err)
+	}
+
+	var list []ListModelInfo
+
+	for _, orgEntry := range entries {
+		if !orgEntry.IsDir() {
+			continue
+		}
+
+		org := orgEntry.Name()
+
+		modelEntries, err := os.ReadDir(fmt.Sprintf("%s/%s", modelPath, org))
+		if err != nil {
+			continue
+		}
+
+		for _, modelEntry := range modelEntries {
+			if !modelEntry.IsDir() {
+				continue
+			}
+			model := modelEntry.Name()
+
+			fileEntries, err := os.ReadDir(fmt.Sprintf("%s/%s/%s", modelPath, org, model))
+			if err != nil {
+				continue
+			}
+
+			for _, fileEntry := range fileEntries {
+				if fileEntry.IsDir() {
+					continue
+				}
+
+				if fileEntry.Name() == ".DS_Store" {
+					continue
+				}
+
+				info, err := fileEntry.Info()
+				if err != nil {
+					continue
+				}
+
+				list = append(list, ListModelInfo{
+					Organization: org,
+					ModelName:    model,
+					ModelFile:    fileEntry.Name(),
+					Size:         info.Size(),
+					Modified:     info.ModTime(),
+				})
+			}
+		}
+	}
+
+	return list, nil
+}
+
+func ListModelsFmt(models []ListModelInfo) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(w, "ORG\tMODEL\tFILE\tSIZE\tMODIFIED")
+
+	for _, model := range models {
+		size := formatSize(model.Size)
+		modified := formatTime(model.Modified)
+
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", model.Organization, model.ModelName, model.ModelFile, size, modified)
+	}
+
+	w.Flush()
+}
+
+func formatSize(bytes int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.1f GB", float64(bytes)/GB)
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/MB)
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB", float64(bytes)/KB)
+	default:
+		return fmt.Sprintf("%d B", bytes)
+	}
+}
+
+func formatTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		mins := int(diff.Minutes())
+		if mins == 1 {
+			return "1 minute ago"
+		}
+		return fmt.Sprintf("%d minutes ago", mins)
+	case diff < 24*time.Hour:
+		hours := int(diff.Hours())
+		if hours == 1 {
+			return "1 hour ago"
+		}
+		return fmt.Sprintf("%d hours ago", hours)
+	case diff < 7*24*time.Hour:
+		days := int(diff.Hours() / 24)
+		if days == 1 {
+			return "1 day ago"
+		}
+		return fmt.Sprintf("%d days ago", days)
+	case diff < 30*24*time.Hour:
+		weeks := int(diff.Hours() / 24 / 7)
+		if weeks == 1 {
+			return "1 week ago"
+		}
+		return fmt.Sprintf("%d weeks ago", weeks)
+	default:
+		months := int(diff.Hours() / 24 / 30)
+		if months == 1 {
+			return "1 month ago"
+		}
+		return fmt.Sprintf("%d months ago", months)
+	}
 }

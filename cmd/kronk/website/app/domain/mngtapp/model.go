@@ -2,6 +2,7 @@ package mngtapp
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/ardanlabs/kronk/tools"
 	"github.com/hybridgroup/yzma/pkg/download"
@@ -30,4 +31,40 @@ func toAppVersion(status string, libPath string, processor download.Processor, k
 		Latest:    krn.Latest,
 		Current:   krn.Current,
 	}
+}
+
+// =============================================================================
+
+// ListModelsInfo represents a collection of model information.
+type ListModelsInfo []ListModelInfo
+
+// Encode implements the encoder interface.
+func (app ListModelsInfo) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(app)
+	return data, "application/json", err
+}
+
+// ListModelInfo provides information about a model.
+type ListModelInfo struct {
+	Organization string    `json:"organization"`
+	ModelName    string    `json:"model_name"`
+	ModelFile    string    `json:"model_file"`
+	Size         int64     `json:"size"`
+	Modified     time.Time `json:"modified"`
+}
+
+func toListModelsInfo(models []tools.ListModelInfo) ListModelsInfo {
+	var list ListModelsInfo
+
+	for _, model := range models {
+		list = append(list, ListModelInfo{
+			Organization: model.Organization,
+			ModelName:    model.ModelName,
+			ModelFile:    model.ModelFile,
+			Size:         model.Size,
+			Modified:     model.Modified,
+		})
+	}
+
+	return list
 }

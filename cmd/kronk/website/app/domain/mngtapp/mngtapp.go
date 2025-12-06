@@ -38,7 +38,14 @@ func (a *app) libs(ctx context.Context, r *http.Request) web.Encoder {
 }
 
 func (a *app) list(ctx context.Context, r *http.Request) web.Encoder {
-	return nil
+	modelPath := a.krnMgr.ModelPath()
+
+	models, err := tools.ListModels(modelPath)
+	if err != nil {
+		return errs.Newf(errs.Internal, "unable to retrieve model list: %s", err)
+	}
+
+	return toListModelsInfo(models)
 }
 
 func (a *app) pull(ctx context.Context, r *http.Request) web.Encoder {

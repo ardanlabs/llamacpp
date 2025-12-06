@@ -64,7 +64,7 @@ func Test_ToolGPTStreamingChat(t *testing.T) {
 
 // =============================================================================
 
-func testChat(t *testing.T, fi tools.ModelFileInfo, tooling bool) {
+func testChat(t *testing.T, fi tools.FindModelInfo, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
@@ -120,7 +120,7 @@ func testChat(t *testing.T, fi tools.ModelFileInfo, tooling bool) {
 	}
 }
 
-func testChatStreaming(t *testing.T, fi tools.ModelFileInfo, tooling bool) {
+func testChatStreaming(t *testing.T, fi tools.FindModelInfo, tooling bool) {
 	if runInParallel {
 		t.Parallel()
 	}
@@ -186,7 +186,7 @@ func testChatStreaming(t *testing.T, fi tools.ModelFileInfo, tooling bool) {
 	}
 }
 
-func initChatTest(t *testing.T, fi tools.ModelFileInfo, tooling bool) (*kronk.Kronk, model.D) {
+func initChatTest(t *testing.T, fi tools.FindModelInfo, tooling bool) (*kronk.Kronk, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: fi.ModelFile,
 	})

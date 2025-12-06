@@ -140,6 +140,11 @@ func (mgr *Manager) LibPath() string {
 	return mgr.libPath
 }
 
+// ModelPath returns the location of the models.
+func (mgr *Manager) ModelPath() string {
+	return mgr.modelPath
+}
+
 // Processor returns the processor being used.
 func (mgr *Manager) Processor() download.Processor {
 	return mgr.processor

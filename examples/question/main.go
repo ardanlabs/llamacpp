@@ -121,15 +121,15 @@ func run() error {
 	return nil
 }
 
-func installSystem() (tools.ModelDownloadInfo, error) {
+func installSystem() (tools.DownloadModelInfo, error) {
 	_, err := tools.DownloadLibraries(context.Background(), tools.FmtLogger, libPath, download.CPU, true)
 	if err != nil {
-		return tools.ModelDownloadInfo{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+		return tools.DownloadModelInfo{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
 	info, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelURL, "", modelPath)
 	if err != nil {
-		return tools.ModelDownloadInfo{}, fmt.Errorf("unable to install model: %w", err)
+		return tools.DownloadModelInfo{}, fmt.Errorf("unable to install model: %w", err)
 	}
 
 	return info, nil

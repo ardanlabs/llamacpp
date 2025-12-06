@@ -21,7 +21,7 @@ func Test_Embedding(t *testing.T) {
 
 // =============================================================================
 
-func testEmbedding(t *testing.T, fi tools.ModelFileInfo) {
+func testEmbedding(t *testing.T, fi tools.FindModelInfo) {
 	if runInParallel {
 		t.Parallel()
 	}
