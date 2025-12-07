@@ -9,15 +9,24 @@ import (
 	"github.com/ardanlabs/kronk/model"
 )
 
+// ModelInfo provides all the model details.
+type ModelInfo struct {
+	ID      string
+	Object  string
+	Created int64
+	OwnedBy string
+	Details model.ModelInfo
+}
+
 // ShowModel provides details for the specified model.
-func ShowModel(libPath string, modelBasePath string, modelID string) (model.ModelInfo, error) {
+func ShowModel(libPath string, modelBasePath string, modelID string) (ModelInfo, error) {
 	fi, err := FindModel(modelBasePath, modelID)
 	if err != nil {
-		return model.ModelInfo{}, err
+		return ModelInfo{}, err
 	}
 
 	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		return model.ModelInfo{}, fmt.Errorf("show-model:unable to init kronk: %w", err)
+		return ModelInfo{}, fmt.Errorf("show-model:unable to init kronk: %w", err)
 	}
 
 	const modelInstances = 1
@@ -27,7 +36,7 @@ func ShowModel(libPath string, modelBasePath string, modelID string) (model.Mode
 	})
 
 	if err != nil {
-		return model.ModelInfo{}, fmt.Errorf("show-model:unable to load kronk: %w", err)
+		return ModelInfo{}, fmt.Errorf("show-model:unable to load kronk: %w", err)
 	}
 
 	defer func() {
@@ -37,5 +46,26 @@ func ShowModel(libPath string, modelBasePath string, modelID string) (model.Mode
 		krn.Unload(ctx)
 	}()
 
-	return krn.ModelInfo(), nil
+	models, err := ListModels(modelBasePath)
+	if err != nil {
+		return ModelInfo{}, fmt.Errorf("show-model:unable to get model file information: %w", err)
+	}
+
+	var modelFile ModelFile
+	for _, model := range models {
+		if model.ID == modelID {
+			modelFile = model
+			break
+		}
+	}
+
+	mi := ModelInfo{
+		ID:      modelFile.ID,
+		Object:  "model",
+		Created: modelFile.Modified.UnixMilli(),
+		OwnedBy: modelFile.Organization,
+		Details: krn.ModelInfo(),
+	}
+
+	return mi, nil
 }

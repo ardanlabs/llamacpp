@@ -73,7 +73,7 @@ func FindModel(modelBasePath string, modelID string) (ModelPath, error) {
 	}
 
 	if fi.ModelFile == "" {
-		return ModelPath{}, fmt.Errorf("find-model:model %q not found", modelID)
+		return ModelPath{}, fmt.Errorf("find-model:model id %q not found", modelID)
 	}
 
 	return fi, nil

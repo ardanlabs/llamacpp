@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ardanlabs/kronk/model"
 	"github.com/ardanlabs/kronk/tools"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
@@ -100,6 +99,9 @@ func (pr *PullRequest) Decode(data []byte) error {
 
 type ModelInfo struct {
 	ID          string            `json:"id"`
+	Object      string            `json:"object"`
+	Created     int64             `json:"created"`
+	OwnedBy     string            `json:"owned_by"`
 	Desc        string            `json:"desc"`
 	Size        uint64            `json:"size"`
 	HasEncoder  bool              `json:"has_encoder"`
@@ -116,16 +118,19 @@ func (app ModelInfo) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toModelInfo(model model.ModelInfo) ModelInfo {
+func toModelInfo(model tools.ModelInfo) ModelInfo {
 	return ModelInfo{
 		ID:          model.ID,
-		Desc:        model.Desc,
-		Size:        model.Size,
-		HasEncoder:  model.HasEncoder,
-		HasDecoder:  model.HasDecoder,
-		IsRecurrent: model.IsRecurrent,
-		IsHybrid:    model.IsHybrid,
-		IsGPT:       model.IsGPT,
-		Metadata:    model.Metadata,
+		Object:      model.Object,
+		Created:     model.Created,
+		OwnedBy:     model.OwnedBy,
+		Desc:        model.Details.Desc,
+		Size:        model.Details.Size,
+		HasEncoder:  model.Details.HasEncoder,
+		HasDecoder:  model.Details.HasDecoder,
+		IsRecurrent: model.Details.IsRecurrent,
+		IsHybrid:    model.Details.IsHybrid,
+		IsGPT:       model.Details.IsGPT,
+		Metadata:    model.Details.Metadata,
 	}
 }

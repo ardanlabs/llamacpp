@@ -61,9 +61,9 @@ kronk-pull-local:
 kronk-remove:
 	go run cmd/kronk/main.go remove "$(FILE)"
 
-# make kronk-show FILE="Qwen2-Audio-7B.Q8_0"
-kronk-show:
-	go run cmd/kronk/main.go show "$(FILE)"
+# make kronk-show-local FILE="Qwen2-Audio-7B.Q8_0"
+kronk-show-local:
+	go run cmd/kronk/main.go show-local "$(FILE)"
 
 # ==============================================================================
 # Kronk Endpoints
@@ -87,10 +87,10 @@ curl-kronk-pull:
 	}'
 
 curl-kronk-remove:
-	curl -i -X DELETE http://localhost:3000/v1/models/Qwen3-8B-Q8_0.gguf
+	curl -i -X DELETE http://localhost:3000/v1/models/Qwen3-8B-Q8_0
 
 curl-kronk-show:
-	curl -i -X GET http://localhost:3000/v1/models/Qwen3-8B-Q8_0.gguf
+	curl -i -X GET http://localhost:3000/v1/models/Qwen3-8B-Q8_0
 
 # ==============================================================================
 # Tests
