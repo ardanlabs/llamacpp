@@ -25,7 +25,7 @@ jobs:
         id: cache-models
         uses: actions/cache@v4
         with:
-          path: $HOME/kronk/models
+          path: ~/kronk/models
           key: ${{ runner.os }}-models-v3
       - name: Install kronk command
         run: |
