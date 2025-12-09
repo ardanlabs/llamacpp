@@ -171,7 +171,7 @@ func downloadLibs(ctx context.Context, log Logger, cfg LibConfig, version string
 
 	pr := NewProgressReader(progress, SizeIntervalMIB10)
 
-	err := download.GetWithProgress(cfg.Arch.String(), cfg.OS.String(), cfg.Processor.String(), version, tempPath, pr)
+	err := download.GetWithContext(ctx, cfg.Arch.String(), cfg.OS.String(), cfg.Processor.String(), version, tempPath, pr)
 	if err != nil {
 		os.RemoveAll(tempPath)
 		return VersionTag{}, fmt.Errorf("download-libs:unable to install llama.cpp: %w", err)

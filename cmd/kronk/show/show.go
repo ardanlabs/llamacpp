@@ -24,7 +24,7 @@ func RunWeb(args []string) error {
 
 	client := client.New(client.FmtLogger)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	var info toolapp.ModelInfoResponse

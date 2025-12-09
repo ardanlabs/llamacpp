@@ -72,7 +72,10 @@ func RunLocal(args []string) error {
 		}
 	}
 
-	_, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelURL, projURL, modelPath)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	_, err := tools.DownloadModel(ctx, tools.FmtLogger, modelURL, projURL, modelPath)
 	if err != nil {
 		return fmt.Errorf("pull:unable to install model: %w", err)
 	}

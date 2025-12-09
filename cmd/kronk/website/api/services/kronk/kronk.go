@@ -69,10 +69,10 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	cfg := struct {
 		conf.Version
 		Web struct {
-			ReadTimeout        time.Duration `conf:"default:25s"`
-			WriteTimeout       time.Duration `conf:"default:360s"`
-			IdleTimeout        time.Duration `conf:"default:360s"`
-			ShutdownTimeout    time.Duration `conf:"default:45s"`
+			ReadTimeout        time.Duration `conf:"default:30s"`
+			WriteTimeout       time.Duration `conf:"default:5m"`
+			IdleTimeout        time.Duration `conf:"default:1m"`
+			ShutdownTimeout    time.Duration `conf:"default:1m"`
 			APIHost            string        `conf:"default:0.0.0.0:3000"`
 			DebugHost          string        `conf:"default:0.0.0.0:3010"`
 			CORSAllowedOrigins []string      `conf:"default:*"`

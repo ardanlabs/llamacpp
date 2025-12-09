@@ -72,7 +72,7 @@ func RunLocal(args []string) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	_, err = tools.DownloadLibraries(ctx, tools.FmtLogger, libCfg)
