@@ -39,7 +39,9 @@ Here is the help screen.
 ```
 $ kronk help
 
-Go for hardware accelerated local inference with llama.cpp directly integrated into your applications via the yzma. Kronk provides a high-level API that feels similar to using an OpenAI compatible API.
+Go for hardware accelerated local inference with llama.cpp directly integrated
+into your applications via the yzma. Kronk provides a high-level API that feels
+similar to using an OpenAI compatible API.
 
 Usage:
   kronk [flags]
