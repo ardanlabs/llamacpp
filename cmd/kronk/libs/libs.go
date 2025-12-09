@@ -17,22 +17,28 @@ import (
 
 // RunWeb executes the libs command against the model server.
 func RunWeb(args []string) error {
-	url, err := client.DefaultURL("/v1/libs")
+	url, err := client.DefaultURL("/v1/libs/pull")
 	if err != nil {
-		return fmt.Errorf("run-web: default: %w", err)
+		return fmt.Errorf("libs: default: %w", err)
 	}
 
 	fmt.Println("URL:", url)
 
-	client := client.New(client.FmtLogger)
+	cln := client.NewSSE[toolapp.VersionResponse](client.FmtLogger)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	var version toolapp.Version
-	if err := client.Do(ctx, http.MethodGet, url, nil, &version); err != nil {
-		return fmt.Errorf("libs:unable to get version: %w", err)
+	ch := make(chan toolapp.VersionResponse)
+	if err := cln.Do(ctx, http.MethodPost, url, nil, ch); err != nil {
+		return fmt.Errorf("libs: unable to download libs: %w", err)
 	}
+
+	for ver := range ch {
+		fmt.Print(ver.Status)
+	}
+
+	fmt.Println()
 
 	return nil
 }

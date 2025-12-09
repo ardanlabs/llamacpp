@@ -19,19 +19,19 @@ import (
 func RunWeb(args []string) error {
 	url, err := client.DefaultURL("/v1/models")
 	if err != nil {
-		return fmt.Errorf("run-web: default: %w", err)
+		return fmt.Errorf("list: default: %w", err)
 	}
 
 	fmt.Println("URL:", url)
 
 	client := client.New(client.FmtLogger)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var info toolapp.ListModelInfo
+	var info toolapp.ListModelInfoResponse
 	if err := client.Do(ctx, http.MethodGet, url, nil, &info); err != nil {
-		return fmt.Errorf("libs:unable to get model list: %w", err)
+		return fmt.Errorf("libs: unable to get model list: %w", err)
 	}
 
 	printWeb(info.Data)

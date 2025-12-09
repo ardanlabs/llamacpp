@@ -54,6 +54,14 @@ kronk-libs:
 kronk-list:
 	go run cmd/kronk/main.go list
 
+# make kronk-pull URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
+kronk-pull:
+	go run cmd/kronk/main.go pull "$(URL)"
+
+# make kronk-remove ID="qwen3-8b-q8_0"
+kronk-remove:
+	go run cmd/kronk/main.go remove "$(ID)"
+
 # make kronk-show ID="qwen3-8b-q8_0"
 kronk-show:
 	go run cmd/kronk/main.go show "$(ID)"
@@ -86,7 +94,7 @@ curl-readiness:
 	curl -i -X GET http://localhost:3000/v1/readiness
 
 curl-libs:
-	curl -i -X GET http://localhost:3000/v1/libs
+	curl -i -X POST http://localhost:3000/v1/libs/pull
 
 curl-model-list:
 	curl -i -X GET http://localhost:3000/v1/models

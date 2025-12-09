@@ -198,8 +198,7 @@ func runPull(cmd *cobra.Command, args []string) {
 	case true:
 		err = pull.RunLocal(args)
 	default:
-		fmt.Println("pull command requires --local flag (web mode not implemented)")
-		os.Exit(1)
+		err = pull.RunWeb(args)
 	}
 
 	if err != nil {
@@ -234,8 +233,7 @@ func runRemove(cmd *cobra.Command, args []string) {
 	case true:
 		err = remove.RunLocal(args)
 	default:
-		fmt.Println("remove command requires --local flag (web mode not implemented)")
-		os.Exit(1)
+		err = remove.RunWeb(args)
 	}
 
 	if err != nil {

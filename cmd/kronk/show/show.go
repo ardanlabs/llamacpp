@@ -17,19 +17,19 @@ import (
 func RunWeb(args []string) error {
 	url, err := client.DefaultURL(fmt.Sprintf("/v1/models/%s", args[0]))
 	if err != nil {
-		return fmt.Errorf("run-web: default: %w", err)
+		return fmt.Errorf("show: default: %w", err)
 	}
 
 	fmt.Println("URL:", url)
 
 	client := client.New(client.FmtLogger)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var info toolapp.ModelInfo
+	var info toolapp.ModelInfoResponse
 	if err := client.Do(ctx, http.MethodGet, url, nil, &info); err != nil {
-		return fmt.Errorf("libs:unable to get mode information: %w", err)
+		return fmt.Errorf("show: unable to get mode information: %w", err)
 	}
 
 	printWeb(info)
@@ -55,7 +55,7 @@ func RunLocal(args []string) error {
 
 // =============================================================================
 
-func printWeb(mi toolapp.ModelInfo) {
+func printWeb(mi toolapp.ModelInfoResponse) {
 	fmt.Printf("ID:          %s\n", mi.ID)
 	fmt.Printf("Object:      %s\n", mi.Object)
 	fmt.Printf("Created:     %v\n", time.UnixMilli(mi.Created))

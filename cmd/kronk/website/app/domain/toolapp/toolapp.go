@@ -27,7 +27,7 @@ func newApp(log *logger.Logger, krnMgr *krn.Manager) *app {
 	}
 }
 
-func (a *app) libs(ctx context.Context, r *http.Request) web.Encoder {
+func (a *app) pullLibs(ctx context.Context, r *http.Request) web.Encoder {
 	w := web.GetWriter(ctx)
 
 	f, ok := w.(http.Flusher)
@@ -42,18 +42,6 @@ func (a *app) libs(ctx context.Context, r *http.Request) web.Encoder {
 
 	// -------------------------------------------------------------------------
 
-	logger := func(ctx context.Context, msg string, args ...any) {
-		var sb strings.Builder
-		for i := 0; i < len(args); i += 2 {
-			if i+1 < len(args) {
-				sb.WriteString(fmt.Sprintf(" %v[%v]", args[i], args[i+1]))
-			}
-		}
-
-		fmt.Fprintf(w, "%s:%s\n", msg, sb.String())
-		f.Flush()
-	}
-
 	cfg := tools.LibConfig{
 		LibPath:      a.krnMgr.LibPath(),
 		Arch:         a.krnMgr.Arch(),
@@ -62,15 +50,43 @@ func (a *app) libs(ctx context.Context, r *http.Request) web.Encoder {
 		Processor:    a.krnMgr.Processor(),
 	}
 
+	logger := func(ctx context.Context, msg string, args ...any) {
+		var sb strings.Builder
+		for i := 0; i < len(args); i += 2 {
+			if i+1 < len(args) {
+				sb.WriteString(fmt.Sprintf(" %v[%v]", args[i], args[i+1]))
+			}
+		}
+
+		status := fmt.Sprintf("%s:%s\n", msg, sb.String())
+		ver := toAppVersion(status, tools.VersionTag{})
+
+		a.log.Info(ctx, "pull-libs", "info", ver[:len(ver)-1])
+		fmt.Fprint(w, ver)
+		f.Flush()
+	}
+
 	vi, err := tools.DownloadLibraries(ctx, logger, cfg)
 	if err != nil {
+		ver := toAppVersion(err.Error(), tools.VersionTag{})
+
+		a.log.Info(ctx, "pull-libs", "info", ver[:len(ver)-1])
+		fmt.Fprint(w, ver)
+		f.Flush()
+
 		return errs.Errorf(errs.Internal, "unable to install llama.cpp: %s", err)
 	}
 
-	return toAppVersion("installed", cfg.LibPath, cfg.Arch, cfg.OS, cfg.Processor, vi)
+	ver := toAppVersion("downloaded", vi)
+
+	a.log.Info(ctx, "pull-libs", "info", ver[:len(ver)-1])
+	fmt.Fprint(w, ver)
+	f.Flush()
+
+	return web.NewNoResponse()
 }
 
-func (a *app) list(ctx context.Context, r *http.Request) web.Encoder {
+func (a *app) listModels(ctx context.Context, r *http.Request) web.Encoder {
 	modelPath := a.krnMgr.ModelPath()
 
 	models, err := tools.ListModels(modelPath)
@@ -81,7 +97,7 @@ func (a *app) list(ctx context.Context, r *http.Request) web.Encoder {
 	return toListModelsInfo(models)
 }
 
-func (a *app) pull(ctx context.Context, r *http.Request) web.Encoder {
+func (a *app) pullModels(ctx context.Context, r *http.Request) web.Encoder {
 	var req PullRequest
 	if err := web.Decode(r, &req); err != nil {
 		return errs.New(errs.InvalidArgument, err)
@@ -123,19 +139,35 @@ func (a *app) pull(ctx context.Context, r *http.Request) web.Encoder {
 			}
 		}
 
-		fmt.Fprintf(w, "%s:%s\n", msg, sb.String())
+		status := fmt.Sprintf("%s:%s\n", msg, sb.String())
+		ver := toAppPull(status, tools.ModelPath{})
+
+		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
+		fmt.Fprint(w, ver)
 		f.Flush()
 	}
 
-	_, err := tools.DownloadModel(ctx, logger, req.ModelURL, req.ProjURL, modelPath)
+	mp, err := tools.DownloadModel(ctx, logger, req.ModelURL, req.ProjURL, modelPath)
 	if err != nil {
+		ver := toAppPull(err.Error(), tools.ModelPath{})
+
+		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
+		fmt.Fprint(w, ver)
+		f.Flush()
+
 		return errs.Errorf(errs.Internal, "unable to install model: %s", err)
 	}
+
+	ver := toAppPull("downloaded", mp)
+
+	a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
+	fmt.Fprint(w, ver)
+	f.Flush()
 
 	return web.NewNoResponse()
 }
 
-func (a *app) remove(ctx context.Context, r *http.Request) web.Encoder {
+func (a *app) removeModel(ctx context.Context, r *http.Request) web.Encoder {
 	modelPath := a.krnMgr.ModelPath()
 	modelName := web.Param(r, "model")
 
@@ -153,7 +185,7 @@ func (a *app) remove(ctx context.Context, r *http.Request) web.Encoder {
 	return nil
 }
 
-func (a *app) show(ctx context.Context, r *http.Request) web.Encoder {
+func (a *app) showModel(ctx context.Context, r *http.Request) web.Encoder {
 	libPath := a.krnMgr.LibPath()
 	modelPath := a.krnMgr.ModelPath()
 	modelName := web.Param(r, "model")

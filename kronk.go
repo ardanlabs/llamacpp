@@ -21,13 +21,13 @@ import (
 )
 
 /*
-	- Fix downloading logging on model server since we can have multiple
-	- Finish Web commands for the cli tooling that are missing
 	- PS command
+	- Detach option on the model server
+	- Expose Embedding endpoint
 */
 
 // Version contains the current version of the kronk package.
-const Version = "1.1.1"
+const Version = "1.1.2"
 
 // =============================================================================
 

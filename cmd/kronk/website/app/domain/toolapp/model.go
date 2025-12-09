@@ -2,54 +2,47 @@ package toolapp
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/ardanlabs/kronk/tools"
-	"github.com/hybridgroup/yzma/pkg/download"
 )
 
-// Version returns information about the installed libraries.
-type Version struct {
+// VersionResponse returns information about the installed libraries.
+type VersionResponse struct {
 	Status    string `json:"status"`
-	LibPath   string `json:"libs_paths"`
-	Arch      string `json:"arch"`
-	OS        string `json:"os"`
-	Processor string `json:"processor"`
-	Latest    string `json:"latest"`
-	Current   string `json:"current"`
+	Arch      string `json:"arch,omitempty"`
+	OS        string `json:"os,omitempty"`
+	Processor string `json:"processor,omitempty"`
+	Latest    string `json:"latest,omitempty"`
+	Current   string `json:"current,omitempty"`
 }
 
 // Encode implements the encoder interface.
-func (app Version) Encode() ([]byte, string, error) {
+func (app VersionResponse) Encode() ([]byte, string, error) {
 	data, err := json.Marshal(app)
 	return data, "application/json", err
 }
 
-func toAppVersion(status string, libPath string, arch download.Arch, os download.OS, processor download.Processor, krn tools.VersionTag) Version {
-	return Version{
+func toAppVersion(status string, vt tools.VersionTag) string {
+	vi := VersionResponse{
 		Status:    status,
-		LibPath:   libPath,
-		Arch:      arch.String(),
-		OS:        os.String(),
-		Processor: processor.String(),
-		Latest:    krn.Latest,
-		Current:   krn.Version,
+		Arch:      vt.Arch,
+		OS:        vt.OS,
+		Processor: vt.Processor,
+		Latest:    vt.Latest,
+		Current:   vt.Version,
 	}
+
+	d, err := json.Marshal(vi)
+	if err != nil {
+		return fmt.Sprintf("data: {\"Status\":%q}\n", err.Error())
+	}
+
+	return fmt.Sprintf("data: %s\n", string(d))
 }
 
 // =============================================================================
-
-// ListModelInfo contains the list of models loaded in the system.
-type ListModelInfo struct {
-	Object string            `json:"object"`
-	Data   []ListModelDetail `json:"data"`
-}
-
-// Encode implements the encoder interface.
-func (app ListModelInfo) Encode() ([]byte, string, error) {
-	data, err := json.Marshal(app)
-	return data, "application/json", err
-}
 
 // ListModelDetail provides information about a model.
 type ListModelDetail struct {
@@ -62,8 +55,20 @@ type ListModelDetail struct {
 	Modified    time.Time `json:"modified"`
 }
 
-func toListModelsInfo(models []tools.ModelFile) ListModelInfo {
-	list := ListModelInfo{
+// ListModelInfoResponse contains the list of models loaded in the system.
+type ListModelInfoResponse struct {
+	Object string            `json:"object"`
+	Data   []ListModelDetail `json:"data"`
+}
+
+// Encode implements the encoder interface.
+func (app ListModelInfoResponse) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(app)
+	return data, "application/json", err
+}
+
+func toListModelsInfo(models []tools.ModelFile) ListModelInfoResponse {
+	list := ListModelInfoResponse{
 		Object: "list",
 	}
 
@@ -91,13 +96,44 @@ type PullRequest struct {
 }
 
 // Decode implements the decoder interface.
-func (pr *PullRequest) Decode(data []byte) error {
-	return json.Unmarshal(data, pr)
+func (app *PullRequest) Decode(data []byte) error {
+	return json.Unmarshal(data, app)
+}
+
+// PullResponse returns information about a model being downloaded.
+type PullResponse struct {
+	Status     string `json:"status"`
+	ModelFile  string `json:"model_file,omitempty"`
+	ProjFile   string `json:"proj_file,omitempty"`
+	Downloaded bool   `json:"downloaded,omitempty"`
+}
+
+// Encode implements the encoder interface.
+func (app PullResponse) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(app)
+	return data, "application/json", err
+}
+
+func toAppPull(status string, mp tools.ModelPath) string {
+	pr := PullResponse{
+		Status:     status,
+		ModelFile:  mp.ModelFile,
+		ProjFile:   mp.ProjFile,
+		Downloaded: mp.Downloaded,
+	}
+
+	d, err := json.Marshal(pr)
+	if err != nil {
+		return fmt.Sprintf("data: {\"Status\":%q}\n", err.Error())
+	}
+
+	return fmt.Sprintf("data: %s\n", string(d))
 }
 
 // =============================================================================
 
-type ModelInfo struct {
+// ModelInfoResponse returns information about a model.
+type ModelInfoResponse struct {
 	ID            string            `json:"id"`
 	Object        string            `json:"object"`
 	Created       int64             `json:"created"`
@@ -114,13 +150,13 @@ type ModelInfo struct {
 }
 
 // Encode implements the encoder interface.
-func (app ModelInfo) Encode() ([]byte, string, error) {
+func (app ModelInfoResponse) Encode() ([]byte, string, error) {
 	data, err := json.Marshal(app)
 	return data, "application/json", err
 }
 
-func toModelInfo(model tools.ModelInfo) ModelInfo {
-	return ModelInfo{
+func toModelInfo(model tools.ModelInfo) ModelInfoResponse {
+	return ModelInfoResponse{
 		ID:            model.ID,
 		Object:        model.Object,
 		Created:       model.Created,

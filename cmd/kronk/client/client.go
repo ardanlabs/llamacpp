@@ -135,7 +135,7 @@ func (cln *SSEClient[T]) Do(ctx context.Context, method string, endpoint string,
 
 			var v T
 			if err := json.Unmarshal([]byte(line[6:]), &v); err != nil {
-				cln.log(ctx, "sseclient: rawRequest:", "Unmarshal", err, "line", line[6:])
+				cln.log(ctx, "do:", "Unmarshal", err, "line", line[6:])
 				return
 			}
 
@@ -143,9 +143,13 @@ func (cln *SSEClient[T]) Do(ctx context.Context, method string, endpoint string,
 			case ch <- v:
 
 			case <-ctx.Done():
-				cln.log(ctx, "sseclient: rawRequest:", "Context", ctx.Err().Error())
+				cln.log(ctx, "do:", "Context", ctx.Err().Error())
 				return
 			}
+		}
+
+		if ctx.Err() != nil {
+			cln.log(ctx, "do:", "Context", ctx.Err().Error())
 		}
 	}(ctx)
 

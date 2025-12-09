@@ -24,7 +24,7 @@ type VersionTag struct {
 }
 
 func isTagMatch(tag VersionTag, cfg LibConfig) bool {
-	return tag.Arch == cfg.Arch.String() && tag.OS == cfg.OS.String() && tag.Processor == cfg.Processor.String()
+	return tag.Latest == tag.Version && tag.Arch == cfg.Arch.String() && tag.OS == cfg.OS.String() && tag.Processor == cfg.Processor.String()
 }
 
 // =============================================================================
