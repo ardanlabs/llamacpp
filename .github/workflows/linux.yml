@@ -28,9 +28,9 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "stable"
-      - name: Cache test models
+      - name: Restore models cache
         id: cache-models
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/kronk/models
           key: ${{ runner.os }}-models-v3
@@ -54,3 +54,9 @@ jobs:
           export GOROUTINES=1
           export RUN_IN_PARALLEL=0
           CGO_ENABLED=0 go test -v -count=1 ./tests
+      - name: Save models cache
+        if: steps.cache-models.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/kronk/models
+          key: ${{ runner.os }}-models-v3
