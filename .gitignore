@@ -2,6 +2,8 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 
+zarf/docker/openwebui
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

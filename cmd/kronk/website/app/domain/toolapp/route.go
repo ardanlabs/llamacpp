@@ -30,7 +30,4 @@ func Routes(app *web.App, cfg Config) {
 	app.HandlerFunc(http.MethodGet, version, "/v1/models/{model}", api.show, bearer)
 	app.HandlerFunc(http.MethodPost, version, "/v1/models/pull", api.pull, bearer)
 	app.HandlerFunc(http.MethodDelete, version, "/v1/models/{model}", api.remove, bearer)
-
-	app.HandlerFunc(http.MethodGet, version, "/api/tags", api.list, bearer)
-	app.HandlerFunc(http.MethodGet, version, "/api/ps", api.list, bearer)
 }

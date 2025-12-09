@@ -23,13 +23,11 @@ import (
 /*
 	- Fix downloading logging on model server since we can have multiple
 	- Finish Web commands for the cli tooling that are missing
-	- Add flashly KRONK in terminal on model server startup
 	- PS command
-	- Update README for new CLI tooling and installation
 */
 
 // Version contains the current version of the kronk package.
-const Version = "1.1.0"
+const Version = "1.1.1"
 
 // =============================================================================
 

@@ -29,6 +29,10 @@ import (
 var build = "develop"
 
 func Run(showHelp bool) error {
+	fmt.Println(logo)
+
+	// -------------------------------------------------------------------------
+
 	var log *logger.Logger
 
 	events := logger.Events{
@@ -337,3 +341,12 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 
 	return nil
 }
+
+var logo = `
+██╗  ██╗██████╗  ██████╗ ███╗   ██╗██╗  ██╗
+██║ ██╔╝██╔══██╗██╔═══██╗████╗  ██║██║ ██╔╝
+█████╔╝ ██████╔╝██║   ██║██╔██╗ ██║█████╔╝ 
+██╔═██╗ ██╔══██╗██║   ██║██║╚██╗██║██╔═██╗ 
+██║  ██╗██║  ██║╚██████╔╝██║ ╚████║██║  ██╗
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝
+`

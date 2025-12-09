@@ -12,7 +12,7 @@ const (
 	defTopP            = 0.9
 	defMinP            = 0.0
 	defTemp            = 0.8
-	defMaxTokens       = 128
+	defMaxTokens       = 1024
 	defEnableThinking  = ThinkingEnabled
 	defReasoningEffort = ReasoningEffortMedium
 )

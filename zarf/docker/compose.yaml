@@ -1,0 +1,22 @@
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:v0.6.41
+    container_name: openwebui
+    restart: always
+    pull_policy: never
+    environment:
+      - WEBUI_AUTH=false
+      - GLOBAL_LOG_LEVEL="DEBUG"
+      - ENABLE_PERSISTENT_CONFIG=false
+      - OPENAI_API_BASE_URL=http://host.docker.internal:3000/v1
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./openwebui:/app/backend/data
+
+volumes:
+  openwebui:
+    external: true
+    name: openwebui

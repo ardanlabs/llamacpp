@@ -53,14 +53,11 @@ func init() {
 	}
 
 	rootCmd.AddCommand(serverCmd)
-	rootCmd.AddCommand(libsLocalCmd)
-	rootCmd.AddCommand(libsWebCmd)
-	rootCmd.AddCommand(listLocalCmd)
-	rootCmd.AddCommand(listWebCmd)
-	rootCmd.AddCommand(pullLocalCmd)
-	rootCmd.AddCommand(removeLocalCmd)
-	rootCmd.AddCommand(showWebCmd)
-	rootCmd.AddCommand(showLocalCmd)
+	rootCmd.AddCommand(libsCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(pullCmd)
+	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(psCmd)
 }
 
@@ -82,40 +79,40 @@ func runServer(cmd *cobra.Command, args []string) {
 
 // =============================================================================
 
-var libsWebCmd = &cobra.Command{
+var libsCmd = &cobra.Command{
 	Use:   "libs",
 	Short: "Install or upgrade llama.cpp libraries",
 	Long: `Install or upgrade llama.cpp libraries
 
-Environment Variables:
-      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server.`,
-	Args: cobra.NoArgs,
-	Run:  runLibsWeb,
-}
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server.
 
-func runLibsWeb(cmd *cobra.Command, args []string) {
-	if err := libs.RunWeb(args); err != nil {
-		fmt.Println("\nERROR:", err)
-		os.Exit(1)
-	}
-}
-
-var libsLocalCmd = &cobra.Command{
-	Use:   "libs-local",
-	Short: "Install or upgrade llama.cpp libraries without running the model server",
-	Long: `Install or upgrade llama.cpp libraries without running the model server
-
-Environment Variables:
+Environment Variables (--local mode):
       KRONK_ARCH       (default: runtime.GOARCH)         The architecture to install.
       KRONK_LIB_PATH   (default: $HOME/kronk/libraries)  The path to the libraries directory,
       KRONK_OS         (default: runtime.GOOS)           The operating system to install.
       KRONK_PROCESSOR  (default: cpu)                    Options: cpu, cuda, metal, vulkan`,
 	Args: cobra.NoArgs,
-	Run:  runLibsLocal,
+	Run:  runLibs,
 }
 
-func runLibsLocal(cmd *cobra.Command, args []string) {
-	if err := libs.RunLocal(args); err != nil {
+func init() {
+	libsCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runLibs(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = libs.RunLocal(args)
+	default:
+		err = libs.RunWeb(args)
+	}
+
+	if err != nil {
 		fmt.Println("\nERROR:", err)
 		os.Exit(1)
 	}
@@ -123,37 +120,37 @@ func runLibsLocal(cmd *cobra.Command, args []string) {
 
 // =============================================================================
 
-var listWebCmd = &cobra.Command{
+var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List models",
 	Long: `List models
 
-Environment Variables:
-	  KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server`,
-	Args: cobra.NoArgs,
-	Run:  runListWeb,
-}
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server
 
-func runListWeb(cmd *cobra.Command, args []string) {
-	if err := list.RunWeb(args); err != nil {
-		fmt.Println("\nERROR:", err)
-		os.Exit(1)
-	}
-}
-
-var listLocalCmd = &cobra.Command{
-	Use:   "list-local",
-	Short: "List models",
-	Long: `List models
-
-Environment Variables:
+Environment Variables (--local mode):
       KRONK_MODELS  (default: $HOME/kronk/models)  The path to the models directory`,
 	Args: cobra.NoArgs,
-	Run:  runListLocal,
+	Run:  runList,
 }
 
-func runListLocal(cmd *cobra.Command, args []string) {
-	if err := list.RunLocal(args); err != nil {
+func init() {
+	listCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runList(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = list.RunLocal(args)
+	default:
+		err = list.RunWeb(args)
+	}
+
+	if err != nil {
 		fmt.Println("\nERROR:", err)
 		os.Exit(1)
 	}
@@ -177,19 +174,35 @@ func runPs(cmd *cobra.Command, args []string) {
 
 // =============================================================================
 
-var pullLocalCmd = &cobra.Command{
-	Use:   "pull-local <MODEL_URL> <MMPROJ_URL>",
-	Short: "Pull a model from the web without running the model server, the mmproj file is optional without running the model server",
-	Long: `Pull a model from the web without running the model server, the mmproj file is optional
+var pullCmd = &cobra.Command{
+	Use:   "pull <MODEL_URL> [MMPROJ_URL]",
+	Short: "Pull a model from the web",
+	Long: `Pull a model from the web, the mmproj file is optional
 
-Environment Variables:
+Environment Variables (--local mode):
       KRONK_MODELS  (default: $HOME/kronk/models)  The path to the models directory`,
 	Args: cobra.RangeArgs(1, 2),
-	Run:  runPullLocal,
+	Run:  runPull,
 }
 
-func runPullLocal(cmd *cobra.Command, args []string) {
-	if err := pull.RunLocal(args); err != nil {
+func init() {
+	pullCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runPull(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = pull.RunLocal(args)
+	default:
+		fmt.Println("pull command requires --local flag (web mode not implemented)")
+		os.Exit(1)
+	}
+
+	if err != nil {
 		fmt.Println("\nERROR:", err)
 		os.Exit(1)
 	}
@@ -197,19 +210,35 @@ func runPullLocal(cmd *cobra.Command, args []string) {
 
 // =============================================================================
 
-var removeLocalCmd = &cobra.Command{
-	Use:   "remove-local MODEL_NAME",
+var removeCmd = &cobra.Command{
+	Use:   "remove MODEL_NAME",
 	Short: "Remove a model",
 	Long: `Remove a model
 
-Environment Variables:
+Environment Variables (--local mode):
       KRONK_MODELS  (default: $HOME/kronk/models)  The path to the models directory`,
 	Args: cobra.ExactArgs(1),
-	Run:  runRemoveLocal,
+	Run:  runRemove,
 }
 
-func runRemoveLocal(cmd *cobra.Command, args []string) {
-	if err := remove.RunLocal(args); err != nil {
+func init() {
+	removeCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runRemove(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = remove.RunLocal(args)
+	default:
+		fmt.Println("remove command requires --local flag (web mode not implemented)")
+		os.Exit(1)
+	}
+
+	if err != nil {
 		fmt.Println("\nERROR:", err)
 		os.Exit(1)
 	}
@@ -217,37 +246,37 @@ func runRemoveLocal(cmd *cobra.Command, args []string) {
 
 // =============================================================================
 
-var showWebCmd = &cobra.Command{
+var showCmd = &cobra.Command{
 	Use:   "show <MODEL_NAME>",
 	Short: "Show information for a model",
 	Long: `Show information for a model
 
-Environment Variables:
-	  KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server`,
-	Args: cobra.ExactArgs(1),
-	Run:  runShowWeb,
-}
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server
 
-func runShowWeb(cmd *cobra.Command, args []string) {
-	if err := show.RunWeb(args); err != nil {
-		fmt.Println("\nERROR:", err)
-		os.Exit(1)
-	}
-}
-
-var showLocalCmd = &cobra.Command{
-	Use:   "show-local <MODEL_NAME>",
-	Short: "Show information for a model",
-	Long: `Show information for a model
-
-Environment Variables:
+Environment Variables (--local mode):
       KRONK_MODELS  (default: $HOME/kronk/models)  The path to the models directory`,
 	Args: cobra.ExactArgs(1),
-	Run:  runShowLocal,
+	Run:  runShow,
 }
 
-func runShowLocal(cmd *cobra.Command, args []string) {
-	if err := show.RunLocal(args); err != nil {
+func init() {
+	showCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runShow(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = show.RunLocal(args)
+	default:
+		err = show.RunWeb(args)
+	}
+
+	if err != nil {
 		fmt.Println("\nERROR:", err)
 		os.Exit(1)
 	}

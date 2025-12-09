@@ -26,13 +26,21 @@ Email:   bill@ardanlabs.com
 Twitter: goinggodotnet
 ```
 
+## Install Kronk
+
+To install the Kronk tool run the following command:
+
+```
+$ go install github.com/ardanlabs/kronk/cmd/kronk@latest
+```
+
 ## Architecture
 
-The architecture of Kronk is designed to be simple and scalable. You have the Kronk API that allows you to write the applications you need to interact with GGUF local open source models (supported by llama.cpp) that provide inference for text and media (vision and audio).
+The architecture of Kronk is designed to be simple and scalable. The Kronk API allows you to write applications that can diectly interact with local open source GGUF models (supported by llama.cpp) that provide inference for text and media (vision and audio).
 
 Check out the [examples](#examples) section below.
 
-If you want an OpenAI compatible model server, the Kronk model server leverages the power of the API to give you a concurrent and scalable web api.
+If you want an OpenAI compatible model server, the Kronk model server leverages the power of the Kronk API to give you a concurrent and scalable web api.
 
 Run `make kronk-server` to check it out.
 
@@ -64,7 +72,7 @@ You can use multimodal models (image/audio) and text language models with full h
 
 Whenever there is a new release of llama.cpp, the tests for yzma are run automatically. Kronk runs tests once a day and will check for updates to llama.cpp. This helps us stay up to date with the latest code and models.
 
-## Examples
+## API Examples
 
 There are examples in the examples direction:
 
@@ -90,32 +98,60 @@ _The first time you run these programs the system will download and install the 
 
 You can find more examples in the ArdanLabs AI training repo at [Example13](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13).
 
-## Sample - Question Example
+## Kronk Model Server
+
+The model server is OpenAI compatible and you can use OpenWebUI to interact with it. To start the Kronk model server run:
+
+`make kronk-server` or `kronk sever` with the installed tooling.
+
+You will need to load a model if this is the first time you're using the system. To download a starter model run:
+
+`kronk pull --local "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"`
+
+Or run this command to pull the model through a running Kronk model server:
+
+`kronk pull "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"`
+
+If you want to play with OpenWebUI, run the following commands:
+
+```
+$ make install-owu
+$ make owu-up
+```
+
+The open your browser to `localhost:8080` or open another terminal window and run:
+
+```
+$ make owu-browse
+```
+
+## Sample API Program - Question Example
 
 ```go
 package main
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/ardanlabs/kronk"
-	"github.com/ardanlabs/kronk/examples/install"
+	"github.com/ardanlabs/kronk/defaults"
 	"github.com/ardanlabs/kronk/model"
+	"github.com/ardanlabs/kronk/tools"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
 const (
-	modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
-	// modelURL  = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf"
-	libPath        = "tests/libraries"
-	modelPath      = "tests/models"
+	modelURL       = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
 	modelInstances = 1
+)
+
+var (
+	libPath   = defaults.LibsDir("")
+	modelPath = defaults.ModelsDir("")
 )
 
 func main() {
@@ -126,15 +162,23 @@ func main() {
 }
 
 func run() error {
-	modelFile, err := installSystem()
+	info, err := installSystem()
 	if err != nil {
 		return fmt.Errorf("unable to installation system: %w", err)
 	}
 
-	krn, err := newKronk(modelFile)
-	if err != nil {
+	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
 		return fmt.Errorf("unable to init kronk: %w", err)
 	}
+
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile: info.ModelFile,
+	})
+
+	if err != nil {
+		return fmt.Errorf("unable to create inference model: %w", err)
+	}
+
 	defer func() {
 		fmt.Println("\nUnloading Kronk")
 		if err := krn.Unload(context.Background()); err != nil {
@@ -144,261 +188,86 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	messages := model.DocumentArray()
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
 
-	for {
-		messages, err = userInput(messages)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-			return fmt.Errorf("user input: %w", err)
-		}
+	question := "Hello model"
 
-		messages, err = func() ([]model.D, error) {
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-			defer cancel()
-
-			d := model.D{
-				"messages":    messages,
-				"tools":       tools(krn.ModelInfo().IsGPT),
-				"max_tokens":  2048,
-				"temperature": 0.7,
-				"top_p":       0.9,
-				"top_k":       40,
-			}
-
-			ch, err := performChat(ctx, krn, d)
-			if err != nil {
-				return nil, fmt.Errorf("unable to perform chat: %w", err)
-			}
-
-			messages, err = modelResponse(krn, messages, ch)
-			if err != nil {
-				return nil, fmt.Errorf("model response: %w", err)
-			}
-
-			return messages, nil
-		}()
-
-		if err != nil {
-			return fmt.Errorf("unable to perform chat: %w", err)
-		}
-	}
-}
-
-func installSystem() (string, error) {
-	if err := install.Libraries(libPath, download.CPU, true); err != nil {
-		return "", fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	modelFile, err := install.Model(modelURL, modelPath)
-	if err != nil {
-		return "", fmt.Errorf("unable to install model: %w", err)
-	}
-
-	return modelFile, nil
-}
-
-func newKronk(modelFile string) (*kronk.Kronk, error) {
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		return nil, fmt.Errorf("unable to init kronk: %w", err)
-	}
-
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: modelFile,
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create inference model: %w", err)
-	}
-
-	fmt.Print("- system info:\n\t")
-	for k, v := range krn.SystemInfo() {
-		fmt.Printf("%s:%v, ", k, v)
-	}
+	fmt.Println()
+	fmt.Println("QUESTION:", question)
 	fmt.Println()
 
-	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
-	fmt.Println("- embeddings   :", krn.ModelConfig().Embeddings)
-	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPT)
-
-	return krn, nil
-}
-
-func userInput(messages []model.D) ([]model.D, error) {
-	fmt.Print("\nUSER> ")
-
-	reader := bufio.NewReader(os.Stdin)
-
-	userInput, err := reader.ReadString('\n')
-	if err != nil {
-		return messages, fmt.Errorf("unable to read user input: %w", err)
+	d := model.D{
+		"messages": model.DocumentArray(
+			model.TextMessage("user", question),
+		),
+		"temperature": 0.7,
+		"top_p":       0.9,
+		"top_k":       40,
+		"max_tokens":  2048,
 	}
 
-	if userInput == "quit\n" {
-		return nil, io.EOF
-	}
-
-	messages = append(messages,
-		model.TextMessage("user", userInput),
-	)
-
-	return messages, nil
-}
-
-func tools(isGPT bool) []model.D {
-	if isGPT {
-		return model.DocumentArray(
-			model.D{
-				"type": "function",
-				"function": model.D{
-					"name":        "get_weather",
-					"description": "Get the current weather for a location",
-					"parameters": model.D{
-						"type": "object",
-						"properties": model.D{
-							"location": model.D{
-								"type":        "string",
-								"description": "The location to get the weather for, e.g. San Francisco, CA",
-							},
-						},
-						"required": []any{"location"},
-					},
-				},
-			},
-			model.D{
-				"type": "function",
-				"function": model.D{
-					"name":        "invoke_cli_command",
-					"description": "Use this anytime you need to run a CLI command of any kind",
-					"parameters": model.D{
-						"type": "object",
-						"properties": model.D{
-							"call": model.D{
-								"type":        "string",
-								"description": "The full set of parameters to pass to the CLI command",
-							},
-						},
-						"required": []any{"call"},
-					},
-				},
-			},
-		)
-	}
-
-	return model.DocumentArray(
-		model.D{
-			"type": "function",
-			"function": model.D{
-				"name":        "get_weather",
-				"description": "Get the current weather for a location",
-				"arguments": model.D{
-					"location": model.D{
-						"type":        "string",
-						"description": "The location to get the weather for, e.g. San Francisco, CA",
-					},
-				},
-			},
-		},
-		model.D{
-			"type": "function",
-			"function": model.D{
-				"name":        "invoke_cli_command",
-				"description": "Use this anytime you need to run a CLI command of any kind",
-				"arguments": model.D{
-					"call": model.D{
-						"type":        "string",
-						"description": "The full set of parameters to pass to the CLI command",
-					},
-				},
-				"required": []any{"call"},
-			},
-		},
-	)
-}
-
-func performChat(ctx context.Context, krn *kronk.Kronk, d model.D) (<-chan model.ChatResponse, error) {
 	ch, err := krn.ChatStreaming(ctx, d)
 	if err != nil {
-		return nil, fmt.Errorf("chat streaming: %w", err)
+		return fmt.Errorf("chat streaming: %w", err)
 	}
 
-	return ch, nil
-}
-
-func modelResponse(krn *kronk.Kronk, messages []model.D, ch <-chan model.ChatResponse) ([]model.D, error) {
-	fmt.Print("\nMODEL> ")
+	// -------------------------------------------------------------------------
 
 	var reasoning bool
-	var lr model.ChatResponse
 
-loop:
 	for resp := range ch {
-		lr = resp
-
 		switch resp.Choice[0].FinishReason {
 		case model.FinishReasonError:
-			return messages, fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
+			return fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
 
 		case model.FinishReasonStop:
-			messages = append(messages,
-				model.TextMessage("assistant", resp.Choice[0].Delta.Content),
-			)
-			break loop
-
-		case model.FinishReasonTool:
-			fmt.Println()
-			if krn.ModelInfo().IsGPT {
-				fmt.Println()
-			}
-
-			fmt.Printf("\u001b[92mModel Asking For Tool Call:\nToolID[%s]: %s(%s)\u001b[0m",
-				resp.Choice[0].Delta.ToolCalls[0].ID,
-				resp.Choice[0].Delta.ToolCalls[0].Name,
-				resp.Choice[0].Delta.ToolCalls[0].Arguments,
-			)
-
-			messages = append(messages,
-				model.TextMessage("tool", fmt.Sprintf("Tool call %s: %s(%v)",
-					resp.Choice[0].Delta.ToolCalls[0].ID,
-					resp.Choice[0].Delta.ToolCalls[0].Name,
-					resp.Choice[0].Delta.ToolCalls[0].Arguments),
-				),
-			)
-			break loop
+			return nil
 
 		default:
 			if resp.Choice[0].Delta.Reasoning != "" {
-				fmt.Printf("\u001b[91m%s\u001b[0m", resp.Choice[0].Delta.Reasoning)
 				reasoning = true
+				fmt.Printf("\u001b[91m%s\u001b[0m", resp.Choice[0].Delta.Reasoning)
 				continue
 			}
 
 			if reasoning {
 				reasoning = false
-
 				fmt.Println()
-				if krn.ModelInfo().IsGPT {
-					fmt.Println()
-				}
+				continue
 			}
 
 			fmt.Printf("%s", resp.Choice[0].Delta.Content)
 		}
 	}
 
-	// -------------------------------------------------------------------------
+	return nil
+}
 
-	contextTokens := lr.Usage.InputTokens + lr.Usage.CompletionTokens
-	contextWindow := krn.ModelConfig().ContextWindow
-	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
-	of := float32(contextWindow) / float32(1024)
+func installSystem() (tools.ModelPath, error) {
+	libCfg, err := tools.NewLibConfig(
+		libPath,
+		runtime.GOARCH,
+		runtime.GOOS,
+		download.CPU.String(),
+		kronk.LogSilent.Int(),
+		true,
+	)
+	if err != nil {
+		return tools.ModelPath{}, err
+	}
 
-	fmt.Printf("\n\n\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\u001b[0m\n",
-		lr.Usage.InputTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
+	_, err = tools.DownloadLibraries(context.Background(), tools.FmtLogger, libCfg)
+	if err != nil {
+		return tools.ModelPath{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
 
-	return messages, nil
+	mp, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelURL, "", modelPath)
+	if err != nil {
+		return tools.ModelPath{}, fmt.Errorf("unable to install model: %w", err)
+	}
+
+	return mp, nil
 }
 ```
 
@@ -407,33 +276,17 @@ This example can produce the following output:
 ```
 $ make example-question
 CGO_ENABLED=0 go run examples/question/main.go
+download-libraries status[check libraries version information] lib-path[/Users/bill/kronk/libraries] arch[arm64] os[darwin] processor[cpu]
+download-libraries status[check llama.cpp installation] lib-path[/Users/bill/kronk/libraries] arch[arm64] os[darwin] processor[cpu] latest[b7327] current[b7312]
+download-libraries status[already installed] latest[b7327] current[b7312]
+download-model: model-dest[/Users/bill/kronk/models] model-url[https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf] proj-url[] model-id[Qwen3-8B-Q8_0]
+download-model: waiting to check model status...
+download-model: status[already exists] model-file[/Users/bill/kronk/models/Qwen/Qwen3-8B-GGUF/Qwen3-8B-Q8_0.gguf] proj-file[]
 
-Output:
+QUESTION: Hello model
 
-- check llama.cpp installation: ✓
-  - latest version : b7248
-  - current version: b7248
-- check "Qwen3-8B-Q8_0" installation: ✓
-- system info:
-	CPU:NEON, ARM_FMA:on, FP16_VA:on, DOTPROD:on, LLAMAFILE:on, ACCELERATE:on, REPACK:on, Metal:EMBED_LIBRARY,
-- contextWindow: 40960
-- embeddings   : false
-- isGPT        : false
+Okay, the user said "Hello model." I need to respond appropriately. First, I should acknowledge their greeting. Since they mentioned "model," maybe they're referring to me as a language model. I should clarify that I'm Qwen, a large language model developed by Alibaba Cloud. I should keep the response friendly and open-ended, inviting them to ask questions or share topics they're interested in. Let me make sure the tone is welcoming and helpful. Also, check for any possible misunderstandings. They might be testing if I recognize the term "model," so confirming my identity as Qwen is important. Alright, time to put it all together in a natural, conversational way.
 
-USER> hello model
-
-MODEL> Okay, the user said "hello model". Let me think about how to respond.
-
-First, I need to check if there's any function I should call here. The available tools are get_weather and invoke_cli_command. The user's message is just a greeting, so probably no function is needed.
-
-The user might just be testing or starting a conversation. My role is to greet them back and offer help. I should keep it friendly and open-ended. Let me make sure there's no hidden request in their message. Nope, it's straightforward.
-
-So, the best move is to acknowledge their greeting and ask how I can assist. That's standard for such interactions. No tool calls required here
-.
-
-Hello! How can I assist you today?
-
-Input: 199  Reasoning: 143  Completion: 10  Output: 153  Window: 209 (1% of 40K) TPS: 46.54
-
-USER>
+! I'm Qwen, a large language model developed by Alibaba Cloud. How can I assist you today? 😊 Whether you have questions, need help with something, or just want to chat, feel free to let me know!
+Unloading Kronk
 ```
