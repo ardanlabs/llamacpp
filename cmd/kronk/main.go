@@ -97,7 +97,7 @@ Environment Variables (--local mode):
 }
 
 func init() {
-
+	libsCmd.Flags().Bool("local", false, "Run without the model server")
 }
 
 func runLibs(cmd *cobra.Command, args []string) {
