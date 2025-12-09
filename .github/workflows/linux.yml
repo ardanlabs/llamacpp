@@ -54,8 +54,14 @@ jobs:
           export GOROUTINES=1
           export RUN_IN_PARALLEL=0
           CGO_ENABLED=0 go test -v -count=1 ./tests
+      - name: Delete existing models cache
+        if: github.ref == 'refs/heads/main' && steps.cache-models.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh cache delete "${{ runner.os }}-models-v3" --repo ${{ github.repository }} || true
       - name: Save models cache
-        if: steps.cache-models.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.cache-models.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ~/kronk/models
