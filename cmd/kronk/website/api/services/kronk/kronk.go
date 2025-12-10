@@ -16,7 +16,7 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/cache"
-	"github.com/ardanlabs/kronk/cmd/kronk/website/api/services/kronk/build/all"
+	"github.com/ardanlabs/kronk/cmd/kronk/website/api/services/kronk/build"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/auth"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/debug"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/sdk/mux"
@@ -26,7 +26,7 @@ import (
 	"github.com/ardanlabs/kronk/tools"
 )
 
-var build = "develop"
+var tag = "develop"
 
 func Run(showHelp bool) error {
 	var log *logger.Logger
@@ -108,7 +108,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		LlamaLog     int  `conf:"default:1"`
 	}{
 		Version: conf.Version{
-			Build: build,
+			Build: tag,
 			Desc:  "Kronk",
 		},
 	}
@@ -289,7 +289,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	cfgMux := mux.Config{
-		Build:  build,
+		Build:  tag,
 		Log:    log,
 		Auth:   ath,
 		Tracer: tracer,
@@ -297,7 +297,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	}
 
 	webAPI := mux.WebAPI(cfgMux,
-		all.Routes(),
+		build.Routes(),
 		mux.WithCORS(cfg.Web.CORSAllowedOrigins),
 	)
 

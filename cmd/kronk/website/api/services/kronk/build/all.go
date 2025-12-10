@@ -1,5 +1,5 @@
-// Package all binds all the routes into the specified app.
-package all
+// Package build binds all the routes into the specified app.
+package build
 
 import (
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/chatapp"
@@ -10,16 +10,16 @@ import (
 	"github.com/ardanlabs/kronk/cmd/kronk/website/foundation/web"
 )
 
-// Routes constructs the add value which provides the implementation of
+// Routes constructs the all value which provides the implementation of
 // of RouteAdder for specifying what routes to bind to this instance.
-func Routes() add {
-	return add{}
+func Routes() all {
+	return all{}
 }
 
-type add struct{}
+type all struct{}
 
 // Add implements the RouterAdder interface.
-func (add) Add(app *web.App, cfg mux.Config) {
+func (all) Add(app *web.App, cfg mux.Config) {
 	checkapp.Routes(app, checkapp.Config{
 		Build: cfg.Build,
 		Log:   cfg.Log,
