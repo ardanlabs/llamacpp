@@ -64,6 +64,12 @@ Flags:
 Use "kronk [command] --help" for more information about a command.
 ```
 
+## Roadmap
+
+Here is the existing [ROADMAP](ROADMAP.md) for the project and the things being worked on or things that would be nice to have. The roadmap is not in any particular order.
+
+If you are interested in helping in any way, please send an email to [Bill Kennedy](mailto:bill@ardanlabs.com).
+
 ## Architecture
 
 The architecture of Kronk is designed to be simple and scalable. The Kronk API allows you to write applications that can diectly interact with local open source GGUF models (supported by llama.cpp) that provide inference for text and media (vision and audio).
