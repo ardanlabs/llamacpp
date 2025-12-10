@@ -85,7 +85,7 @@ func NewLibConfig(libPath string, archStr string, osStr string, procStr string, 
 
 // DownloadLibraries performs a complete workflow for downloading and installing
 // the latest version of llama.cpp.
-func DownloadLibraries(ctx context.Context, log Logger, libCfg LibConfig) (VersionTag, error) {
+func DownloadLibraries(ctx context.Context, log kronk.Logger, libCfg LibConfig) (VersionTag, error) {
 	log(ctx, "download-libraries", "status", "check libraries version information", "lib-path", libCfg.LibPath, "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor)
 
 	tag, err := VersionInformation(libCfg.LibPath)
@@ -162,7 +162,7 @@ func VersionInformation(libPath string) (VersionTag, error) {
 
 // =============================================================================
 
-func downloadLibs(ctx context.Context, log Logger, cfg LibConfig, version string) (VersionTag, error) {
+func downloadLibs(ctx context.Context, log kronk.Logger, cfg LibConfig, version string) (VersionTag, error) {
 	tempPath := filepath.Join(cfg.LibPath, "temp")
 
 	progress := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {

@@ -376,7 +376,7 @@ func initKronk(t *testing.T) *logger.Logger {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	tag, err := tools.DownloadLibraries(ctx, tools.FmtLogger, cfg)
+	tag, err := tools.DownloadLibraries(ctx, kronk.FmtLogger, cfg)
 	if err != nil {
 		t.Fatalf("unable to install llama.cpp: %s", err)
 	}

@@ -72,12 +72,12 @@ func run() error {
 		return err
 	}
 
-	_, err = tools.DownloadLibraries(context.Background(), tools.FmtLogger, libCfg)
+	_, err = tools.DownloadLibraries(context.Background(), kronk.FmtLogger, libCfg)
 	if err != nil {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	info, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelChatURL, "", modelPath)
+	info, err := tools.DownloadModel(context.Background(), kronk.FmtLogger, modelChatURL, "", modelPath)
 	if err != nil {
 		return fmt.Errorf("unable to install chat model: %w", err)
 	}

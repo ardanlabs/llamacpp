@@ -90,12 +90,12 @@ func installSystem() (tools.ModelPath, error) {
 		return tools.ModelPath{}, err
 	}
 
-	_, err = tools.DownloadLibraries(context.Background(), tools.FmtLogger, libCfg)
+	_, err = tools.DownloadLibraries(context.Background(), kronk.FmtLogger, libCfg)
 	if err != nil {
 		return tools.ModelPath{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelURL, projURL, modelPath)
+	mp, err := tools.DownloadModel(context.Background(), kronk.FmtLogger, modelURL, projURL, modelPath)
 	if err != nil {
 		return tools.ModelPath{}, fmt.Errorf("unable to install model: %w", err)
 	}

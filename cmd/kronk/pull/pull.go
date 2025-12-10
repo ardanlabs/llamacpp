@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/defaults"
@@ -75,7 +76,7 @@ func RunLocal(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	_, err := tools.DownloadModel(ctx, tools.FmtLogger, modelURL, projURL, modelPath)
+	_, err := tools.DownloadModel(ctx, kronk.FmtLogger, modelURL, projURL, modelPath)
 	if err != nil {
 		return fmt.Errorf("pull:unable to install model: %w", err)
 	}

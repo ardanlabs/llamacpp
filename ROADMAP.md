@@ -12,6 +12,11 @@
 - Apply OTEL Spans to critical areas beyond start/stop request
 - Maintain stats at a model level
 
+### API
+
+- Implement the Charmbracelt Interface
+  https://github.com/charmbracelet/fantasy/pull/92#issuecomment-3636479873
+
 ### FRONTEND
 
 - Maybe a Kronk model server BUI

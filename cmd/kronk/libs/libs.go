@@ -75,7 +75,7 @@ func RunLocal(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	_, err = tools.DownloadLibraries(ctx, tools.FmtLogger, libCfg)
+	_, err = tools.DownloadLibraries(ctx, kronk.FmtLogger, libCfg)
 	if err != nil {
 		return errs.Errorf(errs.Internal, "libs:unable to install llama.cpp: %s", err)
 	}

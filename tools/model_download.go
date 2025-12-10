@@ -8,11 +8,13 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/ardanlabs/kronk"
 )
 
 // DownloadModel performs a complete workflow for downloading and installing
 // the specified model.
-func DownloadModel(ctx context.Context, log Logger, modelFileURL string, projURL string, modelBasePath string) (ModelPath, error) {
+func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, projURL string, modelBasePath string) (ModelPath, error) {
 	modelFileName, err := extractFileName(modelFileURL)
 	if err != nil {
 		return ModelPath{}, fmt.Errorf("download-model:unable to extract file name: %w", err)

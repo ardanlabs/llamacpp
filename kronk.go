@@ -25,9 +25,6 @@ const Version = "1.1.6"
 
 // =============================================================================
 
-// Logger is a function type for logging.
-type Logger func(ctx context.Context, msg string, args ...any)
-
 // LogLevel represents the logging level.
 type LogLevel int
 
@@ -47,6 +44,8 @@ var (
 	initOnce        sync.Once
 	initErr         error
 )
+
+// =============================================================================
 
 // Init initializes the Kronk backend suport.
 func Init(libPath string, logLevel LogLevel) error {
@@ -83,6 +82,8 @@ func Init(libPath string, logLevel LogLevel) error {
 
 	return initErr
 }
+
+// =============================================================================
 
 // Kronk provides a concurrently safe api for using llama.cpp to access models.
 type Kronk struct {
@@ -420,8 +421,6 @@ func (krn *Kronk) EmbeddingsHTTP(ctx context.Context, log Logger, w http.Respons
 	return resp, nil
 }
 
-// =============================================================================
-
 func (krn *Kronk) acquireModel(ctx context.Context) (*model.Model, error) {
 	err := func() error {
 		krn.shutdown.Lock()
@@ -536,4 +535,24 @@ func sendError[T any](ctx context.Context, ch chan T, ef errorFunc[T], rec any) 
 	case ch <- ef(fmt.Errorf("%v", rec)):
 	default:
 	}
+}
+
+// =============================================================================
+
+// Logger provides a function for logging messages from different APIs.
+type Logger func(ctx context.Context, msg string, args ...any)
+
+// DiscardLogger discards logging.
+var DiscardLogger = func(ctx context.Context, msg string, args ...any) {
+}
+
+// FmtLogger provides a basic logger that writes to stdout.
+var FmtLogger = func(ctx context.Context, msg string, args ...any) {
+	fmt.Print(msg)
+	for i := 0; i < len(args); i += 2 {
+		if i+1 < len(args) {
+			fmt.Printf(" %v[%v]", args[i], args[i+1])
+		}
+	}
+	fmt.Println()
 }
