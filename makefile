@@ -66,6 +66,7 @@ kronk-remove:
 kronk-show:
 	go run cmd/kronk/main.go show "$(ID)"
 
+# ------------------------------------------------------------------------------
 
 kronk-libs-local: install-libraries
 
@@ -122,6 +123,14 @@ curl-kronk-chat:
 				"content": "How do you declare an interface in Go?" \
 			} \
 		] \
+    }'
+
+curl-kronk-embeddings:
+	curl -i -X POST http://localhost:3000/v1/embeddings \
+     -H "Content-Type: application/json" \
+     -d '{ \
+	 	"model": "embeddinggemma-300m-qat-Q8_0", \
+  		"input": "Why is the sky blue?" \
     }'
 
 # ==============================================================================
