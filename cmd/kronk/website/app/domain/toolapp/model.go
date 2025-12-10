@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ardanlabs/kronk/cache"
 	"github.com/ardanlabs/kronk/tools"
 )
 
@@ -171,4 +172,42 @@ func toModelInfo(model tools.ModelInfo) ModelInfoResponse {
 		IsGPT:         model.Details.IsGPTModel,
 		Metadata:      model.Details.Metadata,
 	}
+}
+
+// =============================================================================
+
+// ModelDetail provides details for the models in the cache.
+type ModelDetail struct {
+	ID            string    `json:"id"`
+	OwnedBy       string    `json:"owned_by"`
+	ModelFamily   string    `json:"model_family"`
+	Size          int64     `json:"size"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	ActiveStreams int       `json:"active_streams"`
+}
+
+// ModelDetails is a collection of model detail.
+type ModelDetails []ModelDetail
+
+// Encode implements the encoder interface.
+func (app ModelDetails) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(app)
+	return data, "application/json", err
+}
+
+func toModelDetails(models []cache.ModelDetail) ModelDetails {
+	details := make(ModelDetails, len(models))
+
+	for i, model := range models {
+		details[i] = ModelDetail{
+			ID:            model.ID,
+			OwnedBy:       model.OwnedBy,
+			ModelFamily:   model.ModelFamily,
+			Size:          model.Size,
+			ExpiresAt:     model.ExpiresAt,
+			ActiveStreams: model.ActiveStreams,
+		}
+	}
+
+	return details
 }

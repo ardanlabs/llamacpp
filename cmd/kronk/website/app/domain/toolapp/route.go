@@ -28,6 +28,7 @@ func Routes(app *web.App, cfg Config) {
 	app.HandlerFunc(http.MethodPost, version, "/v1/libs/pull", api.pullLibs, bearer)
 	app.HandlerFunc(http.MethodGet, version, "/v1/models", api.listModels, bearer)
 	app.HandlerFunc(http.MethodGet, version, "/v1/models/{model}", api.showModel, bearer)
+	app.HandlerFunc(http.MethodGet, version, "/v1/models/status", api.modelStatus, bearer)
 	app.HandlerFunc(http.MethodPost, version, "/v1/models/pull", api.pullModels, bearer)
 	app.HandlerFunc(http.MethodDelete, version, "/v1/models/{model}", api.removeModel, bearer)
 }

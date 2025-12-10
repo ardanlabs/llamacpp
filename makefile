@@ -67,6 +67,9 @@ kronk-list:
 kronk-pull:
 	go run cmd/kronk/main.go pull "$(URL)"
 
+kronk-ps:
+	go run cmd/kronk/main.go ps
+
 # make kronk-remove ID="qwen3-8b-q8_0"
 kronk-remove:
 	go run cmd/kronk/main.go remove "$(ID)"
@@ -120,6 +123,9 @@ curl-kronk-remove:
 
 curl-kronk-show:
 	curl -i -X GET http://localhost:3000/v1/models/qwen3-8b-q8_0
+
+curl-model-status:
+	curl -i -X GET http://localhost:3000/v1/models/status
 
 curl-kronk-chat:
 	curl -i -X POST http://localhost:3000/v1/chat/completions \

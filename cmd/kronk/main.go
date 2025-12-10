@@ -12,6 +12,7 @@ import (
 	k "github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/cmd/kronk/libs"
 	"github.com/ardanlabs/kronk/cmd/kronk/list"
+	"github.com/ardanlabs/kronk/cmd/kronk/ps"
 	"github.com/ardanlabs/kronk/cmd/kronk/pull"
 	"github.com/ardanlabs/kronk/cmd/kronk/remove"
 	"github.com/ardanlabs/kronk/cmd/kronk/show"
@@ -291,7 +292,10 @@ Environment Variables:
 }
 
 func runPs(cmd *cobra.Command, args []string) {
-	fmt.Println("ps command not implemented")
+	if err := ps.RunWeb(args); err != nil {
+		fmt.Println("\nERROR:", err)
+		os.Exit(1)
+	}
 }
 
 // =============================================================================

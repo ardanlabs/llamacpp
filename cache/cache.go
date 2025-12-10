@@ -6,6 +6,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -105,7 +106,7 @@ func NewCache(cfg Config) (*Cache, error) {
 
 	opt := otter.Options[string, *kronk.Kronk]{
 		MaximumSize:      cfg.MaxInCache,
-		ExpiryCalculator: otter.ExpiryAccessing[string, *kronk.Kronk](cfg.CacheTTL),
+		ExpiryCalculator: otter.ExpiryWriting[string, *kronk.Kronk](cfg.CacheTTL),
 		OnDeletion:       c.eviction,
 	}
 
@@ -166,15 +167,57 @@ func (c *Cache) Processor() download.Processor {
 	return c.processor
 }
 
+// ModelStatus returns information about the current models in the cache.
+func (c *Cache) ModelStatus() ([]ModelDetail, error) {
+
+	// Extract the models currently in the cache.
+	var models []otter.Entry[string, *kronk.Kronk]
+	for entry := range c.cache.Coldest() {
+		models = append(models, entry)
+	}
+
+	// Retrieve the models installed locally.
+	list, err := tools.ListModels(defaults.ModelsDir(""))
+	if err != nil {
+		return nil, err
+	}
+
+	// Match the model in the cache with a locally stored model
+	// so we can get information about that model.
+	ps := make([]ModelDetail, 0, len(models))
+ids:
+	for _, model := range models {
+		for _, mi := range list {
+			id := strings.ToLower(mi.ID)
+
+			if id == model.Key {
+				ps = append(ps, ModelDetail{
+					ID:            mi.ID,
+					OwnedBy:       mi.OwnedBy,
+					ModelFamily:   mi.ModelFamily,
+					Size:          mi.Size,
+					ExpiresAt:     model.ExpiresAt(),
+					ActiveStreams: model.Value.ActiveStreams(),
+				})
+				continue ids
+			}
+		}
+	}
+
+	return ps, nil
+}
+
 // AquireModel will provide a kronk API for the specified model. If the model
 // is not in the cache, an API for the model will be created.
-func (c *Cache) AquireModel(ctx context.Context, modelName string) (*kronk.Kronk, error) {
-	krn, exists := c.cache.GetIfPresent(modelName)
+func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, error) {
+	modelID = strings.ToLower(modelID)
+
+	krn, exists := c.cache.GetIfPresent(modelID)
 	if exists {
 		return krn, nil
 	}
 
-	fi, err := tools.FindModel(c.modelPath, modelName)
+	fi, err := tools.FindModel(c.modelPath, modelID)
 	if err != nil {
 		return nil, fmt.Errorf("aquire-model: %w", err)
 	}
@@ -190,7 +233,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelName string) (*kronk.Kronk
 		return nil, fmt.Errorf("unable to create inference model: %w", err)
 	}
 
-	c.cache.Set(modelName, krn)
+	c.cache.Set(modelID, krn)
 	c.itemsInCache.Add(1)
 
 	totalEntries := len(krn.SystemInfo())*2 + (5 * 2)
@@ -203,7 +246,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelName string) (*kronk.Kronk
 	info = append(info, "status")
 	info = append(info, "kronk cache add")
 	info = append(info, "model-name")
-	info = append(info, modelName)
+	info = append(info, modelID)
 	info = append(info, "contextWindow")
 	info = append(info, krn.ModelConfig().ContextWindow)
 	info = append(info, "isGPTModel")

@@ -197,3 +197,14 @@ func (a *app) showModel(ctx context.Context, r *http.Request) web.Encoder {
 
 	return toModelInfo(mi)
 }
+
+func (a *app) modelStatus(ctx context.Context, r *http.Request) web.Encoder {
+	models, err := a.cache.ModelStatus()
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	a.log.Info(ctx, "models", "len", len(models))
+
+	return toModelDetails(models)
+}

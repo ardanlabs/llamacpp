@@ -32,17 +32,17 @@ func (a *app) chatCompletions(ctx context.Context, r *http.Request) web.Encoder 
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	modelNameReq, exists := req["model"]
+	modelIDReq, exists := req["model"]
 	if !exists {
 		return errs.Errorf(errs.InvalidArgument, "missing model field")
 	}
 
-	modelName, ok := modelNameReq.(string)
+	modelID, ok := modelIDReq.(string)
 	if !ok {
 		return errs.Errorf(errs.InvalidArgument, "model name must be a string")
 	}
 
-	krn, err := a.cache.AquireModel(ctx, modelName)
+	krn, err := a.cache.AquireModel(ctx, modelID)
 	if err != nil {
 		return errs.New(errs.InvalidArgument, err)
 	}
