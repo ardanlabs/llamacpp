@@ -119,9 +119,16 @@ func TextMessage(role string, content string) D {
 }
 
 // MediaMessage create a new media message.
-func MediaMessage(media []byte) D {
-	return D{
-		"content": media,
+func MediaMessage(text string, media []byte) []D {
+	return []D{
+		{
+			"role":    "user",
+			"content": media,
+		},
+		{
+			"role":    "user",
+			"content": text,
+		},
 	}
 }
 

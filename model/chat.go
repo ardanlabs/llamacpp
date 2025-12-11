@@ -69,6 +69,14 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 			defer mtmd.Free(mtmdCtx)
 		}
 
+		if isOpenAIMediaRequest(d) {
+			d, err = openAIToMediaMessage(d)
+			if err != nil {
+				m.sendChatError(ctx, ch, id, fmt.Errorf("chat-streaming:unable to process request document: %w", err))
+				return
+			}
+		}
+
 		prompt, media, err := m.applyRequestJinjaTemplate(d)
 		if err != nil {
 			m.sendChatError(ctx, ch, id, fmt.Errorf("chat-streaming:unable to apply jinja template: %w", err))
