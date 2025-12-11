@@ -289,19 +289,24 @@ loop:
 				fmt.Println()
 			}
 
-			fmt.Printf("\u001b[92mModel Asking For Tool Call:\nToolID[%s]: %s(%s)\u001b[0m",
-				resp.Choice[0].Delta.ToolCalls[0].ID,
-				resp.Choice[0].Delta.ToolCalls[0].Name,
-				resp.Choice[0].Delta.ToolCalls[0].Arguments,
-			)
+			fmt.Printf("\u001b[92mModel Asking For Tool Calls:\n\u001b[0m")
 
-			messages = append(messages,
-				model.TextMessage("tool", fmt.Sprintf("Tool call %s: %s(%v)",
-					resp.Choice[0].Delta.ToolCalls[0].ID,
-					resp.Choice[0].Delta.ToolCalls[0].Name,
-					resp.Choice[0].Delta.ToolCalls[0].Arguments),
-				),
-			)
+			for _, tool := range resp.Choice[0].Delta.ToolCalls {
+				fmt.Printf("\u001b[92mToolID[%s]: %s(%s)\n\u001b[0m",
+					tool.ID,
+					tool.Name,
+					tool.Arguments,
+				)
+
+				messages = append(messages,
+					model.TextMessage("tool", fmt.Sprintf("Tool call %s: %s(%v)\n",
+						tool.ID,
+						tool.Name,
+						tool.Arguments),
+					),
+				)
+			}
+
 			break loop
 
 		default:

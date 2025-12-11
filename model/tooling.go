@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -26,7 +27,7 @@ func (m *Model) thinkStop(token llama.Token, reasonFlag *int, completionTokens *
 	return batch
 }
 
-func (m *Model) toolCall(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte) (string, error) {
+func (m *Model) toolCall(lctx llama.Context, token llama.Token, sampler llama.Sampler, buf []byte) (llama.Batch, string, error) {
 	var batch llama.Batch
 	var content string
 	var err error
@@ -37,7 +38,7 @@ func (m *Model) toolCall(lctx llama.Context, token llama.Token, sampler llama.Sa
 		batch = m.nextBatch(token)
 		content, token, err = m.batchResponse(lctx, batch, sampler, buf)
 		if err != nil {
-			return "", err
+			return batch, "", err
 		}
 
 		if content == "</tool_call>" {
@@ -47,31 +48,39 @@ func (m *Model) toolCall(lctx llama.Context, token llama.Token, sampler llama.Sa
 		data.WriteString(content)
 	}
 
-	return data.String(), nil
+	content = strings.Trim(data.String(), "\n")
+	content = fmt.Sprintf("%s\n", content)
+
+	batch = m.nextBatch(token)
+
+	return batch, content, nil
 }
 
 // =============================================================================
 
-func parseToolCall(content string) ResponseToolCall {
-	// The idea is to add a unique ID to the tool call. The user
-	// can use this ID to reference the tool call in the future.
+func parseToolCall(content string) []ResponseToolCall {
+	var toolCalls []ResponseToolCall
 
-	toolCall := ResponseToolCall{
-		ID:  uuid.NewString(),
-		Raw: content,
-	}
-
-	switch {
-	case len(content) == 0:
-		toolCall.Status = 1
-		toolCall.Error = "response missing"
-
-	default:
-		if err := json.Unmarshal([]byte(content), &toolCall); err != nil {
-			toolCall.Error = err.Error()
-			toolCall.Status = 2
+	for call := range strings.SplitSeq(content, "\n") {
+		toolCall := ResponseToolCall{
+			ID:  uuid.NewString(),
+			Raw: call,
 		}
+
+		switch {
+		case len(call) == 0:
+			toolCall.Status = 1
+			toolCall.Error = "response missing"
+
+		default:
+			if err := json.Unmarshal([]byte(call), &toolCall); err != nil {
+				toolCall.Error = err.Error()
+				toolCall.Status = 2
+			}
+		}
+
+		toolCalls = append(toolCalls, toolCall)
 	}
 
-	return toolCall
+	return toolCalls
 }

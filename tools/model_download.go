@@ -22,7 +22,7 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 
 	modelID := extractModelID(modelFileName)
 
-	log(ctx, fmt.Sprintf("download-model: model-dest[%s] model-url[%s] proj-url[%s] model-id[%s]", modelBasePath, modelFileURL, projURL, modelID))
+	log(ctx, fmt.Sprintf("download-model: model-url[%s] proj-url[%s] model-id[%s]", modelFileURL, projURL, modelID))
 	log(ctx, "download-model: waiting to check model status...")
 
 	progress := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {
@@ -44,7 +44,7 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 				return ModelPath{}, fmt.Errorf("download-model:unable to download file: %w", errOrg)
 			}
 
-			log(ctx, fmt.Sprintf("download-model: status[using installed version of model] model-file[%s] proj-file[%s]", mp.ModelFile, mp.ProjFile))
+			log(ctx, "download-model: status[using installed version of model]")
 			return mp, nil
 		}
 
@@ -53,10 +53,10 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 
 	switch mp.Downloaded {
 	case true:
-		log(ctx, fmt.Sprintf("download-model: status[downloaded] model-file[%s] proj-file[%s]", mp.ModelFile, mp.ProjFile))
+		log(ctx, "download-model: status[downloaded]")
 
 	default:
-		log(ctx, fmt.Sprintf("download-model: status[already exists] model-file[%s] proj-file[%s]", mp.ModelFile, mp.ProjFile))
+		log(ctx, "download-model: status[already exists]")
 	}
 
 	return mp, nil

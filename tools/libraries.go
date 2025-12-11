@@ -86,7 +86,7 @@ func NewLibConfig(libPath string, archStr string, osStr string, procStr string, 
 // DownloadLibraries performs a complete workflow for downloading and installing
 // the latest version of llama.cpp.
 func DownloadLibraries(ctx context.Context, log kronk.Logger, libCfg LibConfig) (VersionTag, error) {
-	log(ctx, "download-libraries", "status", "check libraries version information", "lib-path", libCfg.LibPath, "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor)
+	log(ctx, "download-libraries", "status", "check libraries version information", "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor)
 
 	tag, err := VersionInformation(libCfg.LibPath)
 	if err != nil {
@@ -94,11 +94,11 @@ func DownloadLibraries(ctx context.Context, log kronk.Logger, libCfg LibConfig) 
 			return VersionTag{}, fmt.Errorf("download-libraries:error retrieving version info: %w", err)
 		}
 
-		log(ctx, "download-libraries", "status", "unable to check latest verion, using installed version", "lib-path", libCfg.LibPath, "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor, "latest", tag.Latest, "current", tag.Version)
+		log(ctx, "download-libraries", "status", "unable to check latest verion, using installed version", "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor, "latest", tag.Latest, "current", tag.Version)
 		return tag, nil
 	}
 
-	log(ctx, "download-libraries", "status", "check llama.cpp installation", "lib-path", libCfg.LibPath, "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor, "latest", tag.Latest, "current", tag.Version)
+	log(ctx, "download-libraries", "status", "check llama.cpp installation", "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor, "latest", tag.Latest, "current", tag.Version)
 
 	if isTagMatch(tag, libCfg) {
 		log(ctx, "download-libraries", "status", "already installed", "latest", tag.Latest, "current", tag.Version)
@@ -123,7 +123,7 @@ func DownloadLibraries(ctx context.Context, log kronk.Logger, libCfg LibConfig) 
 		log(ctx, "download-libraries", "status", "failed to install new version, using current version")
 	}
 
-	log(ctx, "download-libraries", "status", "updated llama.cpp installed", "lib-path", libCfg.LibPath, "old-version", tag.Version, "current", newTag.Version)
+	log(ctx, "download-libraries", "status", "updated llama.cpp installed", "old-version", tag.Version, "current", newTag.Version)
 
 	return newTag, nil
 }

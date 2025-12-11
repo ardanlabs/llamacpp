@@ -261,9 +261,9 @@ func forReasoning(content string, reasoning bool) string {
 	return ""
 }
 
-func chatResponseFinal(id string, object string, model string, index int, prompt string, content string, reasoning string, respToolCall ResponseToolCall, u Usage) ChatResponse {
+func chatResponseFinal(id string, object string, model string, index int, prompt string, content string, reasoning string, respToolCalls []ResponseToolCall, u Usage) ChatResponse {
 	finishReason := FinishReasonStop
-	if respToolCall.ID != "" {
+	if len(respToolCalls) > 0 {
 		finishReason = FinishReasonTool
 	}
 
@@ -279,7 +279,7 @@ func chatResponseFinal(id string, object string, model string, index int, prompt
 					Role:      RoleAssistant,
 					Content:   content,
 					Reasoning: reasoning,
-					ToolCalls: []ResponseToolCall{respToolCall},
+					ToolCalls: respToolCalls,
 				},
 				FinishReason: finishReason,
 			},

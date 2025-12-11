@@ -225,7 +225,7 @@ loop:
 			continue
 
 		case "<tool_call>":
-			content, err = m.toolCall(lctx, token, sampler, buf)
+			batch, content, err = m.toolCall(lctx, token, sampler, buf)
 			if err != nil {
 				m.sendErrorResponse(ctx, ch, id, object, index, prompt, err, Usage{
 					PromptTokens:     inputTokens,
@@ -239,7 +239,7 @@ loop:
 
 			toolFlag = 1
 			finalTooling.WriteString(content)
-			break loop
+			continue
 
 		case "<|channel|>":
 			batch, content, err = m.gptChannel(lctx, token, sampler, buf)
@@ -340,10 +340,10 @@ loop:
 	// -------------------------------------------------------------------------
 
 	// Parse the tool call response to structured data.
-	var respToolCall ResponseToolCall
+	var respToolCalls []ResponseToolCall
 	if toolFlag == 1 {
 		content := finalTooling.String()
-		content = strings.Trim(content, "\n")
+		content = strings.TrimSuffix(content, "\n")
 
 		if len(content) > 0 {
 			// We will count the tokens for the final JSON document
@@ -355,12 +355,12 @@ loop:
 			outputTokens = reasonTokens + completionTokens
 		}
 
-		respToolCall = parseToolCall(content)
+		respToolCalls = parseToolCall(content)
 	}
 
 	// Send the final response that contains eveything we have sent plus
 	// the final usage numbers.
-	m.sendFinalResponse(ctx, ch, id, object, index, prompt, &finalContent, &finalReasoning, respToolCall,
+	m.sendFinalResponse(ctx, ch, id, object, index, prompt, &finalContent, &finalReasoning, respToolCalls,
 		Usage{
 			PromptTokens:     inputTokens,
 			ReasoningTokens:  reasonTokens,
@@ -459,7 +459,7 @@ func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, i
 	return nil
 }
 
-func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, finalContent *strings.Builder, finalReasoning *strings.Builder, respToolCall ResponseToolCall, usage Usage) {
+func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, finalContent *strings.Builder, finalReasoning *strings.Builder, respToolCalls []ResponseToolCall, usage Usage) {
 	select {
 	case <-ctx.Done():
 		select {
@@ -470,7 +470,7 @@ func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, i
 	case ch <- chatResponseFinal(id, object, m.modelInfo.ID, index, prompt,
 		finalContent.String(),
 		finalReasoning.String(),
-		respToolCall,
+		respToolCalls,
 		usage):
 	}
 }
