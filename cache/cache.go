@@ -223,6 +223,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 	}
 
 	krn, err = kronk.New(c.instances, model.Config{
+		Log:            c.log.Info,
 		ModelFile:      fi.ModelFile,
 		ProjectionFile: fi.ProjFile,
 		Device:         c.device,

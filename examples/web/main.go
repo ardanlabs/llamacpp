@@ -89,6 +89,7 @@ func run() error {
 	}
 
 	krnChat, err := kronk.New(modelInstances, model.Config{
+		Log:       kronk.FmtLogger,
 		ModelFile: info.ModelFile,
 		NBatch:    32 * 1024,
 	})

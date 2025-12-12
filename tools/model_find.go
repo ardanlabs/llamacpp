@@ -18,7 +18,7 @@ type ModelPath struct {
 func FindModel(modelBasePath string, modelID string) (ModelPath, error) {
 	entries, err := os.ReadDir(modelBasePath)
 	if err != nil {
-		return ModelPath{}, fmt.Errorf("find-model:reading models directory: %w", err)
+		return ModelPath{}, fmt.Errorf("find-model: reading models directory: %w", err)
 	}
 
 	projID := fmt.Sprintf("mmproj-%s", modelID)
@@ -76,7 +76,7 @@ func FindModel(modelBasePath string, modelID string) (ModelPath, error) {
 	}
 
 	if fi.ModelFile == "" {
-		return ModelPath{}, fmt.Errorf("find-model:model id %q not found", modelID)
+		return ModelPath{}, fmt.Errorf("find-model: model id %q not found", modelID)
 	}
 
 	return fi, nil

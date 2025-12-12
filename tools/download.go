@@ -39,7 +39,7 @@ func DownloadFile(ctx context.Context, src string, dest string, progress Progres
 	}
 
 	if err := client.Get(); err != nil {
-		return false, fmt.Errorf("download-file:failed to download model: %T %w", err, err)
+		return false, fmt.Errorf("download-file: failed to download model: %T %w", err, err)
 	}
 
 	if pr.currentSize == 0 {

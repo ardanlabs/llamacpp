@@ -20,6 +20,7 @@ var jinjaFS embed.FS
 // Model represents a model and provides a low-level API for working with it.
 type Model struct {
 	cfg           Config
+	log           Logger
 	model         llama.Model
 	vocab         llama.Vocab
 	ctxParams     llama.ContextParams
@@ -31,21 +32,21 @@ type Model struct {
 
 func NewModel(cfg Config) (*Model, error) {
 	if err := validateConfig(cfg); err != nil {
-		return nil, fmt.Errorf("new-model:unable to validate config: %w", err)
+		return nil, fmt.Errorf("new-model: unable to validate config: %w", err)
 	}
 
 	mparams := llama.ModelDefaultParams()
 	if cfg.Device != "" {
 		dev := llama.GGMLBackendDeviceByName(cfg.Device)
 		if dev == 0 {
-			return nil, fmt.Errorf("new-model:unknown device: %s", cfg.Device)
+			return nil, fmt.Errorf("new-model: unknown device: %s", cfg.Device)
 		}
 		mparams.SetDevices([]llama.GGMLBackendDevice{dev})
 	}
 
 	mdl, err := llama.ModelLoadFromFile(cfg.ModelFile, mparams)
 	if err != nil {
-		return nil, fmt.Errorf("new-model:unable to load model: %w", err)
+		return nil, fmt.Errorf("new-model: unable to load model: %w", err)
 	}
 
 	cfg = adjustConfig(cfg, mdl)
@@ -57,13 +58,21 @@ func NewModel(cfg Config) (*Model, error) {
 
 	template, err := retrieveTemplate(cfg, mdl, modelInfo)
 	if err != nil {
-		return nil, fmt.Errorf("new-model:failed to retrieve model template: %w", err)
+		return nil, fmt.Errorf("new-model: failed to retrieve model template: %w", err)
+	}
+
+	// -------------------------------------------------------------------------
+
+	l := cfg.Log
+	if cfg.Log == nil {
+		l = func(ctx context.Context, msg string, args ...any) {}
 	}
 
 	// -------------------------------------------------------------------------
 
 	m := Model{
 		cfg:       cfg,
+		log:       l,
 		model:     mdl,
 		vocab:     vocab,
 		ctxParams: modelCtxParams(cfg, modelInfo),
@@ -81,11 +90,11 @@ func retrieveTemplate(cfg Config, mdl llama.Model, modelInfo ModelInfo) (string,
 	if cfg.JinjaFile != "" {
 		data, err := readJinjaTemplate(cfg.JinjaFile)
 		if err != nil {
-			return "", fmt.Errorf("retrieve-template:failed to read jinja template: %w", err)
+			return "", fmt.Errorf("retrieve-template: failed to read jinja template: %w", err)
 		}
 
 		if data == "" {
-			return "", fmt.Errorf("retrieve-template:jinja template is empty")
+			return "", fmt.Errorf("retrieve-template: jinja template is empty")
 		}
 
 		template = data
@@ -95,7 +104,7 @@ func retrieveTemplate(cfg Config, mdl llama.Model, modelInfo ModelInfo) (string,
 		if modelInfo.IsGPTModel {
 			data, err := jinjaFS.ReadFile("jinja/gpt-oss.jinja")
 			if err != nil {
-				return "", fmt.Errorf("retrieve-template:failed to read gpt-oss.jinja template: %w", err)
+				return "", fmt.Errorf("retrieve-template: failed to read gpt-oss.jinja template: %w", err)
 			}
 
 			return string(data), nil
@@ -120,7 +129,7 @@ func (m *Model) Unload(ctx context.Context) error {
 	for m.activeStreams.Load() > 0 {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("unload:cannot unload: %d active streams: %w", m.activeStreams.Load(), ctx.Err())
+			return fmt.Errorf("unload: cannot unload %d active streams: %w", m.activeStreams.Load(), ctx.Err())
 
 		case <-time.After(100 * time.Millisecond):
 		}
@@ -141,10 +150,20 @@ func (m *Model) ModelInfo() ModelInfo {
 }
 
 func (m *Model) processChatRequest(ctx context.Context, id string, lctx llama.Context, object string, prompt string, params Params, ch chan<- ChatResponse) {
-	var inputTokens int
-	var completionTokens int
-	var reasonTokens int
-	var tokensPerSecond float64
+	// These are for token counting.
+	var (
+		inputTokens      int
+		completionTokens int
+		reasonTokens     int
+		tokensPerSecond  float64
+	)
+
+	// These flags track what mode the model is operating in.
+	var (
+		reasonFlag     int
+		completionFlag int
+		toolFlag       int
+	)
 
 	// These builders contain the final content for each of these items.
 	var (
@@ -153,15 +172,8 @@ func (m *Model) processChatRequest(ctx context.Context, id string, lctx llama.Co
 		finalTooling   strings.Builder
 	)
 
-	// index is used to provide the index for each response.
+	// Index is used to provide the index for each response.
 	var index int
-
-	// These flags track what mode the model is operating in.
-	var (
-		reasonFlag     int
-		completionFlag int
-		toolFlag       int
-	)
 
 	// The buffer is used to process tokens.
 	const bufferSize = 32 * 1024
@@ -175,7 +187,7 @@ func (m *Model) processChatRequest(ctx context.Context, id string, lctx llama.Co
 
 	// Check that we have not exceeded the context window.
 	if inputTokens > m.cfg.ContextWindow {
-		err := fmt.Errorf("process-chat-request:input tokens %d exceed context window %d", inputTokens, m.cfg.ContextWindow)
+		err := fmt.Errorf("process-chat-request: input tokens %d exceed context window %d", inputTokens, m.cfg.ContextWindow)
 		m.sendErrorResponse(ctx, ch, id, object, 0, prompt, err, Usage{
 			PromptTokens:     inputTokens,
 			ReasoningTokens:  reasonTokens,
@@ -203,6 +215,7 @@ loop:
 		var token llama.Token
 		var resp response
 
+		// Index is used to provide the index for each response.
 		index++
 
 		// ---------------------------------------------------------------------
@@ -242,14 +255,14 @@ loop:
 			toolFlag = 0
 
 		case statusCompletion:
-			reasonFlag = 0
 			completionFlag++
+			reasonFlag = 0
 			toolFlag = 0
 
 		case statusTooling:
+			toolFlag++
 			reasonFlag = 0
 			completionFlag = 0
-			toolFlag++
 
 		default:
 			batch = m.nextBatch(token)
@@ -430,6 +443,10 @@ func (m *Model) isUnncessaryCRLF(reasonFlag int, completionFlag int, content str
 }
 
 func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, content string, reasonFlag int, usage Usage) error {
+	if index%100 == 0 {
+		m.log(ctx, "chat-completion", "status", "delta", "id", id, "index", index, "object", object, "reasoning", reasonFlag, "content", len(content))
+	}
+
 	select {
 	case <-ctx.Done():
 		select {
@@ -446,6 +463,8 @@ func (m *Model) sendDeltaResponse(ctx context.Context, ch chan<- ChatResponse, i
 }
 
 func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, finalContent *strings.Builder, finalReasoning *strings.Builder, respToolCalls []ResponseToolCall, usage Usage) {
+	m.log(ctx, "chat-completion", "status", "final", "id", id, "index", index, "object", object, "tooling", len(respToolCalls) > 0, "reasoning", finalReasoning.Len(), "content", finalContent.Len())
+
 	select {
 	case <-ctx.Done():
 		select {
@@ -459,9 +478,19 @@ func (m *Model) sendFinalResponse(ctx context.Context, ch chan<- ChatResponse, i
 		respToolCalls,
 		usage):
 	}
+
+	contextTokens := usage.PromptTokens + usage.CompletionTokens
+	contextWindow := m.cfg.ContextWindow
+	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
+	of := float32(contextWindow) / float32(1024)
+
+	m.log(ctx, "chat-completion", "prompt", usage.PromptTokens, "output", usage.OutputTokens,
+		"context", contextTokens, "down", fmt.Sprintf("(%.0f%% of %.0fK) TPS: %.2f", percentage, of, usage.TokensPerSecond))
 }
 
 func (m *Model) sendErrorResponse(ctx context.Context, ch chan<- ChatResponse, id string, object string, index int, prompt string, err error, usage Usage) {
+	m.log(ctx, "chat-completion", "status", "ERROR", "msg", err, "id", id, "object", object, "index", index)
+
 	select {
 	case <-ctx.Done():
 

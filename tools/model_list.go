@@ -21,7 +21,7 @@ type ModelFile struct {
 func ListModels(modelBasePath string) ([]ModelFile, error) {
 	entries, err := os.ReadDir(modelBasePath)
 	if err != nil {
-		return nil, fmt.Errorf("list-models:reading models directory: %w", err)
+		return nil, fmt.Errorf("list-models: reading models directory: %w", err)
 	}
 
 	var list []ModelFile

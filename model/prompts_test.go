@@ -5,27 +5,6 @@ import (
 	"testing"
 )
 
-func Test_Ideas(t *testing.T) {
-	// data := []byte("this is not really an image but it will do")
-	// openEncoded := base64.StdEncoding.EncodeToString(data)
-
-	// d := D{
-	// 	"messages": DocumentArray(
-	// 		imageMessageOpenAI("what do you see in the picture?", openEncoded),
-	// 		D{
-	// 			"content": "follow up question",
-	// 		},
-	// 	),
-	// }
-
-	// jsonData, _ := json.Marshal(d)
-
-	// // var req ChatCompletionRequest
-	// // json.Unmarshal(jsonData, &req)
-
-	// fmt.Printf("%#v\n", req)
-}
-
 func Test_OpenAIToMediaMessage(t *testing.T) {
 	data := []byte("this is not really an image but it will do")
 	openEncoded := base64.StdEncoding.EncodeToString(data)

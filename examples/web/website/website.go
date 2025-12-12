@@ -49,16 +49,7 @@ func (h *handlers) chat(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.timeout)
 	defer cancel()
 
-	log := func(ctx context.Context, msg string, args ...any) {
-		fmt.Print(msg)
-		for i := 0; i < len(args); i += 2 {
-			if i+1 < len(args) {
-				fmt.Printf(" %v[%v]", args[i], args[i+1])
-			}
-		}
-		fmt.Printf(" traceID[%v]", traceID)
-		fmt.Println()
-	}
+	ctx = kronk.SetFmtLoggerTraceID(ctx, traceID)
 
 	params := getParams(traceID, req)
 
@@ -84,7 +75,7 @@ func (h *handlers) chat(w http.ResponseWriter, r *http.Request) {
 
 	model.AddParams(params, d)
 
-	if _, err := h.krnChat.ChatStreamingHTTP(ctx, log, w, d); err != nil {
+	if _, err := h.krnChat.ChatStreamingHTTP(ctx, w, d); err != nil {
 		sendError(w, traceID, "streamResponse", err)
 		return
 	}

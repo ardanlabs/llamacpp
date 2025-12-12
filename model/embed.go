@@ -11,12 +11,12 @@ import (
 // Embeddings performs an embedding request and returns the final response.
 func (m *Model) Embeddings(ctx context.Context, input string) (EmbedReponse, error) {
 	if !m.modelInfo.IsEmbedModel {
-		return EmbedReponse{}, fmt.Errorf("embed:model doesn't support embedding")
+		return EmbedReponse{}, fmt.Errorf("embeddings: model doesn't support embedding")
 	}
 
 	lctx, err := llama.InitFromModel(m.model, m.ctxParams)
 	if err != nil {
-		return EmbedReponse{}, fmt.Errorf("embed:unable to init from model: %w", err)
+		return EmbedReponse{}, fmt.Errorf("embeddings: unable to init from model: %w", err)
 	}
 
 	defer func() {
@@ -37,7 +37,7 @@ func (m *Model) Embeddings(ctx context.Context, input string) (EmbedReponse, err
 	dimensions := llama.ModelNEmbd(m.model)
 	vec, err := llama.GetEmbeddingsSeq(lctx, 0, dimensions)
 	if err != nil {
-		return EmbedReponse{}, fmt.Errorf("embed:unable to get embeddings: %w", err)
+		return EmbedReponse{}, fmt.Errorf("embeddings: unable to get embeddings: %w", err)
 	}
 
 	var sum float64

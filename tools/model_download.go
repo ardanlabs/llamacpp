@@ -17,7 +17,7 @@ import (
 func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, projURL string, modelBasePath string) (ModelPath, error) {
 	modelFileName, err := extractFileName(modelFileURL)
 	if err != nil {
-		return ModelPath{}, fmt.Errorf("download-model:unable to extract file name: %w", err)
+		return ModelPath{}, fmt.Errorf("download-model: unable to extract file name: %w", err)
 	}
 
 	modelID := extractModelID(modelFileName)
@@ -36,19 +36,19 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 		if mp, err := FindModel(modelBasePath, modelID); err == nil {
 			size, err := fileSize(mp.ModelFile)
 			if err != nil {
-				return ModelPath{}, fmt.Errorf("download-model:unable to check file size of model: %w", err)
+				return ModelPath{}, fmt.Errorf("download-model: unable to check file size of model: %w", err)
 			}
 
 			if size == 0 {
 				os.Remove(mp.ModelFile)
-				return ModelPath{}, fmt.Errorf("download-model:unable to download file: %w", errOrg)
+				return ModelPath{}, fmt.Errorf("download-model: unable to download file: %w", errOrg)
 			}
 
 			log(ctx, "download-model: status[using installed version of model]")
 			return mp, nil
 		}
 
-		return ModelPath{}, fmt.Errorf("download-model:unable to download model: %w", err)
+		return ModelPath{}, fmt.Errorf("download-model: unable to download model: %w", err)
 	}
 
 	switch mp.Downloaded {
@@ -90,7 +90,7 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 	}
 
 	if err := os.Rename(orjProjFile, projFileName); err != nil {
-		return ModelPath{}, fmt.Errorf("download-model:unable to rename projector file: %w", err)
+		return ModelPath{}, fmt.Errorf("download-model: unable to rename projector file: %w", err)
 	}
 
 	inf := ModelPath{
@@ -105,12 +105,12 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, progress ProgressFunc) (string, bool, error) {
 	modelFilePath, modelFileName, err := modelFilePathAndName(modelFileURL, modelBasePath)
 	if err != nil {
-		return "", false, fmt.Errorf("pull-model:unable to extract file-path: %w", err)
+		return "", false, fmt.Errorf("pull-model: unable to extract file-path: %w", err)
 	}
 
 	downloaded, err := DownloadFile(ctx, modelFileURL, modelFilePath, progress, SizeIntervalMIB100)
 	if err != nil {
-		return "", false, fmt.Errorf("pull-model:unable to download model: %w", err)
+		return "", false, fmt.Errorf("pull-model: unable to download model: %w", err)
 	}
 
 	return modelFileName, downloaded, nil
@@ -119,12 +119,12 @@ func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, p
 func modelFilePathAndName(modelFileURL string, modelBasePath string) (string, string, error) {
 	mURL, err := url.Parse(modelFileURL)
 	if err != nil {
-		return "", "", fmt.Errorf("pull-model:unable to parse fileURL: %w", err)
+		return "", "", fmt.Errorf("model-file-path-and-name: unable to parse fileURL: %w", err)
 	}
 
 	parts := strings.Split(mURL.Path, "/")
 	if len(parts) < 3 {
-		return "", "", fmt.Errorf("pull-model:invalid huggingface url: %q", mURL.Path)
+		return "", "", fmt.Errorf("model-file-path-and-name: invalid huggingface url: %q", mURL.Path)
 	}
 
 	modelFilePath := filepath.Join(modelBasePath, parts[1], parts[2])
@@ -147,7 +147,7 @@ func extractModelID(modelFileName string) string {
 func extractFileName(modelFileURL string) (string, error) {
 	u, err := url.Parse(modelFileURL)
 	if err != nil {
-		return "", fmt.Errorf("extractFileName:parse error: %w", err)
+		return "", fmt.Errorf("extract-file-name: parse error: %w", err)
 	}
 
 	return path.Base(u.Path), nil

@@ -21,7 +21,7 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "1.2.1"
+const Version = "1.2.2"
 
 // =============================================================================
 
@@ -269,7 +269,7 @@ func (krn *Kronk) ChatStreaming(ctx context.Context, d model.D) (<-chan model.Ch
 }
 
 // ChatStreamingHTTP provides http handler support for a chat/completions call.
-func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.ResponseWriter, d model.D) (model.ChatResponse, error) {
+func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, w http.ResponseWriter, d model.D) (model.ChatResponse, error) {
 	if _, exists := ctx.Deadline(); !exists {
 		return model.ChatResponse{}, fmt.Errorf("chat-streaming-http:context has no deadline, provide a reasonable timeout")
 	}
@@ -283,8 +283,6 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 	// -------------------------------------------------------------------------
 
 	if !stream {
-		log(ctx, "chat-completions:REQUEST", "STREAM", "false")
-
 		resp, err := krn.Chat(ctx, d)
 		if err != nil {
 			return model.ChatResponse{}, fmt.Errorf("chat-streaming-http:stream-response: %w", err)
@@ -303,8 +301,6 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 	}
 
 	// -------------------------------------------------------------------------
-
-	log(ctx, "chat-completions:REQUEST", "STREAM", "true")
 
 	f, ok := w.(http.Flusher)
 	if !ok {
@@ -330,15 +326,11 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 			}
 		}
 
-		switch reason := resp.Choice[0].FinishReason; reason {
-		case model.FinishReasonStop:
-			// OpenAI does not expect the final delta to have content or reasoning.
-			// Kronk returns the entire streamed content in the final chunk.
+		// OpenAI does not expect the final delta to have content or reasoning.
+		// Kronk returns the entire streamed content in the final chunk.
+		if resp.Choice[0].FinishReason == model.FinishReasonStop {
 			resp.Choice[0].Delta = model.ResponseMessage{}
 			resp.Prompt = ""
-
-		case model.FinishReasonError:
-			log(ctx, "chat-completions:RESPONSE", "ERROR", resp.Choice[0].Delta.Content)
 		}
 
 		d, err := json.Marshal(resp)
@@ -354,16 +346,6 @@ func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, log Logger, w http.Resp
 
 	w.Write([]byte("data: [DONE]\n"))
 	f.Flush()
-
-	// -------------------------------------------------------------------------
-
-	contextTokens := lr.Usage.PromptTokens + lr.Usage.CompletionTokens
-	contextWindow := krn.ModelConfig().ContextWindow
-	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
-	of := float32(contextWindow) / float32(1024)
-
-	log(ctx, "chat-completions:USAGE", "Prompt", lr.Usage.PromptTokens, "Output", lr.Usage.OutputTokens,
-		"Context", contextTokens, "down", fmt.Sprintf("(%.0f%% of %.0fK) TPS: %.2f", percentage, of, lr.Usage.TokensPerSecond))
 
 	return lr, nil
 }
@@ -390,8 +372,6 @@ func (krn *Kronk) EmbeddingsHTTP(ctx context.Context, log Logger, w http.Respons
 	if _, exists := ctx.Deadline(); !exists {
 		return model.EmbedReponse{}, fmt.Errorf("embeddings:context has no deadline, provide a reasonable timeout")
 	}
-
-	log(ctx, "embeddings:REQUEST")
 
 	var input string
 	inputReq, ok := d["input"].(string)
@@ -538,6 +518,8 @@ func sendError[T any](ctx context.Context, ch chan T, ef errorFunc[T], rec any) 
 
 // =============================================================================
 
+type traceIDKey int
+
 // Logger provides a function for logging messages from different APIs.
 type Logger func(ctx context.Context, msg string, args ...any)
 
@@ -547,11 +529,24 @@ var DiscardLogger = func(ctx context.Context, msg string, args ...any) {
 
 // FmtLogger provides a basic logger that writes to stdout.
 var FmtLogger = func(ctx context.Context, msg string, args ...any) {
-	fmt.Print(msg)
+	traceID, ok := ctx.Value(traceIDKey(1)).(string)
+	switch ok {
+	case true:
+		fmt.Printf("traceID: %s: %s:", traceID, msg)
+	default:
+		fmt.Printf("%s:", msg)
+	}
+
 	for i := 0; i < len(args); i += 2 {
 		if i+1 < len(args) {
 			fmt.Printf(" %v[%v]", args[i], args[i+1])
 		}
 	}
 	fmt.Println()
+}
+
+// SetFmtLoggerTraceID allows you to set a trace id in the content that
+// can be part of the output of the FmtLogger.
+func SetFmtLoggerTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, traceIDKey(1), traceID)
 }

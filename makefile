@@ -233,6 +233,7 @@ example-web-curl1:
 	curl -i -X POST http://0.0.0.0:8080/chat \
      -H "Content-Type: application/json" \
      -d '{ \
+	 	"stream": true, \
 		"messages": [ \
 			{ \
 				"role": "user", \
@@ -245,6 +246,7 @@ example-web-curl2:
 	curl -i -X POST http://0.0.0.0:8080/chat \
      -H "Content-Type: application/json" \
      -d '{ \
+	 	"stream": true, \
 		"messages": [ \
 			{ \
 				"role": "user", \

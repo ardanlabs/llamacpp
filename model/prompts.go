@@ -51,21 +51,21 @@ func (m *Model) applyRequestJinjaTemplate(d D) (string, [][]byte, error) {
 
 func (m *Model) applyJinjaTemplate(d D) (string, error) {
 	if m.template == "" {
-		return "", errors.New("apply-jinja-template:no template found")
+		return "", errors.New("apply-jinja-template: no template found")
 	}
 
 	gonja.DefaultLoader = &noFSLoader{}
 
 	t, err := newTemplateWithFixedItems(m.template)
 	if err != nil {
-		return "", fmt.Errorf("apply-jinja-template:failed to parse template: %w", err)
+		return "", fmt.Errorf("apply-jinja-template: failed to parse template: %w", err)
 	}
 
 	data := exec.NewContext(d)
 
 	s, err := t.ExecuteToString(data)
 	if err != nil {
-		return "", fmt.Errorf("apply-jinja-template:failed to execute template: %w", err)
+		return "", fmt.Errorf("apply-jinja-template: failed to execute template: %w", err)
 	}
 
 	return s, nil
@@ -159,7 +159,7 @@ func newTemplateWithFixedItems(source string) (*exec.Template, error) {
 func readJinjaTemplate(fileName string) (string, error) {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
-		return "", fmt.Errorf("read-jinja-template:failed to read file: %w", err)
+		return "", fmt.Errorf("read-jinja-template: failed to read file: %w", err)
 	}
 
 	return string(data), nil
@@ -170,7 +170,7 @@ func readJinjaTemplate(fileName string) (string, error) {
 func isOpenAIMediaRequest(req D) (chatMessages, bool, error) {
 	msgs, err := toChatMessages(req)
 	if err != nil {
-		return chatMessages{}, false, fmt.Errorf("chat message conversion: %w", err)
+		return chatMessages{}, false, fmt.Errorf("is-open-ai-media-request: chat message conversion: %w", err)
 	}
 
 	for _, msg := range msgs.Messages {
@@ -271,7 +271,7 @@ func decodeMediaData(data string) ([]byte, error) {
 	// Decode the base64 data back to binary data.
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, fmt.Errorf("unable to decode base64 data: %w", err)
+		return nil, fmt.Errorf("to-media-message: unable to decode base64 data: %w", err)
 	}
 
 	return decoded, nil

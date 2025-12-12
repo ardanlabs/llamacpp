@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,11 @@ const (
 	defNBatch        = 2 * 1024
 	defNUBatch       = 512
 )
+
+// Logger provides a function for logging messages from different APIs.
+type Logger func(ctx context.Context, msg string, args ...any)
+
+// =============================================================================
 
 // Config represents model level configuration. These values if configured
 // incorrectly can cause the system to panic. The defaults are used when these
@@ -69,6 +75,7 @@ const (
 // Embeddings is a boolean that determines if the model you are using is an
 // embedding model. This must be true when using an embedding model.
 type Config struct {
+	Log            Logger
 	ModelFile      string
 	ProjectionFile string
 	JinjaFile      string
@@ -82,7 +89,7 @@ type Config struct {
 
 func validateConfig(cfg Config) error {
 	if cfg.ModelFile == "" {
-		return fmt.Errorf("validate-config:model file is required")
+		return fmt.Errorf("validate-config: model file is required")
 	}
 
 	return nil
@@ -118,7 +125,7 @@ func adjustConfig(cfg Config, model llama.Model) Config {
 
 func adjustContextWindow(cfg Config, model llama.Model) Config {
 	modelCW := defContextWindow
-	v, found := searchModelMeta(model, "adjust-context-window:context_length")
+	v, found := searchModelMeta(model, "adjust-context-window: context_length")
 	if found {
 		ctxLen, err := strconv.Atoi(v)
 		if err == nil {

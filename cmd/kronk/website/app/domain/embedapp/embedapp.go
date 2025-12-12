@@ -56,7 +56,7 @@ func (a *app) embeddings(ctx context.Context, r *http.Request) web.Encoder {
 
 	d := model.MapToModelD(req)
 
-	a.log.Info(ctx, "embedding:REQUEST", "req", req)
+	a.log.Info(ctx, "embedding", "req", req)
 
 	if _, err := krn.EmbeddingsHTTP(ctx, a.log.Info, web.GetWriter(ctx), d); err != nil {
 		return errs.New(errs.Internal, err)

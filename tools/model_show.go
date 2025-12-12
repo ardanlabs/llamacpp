@@ -29,7 +29,7 @@ func ShowModel(libPath string, modelBasePath string, modelID string) (ModelInfo,
 	}
 
 	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model:unable to init kronk: %w", err)
+		return ModelInfo{}, fmt.Errorf("show-model: unable to init kronk: %w", err)
 	}
 
 	const modelInstances = 1
@@ -39,7 +39,7 @@ func ShowModel(libPath string, modelBasePath string, modelID string) (ModelInfo,
 	})
 
 	if err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model:unable to load kronk: %w", err)
+		return ModelInfo{}, fmt.Errorf("show-model: unable to load kronk: %w", err)
 	}
 
 	defer func() {
@@ -51,7 +51,7 @@ func ShowModel(libPath string, modelBasePath string, modelID string) (ModelInfo,
 
 	models, err := ListModels(modelBasePath)
 	if err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model:unable to get model file information: %w", err)
+		return ModelInfo{}, fmt.Errorf("show-model: unable to get model file information: %w", err)
 	}
 
 	var modelFile ModelFile
