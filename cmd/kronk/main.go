@@ -11,6 +11,7 @@ import (
 
 	k "github.com/ardanlabs/kronk"
 	cataloglist "github.com/ardanlabs/kronk/cmd/kronk/catalog/list"
+	catalogpull "github.com/ardanlabs/kronk/cmd/kronk/catalog/pull"
 	catalogshow "github.com/ardanlabs/kronk/cmd/kronk/catalog/show"
 	catalogupdate "github.com/ardanlabs/kronk/cmd/kronk/catalog/update"
 	"github.com/ardanlabs/kronk/cmd/kronk/libs"
@@ -79,6 +80,7 @@ func init() {
 
 	// Catalog subcommands
 	catalogCmd.AddCommand(catalogListCmd)
+	catalogCmd.AddCommand(catalogPullCmd)
 	catalogCmd.AddCommand(catalogShowCmd)
 	catalogCmd.AddCommand(catalogUpdateCmd)
 }
@@ -141,6 +143,39 @@ func runCatalogList(cmd *cobra.Command, args []string) {
 		err = cataloglist.RunLocal(args)
 	default:
 		err = cataloglist.RunWeb(args)
+	}
+
+	if err != nil {
+		fmt.Println("\nERROR:", err)
+		os.Exit(1)
+	}
+}
+
+var catalogPullCmd = &cobra.Command{
+	Use:   "pull <MODEL_ID>",
+	Short: "Pull a model from the catalog",
+	Long: `Pull a model from the catalog
+
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server`,
+	Args: cobra.ExactArgs(1),
+	Run:  runCatalogPull,
+}
+
+func init() {
+	catalogPullCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runCatalogPull(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = catalogpull.RunLocal(args)
+	default:
+		err = catalogpull.RunWeb(args)
 	}
 
 	if err != nil {
