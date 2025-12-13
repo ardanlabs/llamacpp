@@ -108,6 +108,9 @@ kronk-model-show-local:
 kronk-catalog-update-local:
 	go run cmd/kronk/main.go catalog update --local
 
+kronk-catalog-list-local:
+	go run cmd/kronk/main.go catalog list --local
+
 # ==============================================================================
 # Kronk Endpoints
 
