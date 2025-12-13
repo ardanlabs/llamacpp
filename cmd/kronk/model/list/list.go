@@ -43,7 +43,7 @@ func RunWeb(args []string) error {
 func RunLocal(args []string) error {
 	modelPath := defaults.ModelsDir("")
 
-	models, err := tools.ListModels(modelPath)
+	models, err := tools.RetrieveModelFiles(modelPath)
 	if err != nil {
 		return err
 	}

@@ -45,11 +45,11 @@ install-gotooling:
 # ==============================================================================
 # Kronk CLI
 
-kronk-server-detach:
-	go run cmd/kronk/main.go server --detach
-
 kronk-server:
 	go run cmd/kronk/main.go server | go run cmd/kronk/website/api/tooling/logfmt/main.go
+
+kronk-server-detach:
+	go run cmd/kronk/main.go server --detach
 
 kronk-server-logs:
 	go run cmd/kronk/main.go logs
@@ -57,45 +57,56 @@ kronk-server-logs:
 kronk-server-stop:
 	go run cmd/kronk/main.go stop
 
+# ------------------------------------------------------------------------------
+
 kronk-libs:
 	go run cmd/kronk/main.go libs
 
-kronk-list:
-	go run cmd/kronk/main.go list
-
-# make kronk-pull URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
-kronk-pull:
-	go run cmd/kronk/main.go pull "$(URL)"
-
-kronk-ps:
-	go run cmd/kronk/main.go ps
-
-# make kronk-remove ID="qwen3-8b-q8_0"
-kronk-remove:
-	go run cmd/kronk/main.go remove "$(ID)"
-
-# make kronk-show ID="qwen3-8b-q8_0"
-kronk-show:
-	go run cmd/kronk/main.go show "$(ID)"
+kronk-libs-local: install-libraries
 
 # ------------------------------------------------------------------------------
 
-kronk-libs-local: install-libraries
+kronk-model-list:
+	go run cmd/kronk/main.go model list
 
-kronk-list-local:
-	go run cmd/kronk/main.go list --local
+kronk-model-list-local:
+	go run cmd/kronk/main.go model list --local
+
+
+# make kronk-pull URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
+kronk-model-pull:
+	go run cmd/kronk/main.go model pull "$(URL)"
 
 # make kronk-pull-local URL="https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
-kronk-pull-local:
-	go run cmd/kronk/main.go pull --local "$(URL)"
+kronk-model-pull-local:
+	go run cmd/kronk/main.go model pull --local "$(URL)"
+
+
+kronk-model-ps:
+	go run cmd/kronk/main.go model ps
+
+
+# make kronk-remove ID="qwen3-8b-q8_0"
+kronk-model-remove:
+	go run cmd/kronk/main.go model remove "$(ID)"
 
 # make kronk-remove-local ID="qwen3-8b-q8_0"
-kronk-remove-local:
-	go run cmd/kronk/main.go remove --local "$(ID)"
+kronk-model-remove-local:
+	go run cmd/kronk/main.go model remove --local "$(ID)"
+
+
+# make kronk-show ID="qwen3-8b-q8_0"
+kronk-model-show:
+	go run cmd/kronk/main.go model show "$(ID)"
 
 # make kronk-show-local ID="qwen3-8b-q8_0"
-kronk-show-local:
-	go run cmd/kronk/main.go show --local "$(ID)"
+kronk-model-show-local:
+	go run cmd/kronk/main.go model show --local "$(ID)"
+
+# ------------------------------------------------------------------------------
+
+kronk-catalog-update-local:
+	go run cmd/kronk/main.go catalog update --local
 
 # ==============================================================================
 # Kronk Endpoints

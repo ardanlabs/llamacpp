@@ -33,7 +33,7 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 	if errOrg != nil {
 		log(ctx, "download-model:", "ERROR", errOrg, "model-file-url", modelFileURL)
 
-		if mp, err := FindModel(modelBasePath, modelID); err == nil {
+		if mp, err := RetrieveModelPath(modelBasePath, modelID); err == nil {
 			size, err := fileSize(mp.ModelFile)
 			if err != nil {
 				return ModelPath{}, fmt.Errorf("download-model: unable to check file size of model: %w", err)
@@ -100,6 +100,15 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 	}
 
 	return inf, nil
+}
+
+func fileSize(filePath string) (int, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(info.Size()), nil
 }
 
 func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, progress ProgressFunc) (string, bool, error) {

@@ -43,7 +43,7 @@ func RunLocal(args []string) error {
 	modelPath := defaults.ModelsDir("")
 	modelName := args[0]
 
-	mi, err := tools.ShowModel(libPath, modelPath, modelName)
+	mi, err := tools.RetrieveModelInfo(libPath, modelPath, modelName)
 	if err != nil {
 		return err
 	}

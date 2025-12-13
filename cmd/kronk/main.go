@@ -10,12 +10,14 @@ import (
 	"syscall"
 
 	k "github.com/ardanlabs/kronk"
+	cataloglist "github.com/ardanlabs/kronk/cmd/kronk/catalog/list"
+	catalogupdate "github.com/ardanlabs/kronk/cmd/kronk/catalog/update"
 	"github.com/ardanlabs/kronk/cmd/kronk/libs"
-	"github.com/ardanlabs/kronk/cmd/kronk/list"
-	"github.com/ardanlabs/kronk/cmd/kronk/ps"
-	"github.com/ardanlabs/kronk/cmd/kronk/pull"
-	"github.com/ardanlabs/kronk/cmd/kronk/remove"
-	"github.com/ardanlabs/kronk/cmd/kronk/show"
+	"github.com/ardanlabs/kronk/cmd/kronk/model/list"
+	"github.com/ardanlabs/kronk/cmd/kronk/model/ps"
+	"github.com/ardanlabs/kronk/cmd/kronk/model/pull"
+	"github.com/ardanlabs/kronk/cmd/kronk/model/remove"
+	"github.com/ardanlabs/kronk/cmd/kronk/model/show"
 	"github.com/ardanlabs/kronk/cmd/kronk/website/api/services/kronk"
 	"github.com/ardanlabs/kronk/defaults"
 	"github.com/spf13/cobra"
@@ -64,11 +66,109 @@ func init() {
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(libsCmd)
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(pullCmd)
-	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(showCmd)
-	rootCmd.AddCommand(psCmd)
+	rootCmd.AddCommand(modelCmd)
+	rootCmd.AddCommand(catalogCmd)
+
+	// Model subcommands
+	modelCmd.AddCommand(listCmd)
+	modelCmd.AddCommand(pullCmd)
+	modelCmd.AddCommand(removeCmd)
+	modelCmd.AddCommand(showCmd)
+	modelCmd.AddCommand(psCmd)
+
+	// Catalog subcommands
+	catalogCmd.AddCommand(catalogListCmd)
+	catalogCmd.AddCommand(catalogUpdateCmd)
+}
+
+// =============================================================================
+// Model
+
+var modelCmd = &cobra.Command{
+	Use:   "model",
+	Short: "Manage models",
+	Long:  `Manage models - list, pull, remove, show, and check running models`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
+}
+
+// =============================================================================
+// Catalog
+
+var catalogCmd = &cobra.Command{
+	Use:   "catalog",
+	Short: "Manage model catalog",
+	Long:  `Manage model catalog - list and update available models`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
+}
+
+var catalogListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List catalog models",
+	Long: `List catalog models
+
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server`,
+	Args: cobra.NoArgs,
+	Run:  runCatalogList,
+}
+
+func init() {
+	catalogListCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runCatalogList(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = cataloglist.RunLocal(args)
+	default:
+		err = cataloglist.RunWeb(args)
+	}
+
+	if err != nil {
+		fmt.Println("\nERROR:", err)
+		os.Exit(1)
+	}
+}
+
+var catalogUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update the model catalog",
+	Long: `Update the model catalog
+
+Environment Variables (web mode - default):
+      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server`,
+	Args: cobra.NoArgs,
+	Run:  runCatalogUpdate,
+}
+
+func init() {
+	catalogUpdateCmd.Flags().Bool("local", false, "Run without the model server")
+}
+
+func runCatalogUpdate(cmd *cobra.Command, args []string) {
+	local, _ := cmd.Flags().GetBool("local")
+
+	var err error
+
+	switch local {
+	case true:
+		err = catalogupdate.RunLocal(args)
+	default:
+		err = catalogupdate.RunWeb(args)
+	}
+
+	if err != nil {
+		fmt.Println("\nERROR:", err)
+		os.Exit(1)
+	}
 }
 
 // =============================================================================
@@ -125,7 +225,7 @@ func runServer(cmd *cobra.Command, args []string) {
 }
 
 func logFilePath() string {
-	return filepath.Join(defaults.BaseDir(), "kronk.log")
+	return filepath.Join(defaults.BaseDir(""), "kronk.log")
 }
 
 // =============================================================================
@@ -170,7 +270,7 @@ func runStop(cmd *cobra.Command, args []string) {
 }
 
 func pidFilePath() string {
-	return filepath.Join(defaults.BaseDir(), "kronk.pid")
+	return filepath.Join(defaults.BaseDir(""), "kronk.pid")
 }
 
 // =============================================================================

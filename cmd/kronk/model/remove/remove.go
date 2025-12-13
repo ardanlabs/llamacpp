@@ -55,7 +55,7 @@ func RunLocal(args []string) error {
 	fmt.Println("Model Path: ", modelPath)
 	fmt.Println("Model Name: ", modelName)
 
-	mp, err := tools.FindModel(modelPath, modelName)
+	mp, err := tools.RetrieveModelPath(modelPath, modelName)
 	if err != nil {
 		return err
 	}
