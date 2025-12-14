@@ -79,7 +79,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		}
 		Auth struct {
 			KeysJSON   string `conf:"mask"`
-			KeysFolder string `conf:"default:cmd/kronk/website/zarf/keys/"`
+			KeysFolder string `conf:"default:cmd/server/zarf/keys/"`
 			ActiveKID  string `conf:"default:54bb2165-71e1-41a6-af3e-7da4a0e1e2c1"`
 			Issuer     string `conf:"default:kronk project"`
 			Enabled    bool   `conf:"default:false"`

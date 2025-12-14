@@ -145,15 +145,28 @@ You can find more examples in the ArdanLabs AI training repo at [Example13](http
 
 The model server is OpenAI compatible and you can use OpenWebUI to interact with it. To start the Kronk model server run:
 
-`make kronk-server` or `kronk sever` with the installed tooling.
+```
+$ kronk server
+```
 
-You will need to load a model if this is the first time you're using the system. To download a starter model run:
+You will need to load a model if this is the first time you're using the system. To download a starter model run the catalog list command to see the current catalog of models:
 
-`kronk pull --local "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"`
+```
+$ kronk catalog list --local
 
-Or run this command to pull the model through a running Kronk model server:
+CATALOG              MODEL ID
+Audio-Text-to-Text   Qwen2-Audio-7B.Q8_0
+Embedding            embeddinggemma-300m-qat-Q8_0
+Image-Text-to-Text   Qwen2.5-VL-3B-Instruct-Q8_0
+Text-Generation      gpt-oss-20b-Q8_0
+Text-Generation      Qwen3-8B-Q8_0
+```
 
-`kronk pull "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"`
+Then download the `Qwen3-8B-Q8_0` model using the catalog pull command:
+
+```
+$ kronk catalog pull Qwen3-8B-Q8_0 --local
+```
 
 If you want to play with OpenWebUI, run the following commands:
 

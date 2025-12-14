@@ -46,7 +46,7 @@ install-gotooling:
 # Kronk CLI
 
 kronk-server:
-	go run cmd/kronk/main.go server | go run cmd/kronk/website/api/tooling/logfmt/main.go
+	go run cmd/kronk/main.go server | go run cmd/server/api/tooling/logfmt/main.go
 
 kronk-server-detach:
 	go run cmd/kronk/main.go server --detach
