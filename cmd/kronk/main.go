@@ -9,7 +9,6 @@ import (
 	"strings"
 	"syscall"
 
-	k "github.com/ardanlabs/kronk"
 	cataloglist "github.com/ardanlabs/kronk/cmd/kronk/catalog/list"
 	catalogpull "github.com/ardanlabs/kronk/cmd/kronk/catalog/pull"
 	catalogshow "github.com/ardanlabs/kronk/cmd/kronk/catalog/show"
@@ -20,8 +19,9 @@ import (
 	"github.com/ardanlabs/kronk/cmd/kronk/model/pull"
 	"github.com/ardanlabs/kronk/cmd/kronk/model/remove"
 	"github.com/ardanlabs/kronk/cmd/kronk/model/show"
-	"github.com/ardanlabs/kronk/cmd/kronk/website/api/services/kronk"
-	"github.com/ardanlabs/kronk/defaults"
+	"github.com/ardanlabs/kronk/cmd/server/api/services/kronk"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	k "github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/spf13/cobra"
 )
 

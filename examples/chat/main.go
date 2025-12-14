@@ -20,10 +20,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ardanlabs/kronk"
-	"github.com/ardanlabs/kronk/defaults"
-	"github.com/ardanlabs/kronk/model"
-	"github.com/ardanlabs/kronk/tools"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/model"
+	"github.com/ardanlabs/kronk/sdk/tools"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 

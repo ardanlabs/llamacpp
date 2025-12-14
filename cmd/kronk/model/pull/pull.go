@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ardanlabs/kronk"
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
-	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/toolapp"
-	"github.com/ardanlabs/kronk/defaults"
-	"github.com/ardanlabs/kronk/tools"
+	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/tools"
 )
 
 // RunWeb executes the libs command against the model server.

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
-	"github.com/ardanlabs/kronk/defaults"
-	"github.com/ardanlabs/kronk/tools"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools"
 )
 
 // RunWeb executes the remove command.

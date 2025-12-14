@@ -10,9 +10,9 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/ardanlabs/kronk/defaults"
-	"github.com/ardanlabs/kronk/tools"
-	"github.com/ardanlabs/kronk/tools/catalog"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 )
 
 // RunWeb executes the catalog list command against the model server.

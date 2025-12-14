@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/kronk/defaults"
-	"github.com/ardanlabs/kronk/tools/catalog"
+	"github.com/ardanlabs/kronk/sdk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 )
 
 // RunWeb executes the catalog update command against the model server.

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
-	"github.com/ardanlabs/kronk/cmd/kronk/website/app/domain/toolapp"
+	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 )
 
 // RunWeb executes the ps command against the model server.

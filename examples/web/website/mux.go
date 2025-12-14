@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ardanlabs/kronk"
+	"github.com/ardanlabs/kronk/sdk/kronk"
 )
 
 type Config struct {
