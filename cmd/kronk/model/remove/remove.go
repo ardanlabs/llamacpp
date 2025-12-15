@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 // RunWeb executes the remove command.
@@ -55,7 +55,7 @@ func RunLocal(args []string) error {
 	fmt.Println("Model Path: ", modelPath)
 	fmt.Println("Model ID  : ", modelID)
 
-	mp, err := tools.RetrieveModelPath(modelPath, modelID)
+	mp, err := models.RetrievePath(modelPath, modelID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func RunLocal(args []string) error {
 		return nil
 	}
 
-	if err := tools.RemoveModel(mp); err != nil {
+	if err := models.Remove(mp); err != nil {
 		return fmt.Errorf("remove-model: %w", err)
 	}
 

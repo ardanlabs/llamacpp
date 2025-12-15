@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/google/uuid"
 )
 

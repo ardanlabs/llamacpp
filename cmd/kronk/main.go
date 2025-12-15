@@ -20,8 +20,8 @@ import (
 	"github.com/ardanlabs/kronk/cmd/kronk/model/remove"
 	"github.com/ardanlabs/kronk/cmd/kronk/model/show"
 	"github.com/ardanlabs/kronk/cmd/server/api/services/kronk"
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	k "github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/spf13/cobra"
 )
 

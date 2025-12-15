@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/model"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/maypok86/otter/v2"
 )
@@ -170,23 +170,23 @@ func (c *Cache) Processor() download.Processor {
 // ModelStatus returns information about the current models in the cache.
 func (c *Cache) ModelStatus() ([]ModelDetail, error) {
 
-	// Extract the models currently in the cache.
-	var models []otter.Entry[string, *kronk.Kronk]
+	// Extract the entries currently in the cache.
+	var entries []otter.Entry[string, *kronk.Kronk]
 	for entry := range c.cache.Coldest() {
-		models = append(models, entry)
+		entries = append(entries, entry)
 	}
 
 	// Retrieve the models installed locally.
-	list, err := tools.RetrieveModelFiles(defaults.ModelsDir(""))
+	list, err := models.RetrieveFiles(defaults.ModelsDir(""))
 	if err != nil {
 		return nil, err
 	}
 
 	// Match the model in the cache with a locally stored model
 	// so we can get information about that model.
-	ps := make([]ModelDetail, 0, len(models))
+	ps := make([]ModelDetail, 0, len(entries))
 ids:
-	for _, model := range models {
+	for _, model := range entries {
 		for _, mi := range list {
 			id := strings.ToLower(mi.ID)
 
@@ -217,7 +217,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 		return krn, nil
 	}
 
-	fi, err := tools.RetrieveModelPath(c.modelPath, modelID)
+	fi, err := models.RetrievePath(c.modelPath, modelID)
 	if err != nil {
 		return nil, fmt.Errorf("aquire-model: %w", err)
 	}

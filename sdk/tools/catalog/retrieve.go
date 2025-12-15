@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"go.yaml.in/yaml/v2"
 )
 
@@ -23,7 +23,7 @@ func CatalogModelList(basePath string, filterCategory string) ([]Model, error) {
 
 	modelBasePath := defaults.ModelsDir("")
 
-	modelFiles, err := tools.RetrieveModelFiles(modelBasePath)
+	modelFiles, err := models.RetrieveFiles(modelBasePath)
 	if err != nil {
 		return nil, fmt.Errorf("retrieve-model-files: %w", err)
 	}

@@ -194,9 +194,10 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/model"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -300,8 +301,8 @@ func run() error {
 	return nil
 }
 
-func installSystem() (tools.ModelPath, error) {
-	libCfg, err := tools.NewLibConfig(
+func installSystem() (models.Path, error) {
+	libCfg, err := libs.NewConfig(
 		libPath,
 		runtime.GOARCH,
 		runtime.GOOS,
@@ -310,17 +311,17 @@ func installSystem() (tools.ModelPath, error) {
 		true,
 	)
 	if err != nil {
-		return tools.ModelPath{}, err
+		return models.Path{}, err
 	}
 
-	_, err = tools.DownloadLibraries(context.Background(), tools.FmtLogger, libCfg)
+	_, err = libs.Download(context.Background(), kronk.FmtLogger, libCfg)
 	if err != nil {
-		return tools.ModelPath{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := tools.DownloadModel(context.Background(), tools.FmtLogger, modelURL, "", modelPath)
+	mp, err := models.Download(context.Background(), kronk.FmtLogger, modelURL, "", modelPath)
 	if err != nil {
-		return tools.ModelPath{}, fmt.Errorf("unable to install model: %w", err)
+		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
 	}
 
 	return mp, nil
@@ -332,12 +333,12 @@ This example can produce the following output:
 ```
 $ make example-question
 CGO_ENABLED=0 go run examples/question/main.go
-download-libraries status[check libraries version information] lib-path[/Users/bill/kronk/libraries] arch[arm64] os[darwin] processor[cpu]
-download-libraries status[check llama.cpp installation] lib-path[/Users/bill/kronk/libraries] arch[arm64] os[darwin] processor[cpu] latest[b7327] current[b7312]
-download-libraries status[already installed] latest[b7327] current[b7312]
-download-model: model-dest[/Users/bill/kronk/models] model-url[https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf] proj-url[] model-id[Qwen3-8B-Q8_0]
-download-model: waiting to check model status...
-download-model: status[already exists] model-file[/Users/bill/kronk/models/Qwen/Qwen3-8B-GGUF/Qwen3-8B-Q8_0.gguf] proj-file[]
+download-libraries: status[check libraries version information] arch[arm64] os[darwin] processor[cpu]
+download-libraries: status[check llama.cpp installation] arch[arm64] os[darwin] processor[cpu] latest[b7406] current[b7406]
+download-libraries: status[already installed] latest[b7406] current[b7406]
+download-model: model-url[https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf] proj-url[] model-id[Qwen3-8B-Q8_0]:
+download-model: waiting to check model status...:
+download-model: status[already exists]:
 
 QUESTION: Hello model
 

@@ -11,8 +11,8 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 // RunWeb executes the list command against the model server.
@@ -43,7 +43,7 @@ func RunWeb(args []string) error {
 func RunLocal(args []string) error {
 	modelPath := defaults.ModelsDir("")
 
-	models, err := tools.RetrieveModelFiles(modelPath)
+	models, err := models.RetrieveFiles(modelPath)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func printWeb(models []toolapp.ListModelDetail) {
 	w.Flush()
 }
 
-func printLocal(models []tools.ModelFile) {
+func printLocal(models []models.File) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ID\tOWNED BY\tMODEL FAMILY\tSIZE\tMODIFIED")
 

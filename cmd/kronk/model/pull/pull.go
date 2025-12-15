@@ -10,9 +10,9 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 // RunWeb executes the libs command against the model server.
@@ -76,7 +76,7 @@ func RunLocal(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	_, err := tools.DownloadModel(ctx, kronk.FmtLogger, modelURL, projURL, modelBasePath)
+	_, err := models.Download(ctx, kronk.FmtLogger, modelURL, projURL, modelBasePath)
 	if err != nil {
 		return fmt.Errorf("download-model: %w", err)
 	}

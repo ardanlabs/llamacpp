@@ -1,12 +1,12 @@
-package tools
+package models
 
 import (
 	"fmt"
 	"os"
 )
 
-// RemoveModel remove the specified file from the models directory.
-func RemoveModel(mp ModelPath) error {
+// Remove remove the specified file from the models directory.
+func Remove(mp Path) error {
 	if err := os.Remove(mp.ModelFile); err != nil {
 		return fmt.Errorf("remove-model: unable to remove model: %q", mp.ModelFile)
 	}

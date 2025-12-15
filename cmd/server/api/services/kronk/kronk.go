@@ -21,9 +21,9 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/keystore"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
-	"github.com/ardanlabs/kronk/sdk/cache"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
 )
 
 var tag = "develop"
@@ -214,7 +214,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 
 	log.Info(ctx, "startup", "status", "initializing kronk")
 
-	libCfg, err := tools.NewLibConfig(
+	libCfg, err := libs.NewConfig(
 		cfg.LibPath,
 		cfg.Arch,
 		cfg.OS,
@@ -232,7 +232,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	if _, err := tools.DownloadLibraries(ctx, log.Info, libCfg); err != nil {
+	if _, err := libs.Download(ctx, log.Info, libCfg); err != nil {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 

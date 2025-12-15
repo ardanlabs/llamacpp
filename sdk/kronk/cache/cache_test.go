@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
-	"github.com/ardanlabs/kronk/sdk/cache"
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 func Test_NewManager(t *testing.T) {
@@ -365,7 +366,7 @@ func initKronk(t *testing.T) *logger.Logger {
 
 	t.Logf("installing/updating libraries: libPath[%s], arch[%s] os[%s] processor[%s]", libPath, arch, opSys, processor)
 
-	cfg := tools.LibConfig{
+	cfg := libs.Config{
 		LibPath:      libPath,
 		Arch:         arch,
 		OS:           opSys,
@@ -376,7 +377,7 @@ func initKronk(t *testing.T) *logger.Logger {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	tag, err := tools.DownloadLibraries(ctx, kronk.FmtLogger, cfg)
+	tag, err := libs.Download(ctx, kronk.FmtLogger, cfg)
 	if err != nil {
 		t.Fatalf("unable to install llama.cpp: %s", err)
 	}
@@ -400,7 +401,7 @@ func initKronk(t *testing.T) *logger.Logger {
 }
 
 func findAvailableModel(t *testing.T, notModelID string) string {
-	modelFiles, err := tools.RetrieveModelFiles(defaults.ModelsDir(""))
+	modelFiles, err := models.RetrieveFiles(defaults.ModelsDir(""))
 	if err != nil {
 		t.Skip("no models available for testing - skipping")
 	}

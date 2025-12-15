@@ -1,4 +1,5 @@
-package tools
+// Package libs provides llama.cpp library support.
+package libs
 
 import (
 	"context"
@@ -7,8 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/downloader"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -23,14 +25,14 @@ type VersionTag struct {
 	Latest    string `json:"-"`
 }
 
-func isTagMatch(tag VersionTag, cfg LibConfig) bool {
+func isTagMatch(tag VersionTag, cfg Config) bool {
 	return tag.Latest == tag.Version && tag.Arch == cfg.Arch.String() && tag.OS == cfg.OS.String() && tag.Processor == cfg.Processor.String()
 }
 
 // =============================================================================
 
-// LibConfig contains all the required parameters to download llama.cpp.
-type LibConfig struct {
+// Config contains all the required parameters to download llama.cpp.
+type Config struct {
 	LibPath      string
 	Arch         download.Arch
 	OS           download.OS
@@ -39,7 +41,7 @@ type LibConfig struct {
 	AllowUpgrade bool
 }
 
-// NewLibConfig constructs a valid library config for downloading based on raw
+// NewConfig constructs a valid library config for downloading based on raw
 // values that would come from configuration. It sets defaults for the specified
 // values when the parameters are empty.
 // libPath     : represents the path the llama.cpp libraries will/are installed in.
@@ -48,30 +50,30 @@ type LibConfig struct {
 // procStr     : string representation of a `download.Processor`.
 // llamaLog    : int representation of `kronk.LogSilent` or `kronk.LogNormal`.
 // allowUpgrade: true or false to determine to upgrade libraries when available.
-func NewLibConfig(libPath string, archStr string, osStr string, procStr string, llamaLog int, allowUpgrade bool) (LibConfig, error) {
+func NewConfig(libPath string, archStr string, osStr string, procStr string, llamaLog int, allowUpgrade bool) (Config, error) {
 	arch, err := defaults.Arch(archStr)
 	if err != nil {
-		return LibConfig{}, err
+		return Config{}, err
 	}
 
 	opSys, err := defaults.OS(osStr)
 	if err != nil {
-		return LibConfig{}, err
+		return Config{}, err
 	}
 
 	processor, err := defaults.Processor(procStr)
 	if err != nil {
-		return LibConfig{}, err
+		return Config{}, err
 	}
 
 	log, err := defaults.LlamaLog(llamaLog)
 	if err != nil {
-		return LibConfig{}, err
+		return Config{}, err
 	}
 
 	libPath = defaults.LibsDir(libPath)
 
-	cfg := LibConfig{
+	cfg := Config{
 		LibPath:      libPath,
 		Arch:         arch,
 		OS:           opSys,
@@ -83,9 +85,9 @@ func NewLibConfig(libPath string, archStr string, osStr string, procStr string, 
 	return cfg, nil
 }
 
-// DownloadLibraries performs a complete workflow for downloading and installing
+// Download performs a complete workflow for downloading and installing
 // the latest version of llama.cpp.
-func DownloadLibraries(ctx context.Context, log kronk.Logger, libCfg LibConfig) (VersionTag, error) {
+func Download(ctx context.Context, log kronk.Logger, libCfg Config) (VersionTag, error) {
 	log(ctx, "download-libraries", "status", "check libraries version information", "arch", libCfg.Arch, "os", libCfg.OS, "processor", libCfg.Processor)
 
 	tag, err := VersionInformation(libCfg.LibPath)
@@ -162,14 +164,14 @@ func VersionInformation(libPath string) (VersionTag, error) {
 
 // =============================================================================
 
-func downloadLibs(ctx context.Context, log kronk.Logger, cfg LibConfig, version string) (VersionTag, error) {
+func downloadLibs(ctx context.Context, log kronk.Logger, cfg Config, version string) (VersionTag, error) {
 	tempPath := filepath.Join(cfg.LibPath, "temp")
 
 	progress := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {
 		log(ctx, fmt.Sprintf("\x1b[1A\r\x1b[Kdownload-libraries: Downloading %s... %d MiB of %d MiB (%.2f MiB/s)", src, currentSize/(1024*1024), totalSize/(1024*1024), mibPerSec))
 	}
 
-	pr := NewProgressReader(progress, SizeIntervalMIB10)
+	pr := downloader.NewProgressReader(progress, downloader.SizeIntervalMIB10)
 
 	err := download.GetWithContext(ctx, cfg.Arch.String(), cfg.OS.String(), cfg.Processor.String(), version, tempPath, pr)
 	if err != nil {
@@ -221,7 +223,7 @@ func swapTempForLib(libPath string, tempPath string) error {
 	return nil
 }
 
-func createVersionFile(cfg LibConfig, version string) error {
+func createVersionFile(cfg Config, version string) error {
 	versionInfoPath := filepath.Join(cfg.LibPath, versionFile)
 
 	f, err := os.Create(versionInfoPath)

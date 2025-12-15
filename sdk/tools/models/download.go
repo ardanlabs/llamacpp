@@ -1,4 +1,4 @@
-package tools
+package models
 
 import (
 	"context"
@@ -11,14 +11,15 @@ import (
 	"sync"
 
 	"github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/tools/downloader"
 	"go.yaml.in/yaml/v2"
 )
 
 var indexFile = "index.yaml"
 
-// DownloadModel performs a complete workflow for downloading and installing
+// Download performs a complete workflow for downloading and installing
 // the specified model.
-func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, projURL string, modelBasePath string) (ModelPath, error) {
+func Download(ctx context.Context, log kronk.Logger, modelFileURL string, projURL string, modelBasePath string) (Path, error) {
 	defer func() {
 		if err := buildIndex(modelBasePath); err != nil {
 			log(ctx, "download-model: unable to create index", "ERROR", err)
@@ -27,7 +28,7 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 
 	modelFileName, err := extractFileName(modelFileURL)
 	if err != nil {
-		return ModelPath{}, fmt.Errorf("download-model: unable to extract file name: %w", err)
+		return Path{}, fmt.Errorf("download-model: unable to extract file name: %w", err)
 	}
 
 	modelID := extractModelID(modelFileName)
@@ -43,22 +44,22 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 	if errOrg != nil {
 		log(ctx, "download-model:", "ERROR", errOrg, "model-file-url", modelFileURL)
 
-		if mp, err := RetrieveModelPath(modelBasePath, modelID); err == nil {
+		if mp, err := RetrievePath(modelBasePath, modelID); err == nil {
 			size, err := fileSize(mp.ModelFile)
 			if err != nil {
-				return ModelPath{}, fmt.Errorf("download-model: unable to check file size of model: %w", err)
+				return Path{}, fmt.Errorf("download-model: unable to check file size of model: %w", err)
 			}
 
 			if size == 0 {
 				os.Remove(mp.ModelFile)
-				return ModelPath{}, fmt.Errorf("download-model: unable to download file: %w", errOrg)
+				return Path{}, fmt.Errorf("download-model: unable to download file: %w", errOrg)
 			}
 
 			log(ctx, "download-model: status[using installed version of model]")
 			return mp, nil
 		}
 
-		return ModelPath{}, fmt.Errorf("download-model: unable to download model: %w", err)
+		return Path{}, fmt.Errorf("download-model: unable to download model: %w", err)
 	}
 
 	switch mp.Downloaded {
@@ -74,20 +75,20 @@ func DownloadModel(ctx context.Context, log kronk.Logger, modelFileURL string, p
 
 // =============================================================================
 
-func downloadModel(ctx context.Context, modelFileURL string, projFileURL string, modelBasePath string, progress ProgressFunc) (ModelPath, error) {
+func downloadModel(ctx context.Context, modelFileURL string, projFileURL string, modelBasePath string, progress downloader.ProgressFunc) (Path, error) {
 	modelFileName, downloadedMF, err := pullModel(ctx, modelFileURL, modelBasePath, progress)
 	if err != nil {
-		return ModelPath{}, err
+		return Path{}, err
 	}
 
 	if projFileURL == "" {
-		return ModelPath{ModelFile: modelFileName, Downloaded: downloadedMF}, nil
+		return Path{ModelFile: modelFileName, Downloaded: downloadedMF}, nil
 	}
 
 	projFileName := createProjFileName(modelFileName)
 
 	if _, err := os.Stat(projFileName); err == nil {
-		inf := ModelPath{
+		inf := Path{
 			ModelFile:  modelFileName,
 			ProjFile:   projFileName,
 			Downloaded: downloadedMF,
@@ -98,14 +99,14 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 
 	orjProjFile, downloadedPF, err := pullModel(ctx, projFileURL, modelBasePath, progress)
 	if err != nil {
-		return ModelPath{}, err
+		return Path{}, err
 	}
 
 	if err := os.Rename(orjProjFile, projFileName); err != nil {
-		return ModelPath{}, fmt.Errorf("download-model: unable to rename projector file: %w", err)
+		return Path{}, fmt.Errorf("download-model: unable to rename projector file: %w", err)
 	}
 
-	inf := ModelPath{
+	inf := Path{
 		ModelFile:  modelFileName,
 		ProjFile:   projFileName,
 		Downloaded: downloadedMF && downloadedPF,
@@ -123,13 +124,13 @@ func fileSize(filePath string) (int, error) {
 	return int(info.Size()), nil
 }
 
-func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, progress ProgressFunc) (string, bool, error) {
+func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, progress downloader.ProgressFunc) (string, bool, error) {
 	modelFilePath, modelFileName, err := modelFilePathAndName(modelFileURL, modelBasePath)
 	if err != nil {
 		return "", false, fmt.Errorf("pull-model: unable to extract file-path: %w", err)
 	}
 
-	downloaded, err := DownloadFile(ctx, modelFileURL, modelFilePath, progress, SizeIntervalMIB100)
+	downloaded, err := downloader.Download(ctx, modelFileURL, modelFilePath, progress, downloader.SizeIntervalMIB100)
 	if err != nil {
 		return "", false, fmt.Errorf("pull-model: unable to download model: %w", err)
 	}
@@ -185,7 +186,7 @@ func buildIndex(modelBasePath string) error {
 		return fmt.Errorf("list-models: reading models directory: %w", err)
 	}
 
-	index := make(map[string]ModelPath)
+	index := make(map[string]Path)
 
 	for _, orgEntry := range entries {
 		if !orgEntry.IsDir() {
@@ -236,7 +237,7 @@ func buildIndex(modelBasePath string) error {
 			}
 
 			for modelID, modelFile := range modelfiles {
-				mp := ModelPath{
+				mp := Path{
 					ModelFile:  modelFile,
 					Downloaded: true,
 				}

@@ -14,14 +14,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ardanlabs/kronk/sdk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
 	"github.com/nikolalohinski/gonja/v2"
 )
 
 // Version contains the current version of the kronk package.
-const Version = "1.3.1"
+const Version = "1.4.0"
 
 // =============================================================================
 

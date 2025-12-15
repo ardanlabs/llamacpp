@@ -1,0 +1,45 @@
+catalog: Text-Generation
+models:
+  - id: Qwen3-8B-Q8_0
+    category: Text-Generation
+    owned_by: Qwen
+    model_family: Qwen3-8B-GGUF
+    web_page: https://huggingface.co/Qwen/Qwen3-8B-GGUF
+    files:
+      model:
+        url: https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf
+        size: 8.71 GiB
+    capabilities:
+      endpoint: chat_completion
+      images: false
+      audio: false
+      video: false
+      streaming: true
+      reasoning: true
+      tooling: true
+    metadata:
+      created: 2025-05-03T0:00:00Z
+      collections: https://huggingface.co/collections/Qwen
+      description: Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.
+
+  - id: gpt-oss-20b-Q8_0
+    category: Text-Generation
+    owned_by: unsloth
+    model_family: gpt-oss-20b-GGUF
+    hf_url: https://huggingface.co/unsloth/gpt-oss-20b-GGUF
+    files:
+      model:
+        url: https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf
+        size: 12.1 GiB
+    capabilities:
+      endpoint: chat_completion
+      images: false
+      audio: false
+      video: false
+      streaming: true
+      reasoning: true
+      tooling: true
+    metadata:
+      created: 2025-08-08T0:00:00Z
+      collections: https://huggingface.co/collections/unsloth
+      description: OpenAI's GPT-OSS (OpenAI Open-Source Series) are open-weight large language models designed for powerful reasoning, agentic tasks, and on-premises deployment, released under a permissive Apache 2.0 license.

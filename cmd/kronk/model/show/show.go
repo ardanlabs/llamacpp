@@ -9,8 +9,8 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 // RunWeb executes the show command against the model server.
@@ -45,7 +45,7 @@ func RunLocal(args []string) error {
 	modelBasePath := defaults.ModelsDir("")
 	modelID := args[0]
 
-	mi, err := tools.RetrieveModelInfo(libPath, modelBasePath, modelID)
+	mi, err := models.RetrieveInfo(libPath, modelBasePath, modelID)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func printWeb(mi toolapp.ModelInfoResponse) {
 	}
 }
 
-func printLocal(mi tools.ModelInfo) {
+func printLocal(mi models.Info) {
 	fmt.Printf("ID:          %s\n", mi.ID)
 	fmt.Printf("Object:      %s\n", mi.Object)
 	fmt.Printf("Created:     %v\n", time.UnixMilli(mi.Created))

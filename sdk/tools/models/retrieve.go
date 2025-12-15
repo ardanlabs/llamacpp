@@ -1,4 +1,4 @@
-package tools
+package models
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"go.yaml.in/yaml/v2"
 )
 
-// ModelFile provides information about a model.
-type ModelFile struct {
+// File provides information about a model.
+type File struct {
 	ID          string
 	OwnedBy     string
 	ModelFamily string
@@ -23,9 +23,9 @@ type ModelFile struct {
 	Modified    time.Time
 }
 
-// RetrieveModelFiles returns all the models in the given model directory.
-func RetrieveModelFiles(modelBasePath string) ([]ModelFile, error) {
-	var list []ModelFile
+// RetrieveFiles returns all the models in the given model directory.
+func RetrieveFiles(modelBasePath string) ([]File, error) {
+	var list []File
 
 	index, err := loadIndex(modelBasePath)
 	if err != nil {
@@ -41,7 +41,7 @@ func RetrieveModelFiles(modelBasePath string) ([]ModelFile, error) {
 		modelPath := strings.TrimLeft(mp.ModelFile, modelBasePath)
 		parts := strings.Split(modelPath, "/")
 
-		mf := ModelFile{
+		mf := File{
 			ID:          modelID,
 			OwnedBy:     parts[0],
 			ModelFamily: parts[1],
@@ -52,7 +52,7 @@ func RetrieveModelFiles(modelBasePath string) ([]ModelFile, error) {
 		list = append(list, mf)
 	}
 
-	slices.SortFunc(list, func(a, b ModelFile) int {
+	slices.SortFunc(list, func(a, b File) int {
 		if a.ID < b.ID {
 			return -1
 		}
@@ -65,22 +65,22 @@ func RetrieveModelFiles(modelBasePath string) ([]ModelFile, error) {
 	return list, nil
 }
 
-// retrieveModelFile finds the model and returns the model file information.
-func retrieveModelFile(modelBasePath string, modelID string) (ModelFile, error) {
-	mp, err := RetrieveModelPath(modelBasePath, modelID)
+// retrieveFile finds the model and returns the model file information.
+func retrieveFile(modelBasePath string, modelID string) (File, error) {
+	mp, err := RetrievePath(modelBasePath, modelID)
 	if err != nil {
-		return ModelFile{}, fmt.Errorf("retrieve-model-path: %w", err)
+		return File{}, fmt.Errorf("retrieve-model-path: %w", err)
 	}
 
 	info, err := os.Stat(mp.ModelFile)
 	if err != nil {
-		return ModelFile{}, fmt.Errorf("stat: %w", err)
+		return File{}, fmt.Errorf("stat: %w", err)
 	}
 
 	modelPath := strings.TrimLeft(mp.ModelFile, modelBasePath)
 	parts := strings.Split(modelPath, "/")
 
-	mf := ModelFile{
+	mf := File{
 		ID:          modelID,
 		OwnedBy:     parts[0],
 		ModelFamily: parts[1],
@@ -93,8 +93,8 @@ func retrieveModelFile(modelBasePath string, modelID string) (ModelFile, error) 
 
 // =============================================================================
 
-// ModelInfo provides all the model details.
-type ModelInfo struct {
+// Info provides all the model details.
+type Info struct {
 	ID      string
 	Object  string
 	Created int64
@@ -102,17 +102,17 @@ type ModelInfo struct {
 	Details model.ModelInfo
 }
 
-// RetrieveModelInfo provides details for the specified model.
-func RetrieveModelInfo(libPath string, modelBasePath string, modelID string) (ModelInfo, error) {
+// RetrieveInfo provides details for the specified model.
+func RetrieveInfo(libPath string, modelBasePath string, modelID string) (Info, error) {
 	modelID = strings.ToLower(modelID)
 
-	mp, err := RetrieveModelPath(modelBasePath, modelID)
+	mp, err := RetrievePath(modelBasePath, modelID)
 	if err != nil {
-		return ModelInfo{}, err
+		return Info{}, err
 	}
 
 	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model: unable to init kronk: %w", err)
+		return Info{}, fmt.Errorf("show-model: unable to init kronk: %w", err)
 	}
 
 	const modelInstances = 1
@@ -122,7 +122,7 @@ func RetrieveModelInfo(libPath string, modelBasePath string, modelID string) (Mo
 	})
 
 	if err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model: unable to load kronk: %w", err)
+		return Info{}, fmt.Errorf("show-model: unable to load kronk: %w", err)
 	}
 
 	defer func() {
@@ -132,12 +132,12 @@ func RetrieveModelInfo(libPath string, modelBasePath string, modelID string) (Mo
 		krn.Unload(ctx)
 	}()
 
-	mf, err := retrieveModelFile(modelBasePath, modelID)
+	mf, err := retrieveFile(modelBasePath, modelID)
 	if err != nil {
-		return ModelInfo{}, fmt.Errorf("show-model: unable to get model file information: %w", err)
+		return Info{}, fmt.Errorf("show-model: unable to get model file information: %w", err)
 	}
 
-	mi := ModelInfo{
+	mi := Info{
 		ID:      mf.ID,
 		Object:  "model",
 		Created: mf.Modified.UnixMilli(),
@@ -150,25 +150,25 @@ func RetrieveModelInfo(libPath string, modelBasePath string, modelID string) (Mo
 
 // =============================================================================
 
-// ModelPath returns file path information about a model.
-type ModelPath struct {
+// Path returns file path information about a model.
+type Path struct {
 	ModelFile  string
 	ProjFile   string
 	Downloaded bool
 }
 
-// RetrieveModelPath locates the physical location on disk and returns the full path.
-func RetrieveModelPath(modelBasePath string, modelID string) (ModelPath, error) {
+// RetrievePath locates the physical location on disk and returns the full path.
+func RetrievePath(modelBasePath string, modelID string) (Path, error) {
 	index, err := loadIndex(modelBasePath)
 	if err != nil {
-		return ModelPath{}, fmt.Errorf("load-index: %w", err)
+		return Path{}, fmt.Errorf("load-index: %w", err)
 	}
 
 	modelID = strings.ToLower(modelID)
 
 	modelPath, exists := index[modelID]
 	if !exists {
-		return ModelPath{}, fmt.Errorf("model %q not found", modelID)
+		return Path{}, fmt.Errorf("model %q not found", modelID)
 	}
 
 	return modelPath, nil
@@ -176,8 +176,8 @@ func RetrieveModelPath(modelBasePath string, modelID string) (ModelPath, error) 
 
 // MustRetrieveModel finds a model and panics if the model was not found. This
 // should only be used for testing.
-func MustRetrieveModel(modelBasePath string, modelID string) ModelPath {
-	fi, err := RetrieveModelPath(modelBasePath, modelID)
+func MustRetrieveModel(modelBasePath string, modelID string) Path {
+	fi, err := RetrievePath(modelBasePath, modelID)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -188,7 +188,7 @@ func MustRetrieveModel(modelBasePath string, modelID string) ModelPath {
 // =============================================================================
 
 // LoadIndex returns the catalog index.
-func loadIndex(modelBasePath string) (map[string]ModelPath, error) {
+func loadIndex(modelBasePath string) (map[string]Path, error) {
 	indexPath := filepath.Join(modelBasePath, indexFile)
 
 	data, err := os.ReadFile(indexPath)
@@ -202,7 +202,7 @@ func loadIndex(modelBasePath string) (map[string]ModelPath, error) {
 		}
 	}
 
-	var index map[string]ModelPath
+	var index map[string]Path
 	if err := yaml.Unmarshal(data, &index); err != nil {
 		return nil, fmt.Errorf("unmarshal-index: %w", err)
 	}

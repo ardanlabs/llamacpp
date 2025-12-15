@@ -1,4 +1,4 @@
-// Package catalog provides tooling support for catalogs.
+// Package catalog provides tooling support for the catalog system.
 package catalog
 
 const (

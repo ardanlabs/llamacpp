@@ -9,26 +9,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/model"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 var (
-	mpThinkToolChat tools.ModelPath
-	mpGPTChat       tools.ModelPath
-	mpSimpleVision  tools.ModelPath
-	mpEmbed         tools.ModelPath
+	mpThinkToolChat models.Path
+	mpGPTChat       models.Path
+	mpSimpleVision  models.Path
+	mpEmbed         models.Path
 )
 
 func init() {
-	mpThinkToolChat = tools.MustRetrieveModel(defaults.ModelsDir(""), "Qwen3-8B-Q8_0")
-	mpSimpleVision = tools.MustRetrieveModel(defaults.ModelsDir(""), "Qwen2.5-VL-3B-Instruct-Q8_0")
-	mpEmbed = tools.MustRetrieveModel(defaults.ModelsDir(""), "embeddinggemma-300m-qat-Q8_0")
+	mpThinkToolChat = models.MustRetrieveModel(defaults.ModelsDir(""), "Qwen3-8B-Q8_0")
+	mpSimpleVision = models.MustRetrieveModel(defaults.ModelsDir(""), "Qwen2.5-VL-3B-Instruct-Q8_0")
+	mpEmbed = models.MustRetrieveModel(defaults.ModelsDir(""), "embeddinggemma-300m-qat-Q8_0")
 
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		mpGPTChat = tools.MustRetrieveModel(defaults.ModelsDir(""), "gpt-oss-20b-Q8_0")
+		mpGPTChat = models.MustRetrieveModel(defaults.ModelsDir(""), "gpt-oss-20b-Q8_0")
 	}
 }
 
@@ -77,7 +78,7 @@ func printInfo() {
 	fmt.Println("GOROUTINES     :", goroutines)
 	fmt.Println("RUN_IN_PARALLEL:", runInParallel)
 
-	currentVersion, err := tools.InstalledVersion(libPath)
+	currentVersion, err := libs.InstalledVersion(libPath)
 	if err != nil {
 		fmt.Printf("Failed to retrieve version info: %v\n", err)
 		os.Exit(1)

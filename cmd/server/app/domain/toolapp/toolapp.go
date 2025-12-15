@@ -11,10 +11,11 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
-	"github.com/ardanlabs/kronk/sdk/cache"
-	"github.com/ardanlabs/kronk/sdk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 type app struct {
@@ -44,7 +45,7 @@ func (a *app) pullLibs(ctx context.Context, r *http.Request) web.Encoder {
 
 	// -------------------------------------------------------------------------
 
-	cfg := tools.LibConfig{
+	cfg := libs.Config{
 		LibPath:      a.cache.LibPath(),
 		Arch:         a.cache.Arch(),
 		OS:           a.cache.OS(),
@@ -61,16 +62,16 @@ func (a *app) pullLibs(ctx context.Context, r *http.Request) web.Encoder {
 		}
 
 		status := fmt.Sprintf("%s:%s\n", msg, sb.String())
-		ver := toAppVersion(status, tools.VersionTag{})
+		ver := toAppVersion(status, libs.VersionTag{})
 
 		a.log.Info(ctx, "pull-libs", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)
 		f.Flush()
 	}
 
-	vi, err := tools.DownloadLibraries(ctx, logger, cfg)
+	vi, err := libs.Download(ctx, logger, cfg)
 	if err != nil {
-		ver := toAppVersion(err.Error(), tools.VersionTag{})
+		ver := toAppVersion(err.Error(), libs.VersionTag{})
 
 		a.log.Info(ctx, "pull-libs", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)
@@ -91,7 +92,7 @@ func (a *app) pullLibs(ctx context.Context, r *http.Request) web.Encoder {
 func (a *app) listModels(ctx context.Context, r *http.Request) web.Encoder {
 	modelPath := a.cache.ModelPath()
 
-	models, err := tools.RetrieveModelFiles(modelPath)
+	models, err := models.RetrieveFiles(modelPath)
 	if err != nil {
 		return errs.Errorf(errs.Internal, "unable to retrieve model list: %s", err)
 	}
@@ -142,16 +143,16 @@ func (a *app) pullModels(ctx context.Context, r *http.Request) web.Encoder {
 		}
 
 		status := fmt.Sprintf("%s:%s\n", msg, sb.String())
-		ver := toAppPull(status, tools.ModelPath{})
+		ver := toAppPull(status, models.Path{})
 
 		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)
 		f.Flush()
 	}
 
-	mp, err := tools.DownloadModel(ctx, logger, req.ModelURL, req.ProjURL, modelPath)
+	mp, err := models.Download(ctx, logger, req.ModelURL, req.ProjURL, modelPath)
 	if err != nil {
-		ver := toAppPull(err.Error(), tools.ModelPath{})
+		ver := toAppPull(err.Error(), models.Path{})
 
 		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)
@@ -175,12 +176,12 @@ func (a *app) removeModel(ctx context.Context, r *http.Request) web.Encoder {
 
 	a.log.Info(ctx, "tool-remove", "modelName", modelName)
 
-	mp, err := tools.RetrieveModelPath(modelPath, modelName)
+	mp, err := models.RetrievePath(modelPath, modelName)
 	if err != nil {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	if err := tools.RemoveModel(mp); err != nil {
+	if err := models.Remove(mp); err != nil {
 		return errs.Errorf(errs.Internal, "failed to remove model: %s", err)
 	}
 
@@ -192,7 +193,7 @@ func (a *app) showModel(ctx context.Context, r *http.Request) web.Encoder {
 	modelPath := a.cache.ModelPath()
 	modelName := web.Param(r, "model")
 
-	mi, err := tools.RetrieveModelInfo(libPath, modelPath, modelName)
+	mi, err := models.RetrieveInfo(libPath, modelPath, modelName)
 	if err != nil {
 		return errs.New(errs.Internal, err)
 	}
@@ -260,16 +261,16 @@ func (a *app) pullCatalog(ctx context.Context, r *http.Request) web.Encoder {
 		}
 
 		status := fmt.Sprintf("%s:%s\n", msg, sb.String())
-		ver := toAppPull(status, tools.ModelPath{})
+		ver := toAppPull(status, models.Path{})
 
 		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)
 		f.Flush()
 	}
 
-	mp, err := tools.DownloadModel(ctx, logger, model.Files.Model.URL, model.Files.Proj.URL, modelPath)
+	mp, err := models.Download(ctx, logger, model.Files.Model.URL, model.Files.Proj.URL, modelPath)
 	if err != nil {
-		ver := toAppPull(err.Error(), tools.ModelPath{})
+		ver := toAppPull(err.Error(), models.Path{})
 
 		a.log.Info(ctx, "pull-model", "info", ver[:len(ver)-1])
 		fmt.Fprint(w, ver)

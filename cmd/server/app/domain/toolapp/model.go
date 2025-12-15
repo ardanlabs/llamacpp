@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ardanlabs/kronk/sdk/cache"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/cache"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 // VersionResponse returns information about the installed libraries.
@@ -26,7 +27,7 @@ func (app VersionResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toAppVersion(status string, vt tools.VersionTag) string {
+func toAppVersion(status string, vt libs.VersionTag) string {
 	vi := VersionResponse{
 		Status:    status,
 		Arch:      vt.Arch,
@@ -69,7 +70,7 @@ func (app ListModelInfoResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toListModelsInfo(models []tools.ModelFile) ListModelInfoResponse {
+func toListModelsInfo(models []models.File) ListModelInfoResponse {
 	list := ListModelInfoResponse{
 		Object: "list",
 	}
@@ -116,7 +117,7 @@ func (app PullResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toAppPull(status string, mp tools.ModelPath) string {
+func toAppPull(status string, mp models.Path) string {
 	pr := PullResponse{
 		Status:     status,
 		ModelFile:  mp.ModelFile,
@@ -157,7 +158,7 @@ func (app ModelInfoResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toModelInfo(model tools.ModelInfo) ModelInfoResponse {
+func toModelInfo(model models.Info) ModelInfoResponse {
 	return ModelInfoResponse{
 		ID:            model.ID,
 		Object:        model.Object,

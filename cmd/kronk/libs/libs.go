@@ -10,9 +10,9 @@ import (
 	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
-	"github.com/ardanlabs/kronk/sdk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/tools"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
 )
 
 // RunWeb executes the libs command against the model server.
@@ -60,7 +60,7 @@ func RunLocal(args []string) error {
 		return err
 	}
 
-	libCfg, err := tools.NewLibConfig(
+	libCfg, err := libs.NewConfig(
 		defaults.LibsDir(""),
 		arch.String(),
 		os.String(),
@@ -75,7 +75,7 @@ func RunLocal(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	_, err = tools.DownloadLibraries(ctx, kronk.FmtLogger, libCfg)
+	_, err = libs.Download(ctx, kronk.FmtLogger, libCfg)
 	if err != nil {
 		return errs.Errorf(errs.Internal, "libs:unable to install llama.cpp: %s", err)
 	}

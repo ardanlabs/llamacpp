@@ -1,4 +1,5 @@
-package tools
+// Package downloader provide support for downloading files.
+package downloader
 
 import (
 	"context"
@@ -19,8 +20,8 @@ const (
 // ProgressFunc provides feedback on the progress of a file download.
 type ProgressFunc func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool)
 
-// DownloadFile pulls down a single file from a url to a specified destination.
-func DownloadFile(ctx context.Context, src string, dest string, progress ProgressFunc, sizeInterval int64) (bool, error) {
+// Download pulls down a single file from a url to a specified destination.
+func Download(ctx context.Context, src string, dest string, progress ProgressFunc, sizeInterval int64) (bool, error) {
 	var pr ProgressReader
 
 	if progress != nil {

@@ -3,7 +3,7 @@ package website
 import (
 	"fmt"
 
-	"github.com/ardanlabs/kronk/sdk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 )
 
 type Message struct {
