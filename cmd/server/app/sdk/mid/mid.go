@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ardanlabs/kronk/cmd/server/app/sdk/auth"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
+	"github.com/ardanlabs/kronk/sdk/security/auth"
 	"github.com/google/uuid"
 )
 

@@ -27,14 +27,16 @@ var (
 // Claims represents the authorization claims transmitted via a JWT.
 type Claims struct {
 	jwt.RegisteredClaims
+	Admin     bool
+	Endpoints map[string]bool
 }
 
 // KeyLookup declares a method set of behavior for looking up
 // private and public keys for JWT use. The return could be a
 // PEM encoded string or a JWS based key.
 type KeyLookup interface {
-	PrivateKey(kid string) (key string, err error)
-	PublicKey(kid string) (key string, err error)
+	PrivateKey() (keyID string, pem string)
+	PublicKey(kid string) (pem string, err error)
 }
 
 // Config represents information required to initialize auth.
@@ -79,14 +81,11 @@ func (a *Auth) Enabled() bool {
 }
 
 // GenerateToken generates a signed JWT token string representing the user Claims.
-func (a *Auth) GenerateToken(kid string, claims Claims) (string, error) {
+func (a *Auth) GenerateToken(claims Claims) (string, error) {
+	kid, privateKeyPEM := a.keyLookup.PrivateKey()
+
 	token := jwt.NewWithClaims(a.method, claims)
 	token.Header["kid"] = kid
-
-	privateKeyPEM, err := a.keyLookup.PrivateKey(kid)
-	if err != nil {
-		return "", fmt.Errorf("private key: %w", err)
-	}
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privateKeyPEM))
 	if err != nil {
@@ -141,12 +140,6 @@ func (a *Auth) Authenticate(ctx context.Context, bearerToken string) (Claims, er
 		return Claims{}, fmt.Errorf("authentication failed: %w", err)
 	}
 
-	// Check the database for this user to verify they are still enabled.
-
-	if err := a.isUserEnabled(ctx, claims); err != nil {
-		return Claims{}, fmt.Errorf("user not enabled: %w", err)
-	}
-
 	return claims, nil
 }
 
@@ -178,10 +171,5 @@ func (a *Auth) opaPolicyEvaluation(ctx context.Context, regoScript string, rule 
 		return fmt.Errorf("%w: OPA policy rule %q not satisfied", baseError, rule)
 	}
 
-	return nil
-}
-
-// isUserEnabled performs a secondary check to user validation.
-func (a *Auth) isUserEnabled(ctx context.Context, claims Claims) error {
 	return nil
 }
