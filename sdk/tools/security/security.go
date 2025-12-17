@@ -15,7 +15,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var localFolder = "keys"
+var (
+	localFolder = "keys"
+	masterFile  = "master"
+)
 
 // Config represents the config needed to constuct the security API.
 type Config struct {
@@ -35,45 +38,18 @@ type Security struct {
 func New(log *logger.Logger, cfg Config) (*Security, error) {
 	ks := keystore.New()
 
-	basePath := defaults.BaseDir(cfg.KeysFolder)
-	keysPath := filepath.Join(basePath, localFolder)
-
-	os.MkdirAll(keysPath, 0755)
-
-	n, err := ks.LoadByFileSystem(os.DirFS(keysPath))
-	if err != nil {
-		return nil, fmt.Errorf("load-by-file-system: %w", err)
-	}
-
-	// There are no keys in the system yet, create the master key.
-	if n == 0 {
-		if err := generateNewPrivateKey(ks, keysPath, "master"); err != nil {
-			return nil, fmt.Errorf("generate-new-key: %w", err)
-		}
-	}
-
-	authCfg := auth.Config{
-		KeyLookup: ks,
-		Issuer:    cfg.Issuer,
-		Enabled:   cfg.Enabled,
-	}
-
 	sec := Security{
-		Auth: auth.New(authCfg),
-		cfg:  cfg,
-		ks:   ks,
+		Auth: auth.New(auth.Config{
+			KeyLookup: ks,
+			Issuer:    cfg.Issuer,
+			Enabled:   cfg.Enabled,
+		}),
+		cfg: cfg,
+		ks:  ks,
 	}
 
-	// We need an admin token and a new private key for moving forward with
-	// creating user tokens.
-	if n == 0 {
-		if err := sec.generateAdminToken(keysPath); err != nil {
-			return nil, fmt.Errorf("generate-super-user-token: %w", err)
-		}
-
-		if err := generateNewPrivateKey(ks, keysPath, uuid.NewString()); err != nil {
-			return nil, fmt.Errorf("generate-new-key: %w", err)
-		}
+	if err := sec.addSystemKeys(cfg.KeysFolder); err != nil {
+		return nil, fmt.Errorf("add-system-keys: %w", err)
 	}
 
 	return &sec, nil
@@ -102,12 +78,39 @@ func (sec *Security) GenerateToken(subject string, admin bool, endpoints map[str
 
 // =============================================================================
 
-func generateNewPrivateKey(ks *keystore.KeyStore, keysPath string, keyName string) error {
-	if err := generatePrivateKey(keysPath, keyName); err != nil {
+func (sec *Security) addSystemKeys(keysFolder string) error {
+	basePath := defaults.BaseDir(keysFolder)
+	keysPath := filepath.Join(basePath, localFolder)
+
+	os.MkdirAll(keysPath, 0755)
+
+	n, err := sec.ks.LoadByFileSystem(os.DirFS(keysPath))
+	if err != nil {
+		return fmt.Errorf("load-by-file-system: %w", err)
+	}
+
+	// If the keys already exist, we are done.
+	if n > 0 {
+		return nil
+	}
+
+	if err := generatePrivateKey(keysPath, masterFile); err != nil {
 		return fmt.Errorf("generate-private-key: %w", err)
 	}
 
-	if _, err := ks.LoadByFileSystem(os.DirFS(keysPath)); err != nil {
+	if _, err := sec.ks.LoadByFileSystem(os.DirFS(keysPath)); err != nil {
+		return fmt.Errorf("load-by-file-system: %w", err)
+	}
+
+	if err := sec.generateAdminToken(keysPath); err != nil {
+		return fmt.Errorf("generate-admin-token: %w", err)
+	}
+
+	if err := generatePrivateKey(keysPath, uuid.NewString()); err != nil {
+		return fmt.Errorf("generate-private-key: %w", err)
+	}
+
+	if _, err := sec.ks.LoadByFileSystem(os.DirFS(keysPath)); err != nil {
 		return fmt.Errorf("load-by-file-system: %w", err)
 	}
 
@@ -129,7 +132,7 @@ func (sec *Security) generateAdminToken(keysPath string) error {
 		return fmt.Errorf("generate admin token: %w", err)
 	}
 
-	fileName := filepath.Join(keysPath, "admin-read-and-delete.jwt")
+	fileName := filepath.Join(keysPath, fmt.Sprintf("%s.jwt", masterFile))
 
 	if err := os.WriteFile(fileName, []byte(token), 0600); err != nil {
 		return fmt.Errorf("write superuser token: %w", err)
