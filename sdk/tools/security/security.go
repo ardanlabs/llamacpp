@@ -85,6 +85,43 @@ func (sec *Security) GenerateToken(subject string, admin bool, endpoints map[str
 	return token, nil
 }
 
+// ListKeys returns the set of keys that currently exist.
+func (sec *Security) ListKeys() ([]Key, error) {
+	basePath := defaults.BaseDir(sec.cfg.OverrideBaseKeysFolder)
+	keysPath := filepath.Join(basePath, localFolder)
+
+	entries, err := os.ReadDir(keysPath)
+	if err != nil {
+		return nil, fmt.Errorf("read-dir: %w", err)
+	}
+
+	var keys []Key
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		if filepath.Ext(entry.Name()) != ".pem" {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return nil, fmt.Errorf("file-info: %w", err)
+		}
+
+		key := Key{
+			ID:      entry.Name()[:len(entry.Name())-4],
+			Created: info.ModTime(),
+		}
+
+		keys = append(keys, key)
+	}
+
+	return keys, nil
+}
+
 // AddPrivateKey adds a new private key to the system. You can override the
 // default location of the keys folder by passing a non-empty string.
 func (sec *Security) AddPrivateKey() error {

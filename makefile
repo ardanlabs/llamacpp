@@ -139,6 +139,13 @@ kronk-security-help:
 	go run cmd/kronk/main.go security --help
 
 
+kronk-security-key-list:
+	go run cmd/kronk/main.go security key list
+
+kronk-security-key-list-local:
+	go run cmd/kronk/main.go security key list --local
+
+
 # make kronk-security-token-create-local U="bill" D="5m" E="chat-completions"
 kronk-security-token-create-local:
 	go run cmd/kronk/main.go security token create --local --username "$(U)" --duration "$(D)" --endpoints "$(E)"

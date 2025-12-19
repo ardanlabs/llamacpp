@@ -40,6 +40,7 @@ func Routes(app *web.App, cfg Config) {
 	app.HandlerFunc(http.MethodPost, version, "/v1/catalog/pull/{model}", api.pullCatalog, bearer)
 
 	app.HandlerFunc(http.MethodPost, version, "/v1/security/token/create", api.createToken, bearer, authorizeAdmin)
+	app.HandlerFunc(http.MethodGet, version, "/v1/security/keys", api.listKeys, bearer, authorizeAdmin)
 	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/add", api.addKey, bearer, authorizeAdmin)
 	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/remove/{keyid}", api.removeKey, bearer, authorizeAdmin)
 }

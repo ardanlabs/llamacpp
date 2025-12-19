@@ -303,6 +303,15 @@ func (a *app) showCatalogModel(ctx context.Context, r *http.Request) web.Encoder
 	return toCatalogModelResponse(model)
 }
 
+func (a *app) listKeys(ctx context.Context, r *http.Request) web.Encoder {
+	keys, err := a.security.ListKeys()
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	return toKeys(keys)
+}
+
 func (a *app) createToken(ctx context.Context, r *http.Request) web.Encoder {
 	var req TokenRequest
 	if err := web.Decode(r, &req); err != nil {
