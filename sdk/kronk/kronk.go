@@ -21,7 +21,7 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "1.5.3"
+const Version = "1.6.0"
 
 // =============================================================================
 
