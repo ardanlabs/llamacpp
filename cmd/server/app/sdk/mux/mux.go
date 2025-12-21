@@ -11,7 +11,6 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
-	"github.com/ardanlabs/kronk/sdk/tools/security"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -52,7 +51,6 @@ func WithFileServer(react bool, static embed.FS, dir string, path string) func(o
 type Config struct {
 	Build      string
 	Log        *logger.Logger
-	Security   *security.Security
 	AuthClient *authclient.Client
 	Tracer     trace.Tracer
 	Cache      *cache.Cache

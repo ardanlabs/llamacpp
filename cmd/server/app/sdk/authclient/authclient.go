@@ -103,3 +103,35 @@ func (cln *Client) CreateToken(ctx context.Context, bearerToken string, userName
 
 	return toCreateTokenResponse(req), nil
 }
+
+// ListKeys calls the auth service to list all keys.
+func (cln *Client) ListKeys(ctx context.Context, bearerToken string) (ListKeysResponse, error) {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", bearerToken)
+
+	req, err := cln.grpc.ListKeys(ctx, &authapp.ListKeysRequest{})
+	if err != nil {
+		return ListKeysResponse{}, err
+	}
+
+	return toListKeysResponse(req), nil
+}
+
+// AddKey calls the auth service to add a new key.
+func (cln *Client) AddKey(ctx context.Context, bearerToken string) error {
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", bearerToken)
+
+	_, err := cln.grpc.AddKey(ctx, &authapp.AddKeyRequest{})
+	return err
+}
+
+// RemoveKey calls the auth service to remove a key.
+func (cln *Client) RemoveKey(ctx context.Context, bearerToken string, keyID string) error {
+	rkb := authapp.RemoveKeyRequest_builder{
+		KeyId: proto.String(keyID),
+	}
+
+	ctx = metadata.AppendToOutgoingContext(ctx, "authorization", bearerToken)
+
+	_, err := cln.grpc.RemoveKey(ctx, rkb.Build())
+	return err
+}

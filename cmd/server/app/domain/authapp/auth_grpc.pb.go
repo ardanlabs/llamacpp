@@ -8,7 +8,6 @@ package authapp
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -22,6 +21,9 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Auth_CreateToken_FullMethodName  = "/auth.Auth/CreateToken"
 	Auth_Authenticate_FullMethodName = "/auth.Auth/Authenticate"
+	Auth_ListKeys_FullMethodName     = "/auth.Auth/ListKeys"
+	Auth_AddKey_FullMethodName       = "/auth.Auth/AddKey"
+	Auth_RemoveKey_FullMethodName    = "/auth.Auth/RemoveKey"
 )
 
 // AuthClient is the client API for Auth service.
@@ -34,6 +36,12 @@ type AuthClient interface {
 	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error)
 	// Authenticate a request using a bearer token.
 	Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
+	// List all keys in the system.
+	ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error)
+	// Add a new private key.
+	AddKey(ctx context.Context, in *AddKeyRequest, opts ...grpc.CallOption) (*AddKeyResponse, error)
+	// Remove a private key by ID.
+	RemoveKey(ctx context.Context, in *RemoveKeyRequest, opts ...grpc.CallOption) (*RemoveKeyResponse, error)
 }
 
 type authClient struct {
@@ -64,6 +72,36 @@ func (c *authClient) Authenticate(ctx context.Context, in *AuthenticateRequest, 
 	return out, nil
 }
 
+func (c *authClient) ListKeys(ctx context.Context, in *ListKeysRequest, opts ...grpc.CallOption) (*ListKeysResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListKeysResponse)
+	err := c.cc.Invoke(ctx, Auth_ListKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) AddKey(ctx context.Context, in *AddKeyRequest, opts ...grpc.CallOption) (*AddKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddKeyResponse)
+	err := c.cc.Invoke(ctx, Auth_AddKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authClient) RemoveKey(ctx context.Context, in *RemoveKeyRequest, opts ...grpc.CallOption) (*RemoveKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveKeyResponse)
+	err := c.cc.Invoke(ctx, Auth_RemoveKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations must embed UnimplementedAuthServer
 // for forward compatibility.
@@ -74,6 +112,12 @@ type AuthServer interface {
 	CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error)
 	// Authenticate a request using a bearer token.
 	Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error)
+	// List all keys in the system.
+	ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error)
+	// Add a new private key.
+	AddKey(context.Context, *AddKeyRequest) (*AddKeyResponse, error)
+	// Remove a private key by ID.
+	RemoveKey(context.Context, *RemoveKeyRequest) (*RemoveKeyResponse, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -89,6 +133,15 @@ func (UnimplementedAuthServer) CreateToken(context.Context, *CreateTokenRequest)
 }
 func (UnimplementedAuthServer) Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Authenticate not implemented")
+}
+func (UnimplementedAuthServer) ListKeys(context.Context, *ListKeysRequest) (*ListKeysResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListKeys not implemented")
+}
+func (UnimplementedAuthServer) AddKey(context.Context, *AddKeyRequest) (*AddKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddKey not implemented")
+}
+func (UnimplementedAuthServer) RemoveKey(context.Context, *RemoveKeyRequest) (*RemoveKeyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveKey not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 func (UnimplementedAuthServer) testEmbeddedByValue()              {}
@@ -147,6 +200,60 @@ func _Auth_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_ListKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).ListKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_ListKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).ListKeys(ctx, req.(*ListKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_AddKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).AddKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_AddKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).AddKey(ctx, req.(*AddKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Auth_RemoveKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).RemoveKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_RemoveKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).RemoveKey(ctx, req.(*RemoveKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -161,6 +268,18 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Authenticate",
 			Handler:    _Auth_Authenticate_Handler,
+		},
+		{
+			MethodName: "ListKeys",
+			Handler:    _Auth_ListKeys_Handler,
+		},
+		{
+			MethodName: "AddKey",
+			Handler:    _Auth_AddKey_Handler,
+		},
+		{
+			MethodName: "RemoveKey",
+			Handler:    _Auth_RemoveKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

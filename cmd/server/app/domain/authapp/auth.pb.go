@@ -7,11 +7,10 @@
 package authapp
 
 import (
-	reflect "reflect"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	unsafe "unsafe"
 )
 
 const (
@@ -543,6 +542,433 @@ func (b0 AuthenticateResponse_builder) Build() *AuthenticateResponse {
 	return m0
 }
 
+// Request message for listing keys.
+type ListKeysRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListKeysRequest) Reset() {
+	*x = ListKeysRequest{}
+	mi := &file_auth_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListKeysRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListKeysRequest) ProtoMessage() {}
+
+func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type ListKeysRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 ListKeysRequest_builder) Build() *ListKeysRequest {
+	m0 := &ListKeysRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+// Response message for listing keys.
+type ListKeysResponse struct {
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Keys *[]*Key                `protobuf:"bytes,1,rep,name=keys"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListKeysResponse) Reset() {
+	*x = ListKeysResponse{}
+	mi := &file_auth_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListKeysResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListKeysResponse) ProtoMessage() {}
+
+func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ListKeysResponse) GetKeys() []*Key {
+	if x != nil {
+		if x.xxx_hidden_Keys != nil {
+			return *x.xxx_hidden_Keys
+		}
+	}
+	return nil
+}
+
+func (x *ListKeysResponse) SetKeys(v []*Key) {
+	x.xxx_hidden_Keys = &v
+}
+
+type ListKeysResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Keys []*Key
+}
+
+func (b0 ListKeysResponse_builder) Build() *ListKeysResponse {
+	m0 := &ListKeysResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Keys = &b.Keys
+	return m0
+}
+
+// Key represents a key in the system.
+type Key struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          *string                `protobuf:"bytes,1,opt,name=id"`
+	xxx_hidden_Created     *string                `protobuf:"bytes,2,opt,name=created"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *Key) Reset() {
+	*x = Key{}
+	mi := &file_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Key) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Key) ProtoMessage() {}
+
+func (x *Key) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Key) GetId() string {
+	if x != nil {
+		if x.xxx_hidden_Id != nil {
+			return *x.xxx_hidden_Id
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *Key) GetCreated() string {
+	if x != nil {
+		if x.xxx_hidden_Created != nil {
+			return *x.xxx_hidden_Created
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *Key) SetId(v string) {
+	x.xxx_hidden_Id = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+}
+
+func (x *Key) SetCreated(v string) {
+	x.xxx_hidden_Created = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *Key) HasId() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *Key) HasCreated() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *Key) ClearId() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Id = nil
+}
+
+func (x *Key) ClearCreated() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Created = nil
+}
+
+type Key_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id      *string
+	Created *string
+}
+
+func (b0 Key_builder) Build() *Key {
+	m0 := &Key{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Id != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Id = b.Id
+	}
+	if b.Created != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Created = b.Created
+	}
+	return m0
+}
+
+// Request message for adding a key.
+type AddKeyRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddKeyRequest) Reset() {
+	*x = AddKeyRequest{}
+	mi := &file_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddKeyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddKeyRequest) ProtoMessage() {}
+
+func (x *AddKeyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type AddKeyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 AddKeyRequest_builder) Build() *AddKeyRequest {
+	m0 := &AddKeyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+// Response message for adding a key.
+type AddKeyResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddKeyResponse) Reset() {
+	*x = AddKeyResponse{}
+	mi := &file_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddKeyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddKeyResponse) ProtoMessage() {}
+
+func (x *AddKeyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type AddKeyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 AddKeyResponse_builder) Build() *AddKeyResponse {
+	m0 := &AddKeyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+// Request message for removing a key.
+type RemoveKeyRequest struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_KeyId       *string                `protobuf:"bytes,1,opt,name=key_id,json=keyId"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *RemoveKeyRequest) Reset() {
+	*x = RemoveKeyRequest{}
+	mi := &file_auth_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveKeyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveKeyRequest) ProtoMessage() {}
+
+func (x *RemoveKeyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RemoveKeyRequest) GetKeyId() string {
+	if x != nil {
+		if x.xxx_hidden_KeyId != nil {
+			return *x.xxx_hidden_KeyId
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *RemoveKeyRequest) SetKeyId(v string) {
+	x.xxx_hidden_KeyId = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 1)
+}
+
+func (x *RemoveKeyRequest) HasKeyId() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *RemoveKeyRequest) ClearKeyId() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_KeyId = nil
+}
+
+type RemoveKeyRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	KeyId *string
+}
+
+func (b0 RemoveKeyRequest_builder) Build() *RemoveKeyRequest {
+	m0 := &RemoveKeyRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.KeyId != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 1)
+		x.xxx_hidden_KeyId = b.KeyId
+	}
+	return m0
+}
+
+// Response message for removing a key.
+type RemoveKeyResponse struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveKeyResponse) Reset() {
+	*x = RemoveKeyResponse{}
+	mi := &file_auth_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveKeyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveKeyResponse) ProtoMessage() {}
+
+func (x *RemoveKeyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type RemoveKeyResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 RemoveKeyResponse_builder) Build() *RemoveKeyResponse {
+	m0 := &RemoveKeyResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -563,28 +989,56 @@ const file_auth_proto_rawDesc = "" +
 	"\bendpoint\x18\x03 \x01(\tR\bendpoint\"K\n" +
 	"\x14AuthenticateResponse\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\x12\x18\n" +
-	"\asubject\x18\x02 \x01(\tR\asubject2\x91\x01\n" +
+	"\asubject\x18\x02 \x01(\tR\asubject\"\x11\n" +
+	"\x0fListKeysRequest\"1\n" +
+	"\x10ListKeysResponse\x12\x1d\n" +
+	"\x04keys\x18\x01 \x03(\v2\t.auth.KeyR\x04keys\"/\n" +
+	"\x03Key\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\acreated\x18\x02 \x01(\tR\acreated\"\x0f\n" +
+	"\rAddKeyRequest\"\x10\n" +
+	"\x0eAddKeyResponse\")\n" +
+	"\x10RemoveKeyRequest\x12\x15\n" +
+	"\x06key_id\x18\x01 \x01(\tR\x05keyId\"\x13\n" +
+	"\x11RemoveKeyResponse2\xbf\x02\n" +
 	"\x04Auth\x12B\n" +
 	"\vCreateToken\x12\x18.auth.CreateTokenRequest\x1a\x19.auth.CreateTokenResponse\x12E\n" +
-	"\fAuthenticate\x12\x19.auth.AuthenticateRequest\x1a\x1a.auth.AuthenticateResponseB3Z1github.com/ardanlabs/kronk/app/domain/grpcauthappb\beditionsp\xe9\a"
+	"\fAuthenticate\x12\x19.auth.AuthenticateRequest\x1a\x1a.auth.AuthenticateResponse\x129\n" +
+	"\bListKeys\x12\x15.auth.ListKeysRequest\x1a\x16.auth.ListKeysResponse\x123\n" +
+	"\x06AddKey\x12\x13.auth.AddKeyRequest\x1a\x14.auth.AddKeyResponse\x12<\n" +
+	"\tRemoveKey\x12\x16.auth.RemoveKeyRequest\x1a\x17.auth.RemoveKeyResponseB:Z8github.com/ardanlabs/kronk/cmd/server/app/domain/authappb\beditionsp\xe9\a"
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_auth_proto_goTypes = []any{
 	(*CreateTokenRequest)(nil),   // 0: auth.CreateTokenRequest
 	(*CreateTokenResponse)(nil),  // 1: auth.CreateTokenResponse
 	(*AuthenticateRequest)(nil),  // 2: auth.AuthenticateRequest
 	(*AuthenticateResponse)(nil), // 3: auth.AuthenticateResponse
+	(*ListKeysRequest)(nil),      // 4: auth.ListKeysRequest
+	(*ListKeysResponse)(nil),     // 5: auth.ListKeysResponse
+	(*Key)(nil),                  // 6: auth.Key
+	(*AddKeyRequest)(nil),        // 7: auth.AddKeyRequest
+	(*AddKeyResponse)(nil),       // 8: auth.AddKeyResponse
+	(*RemoveKeyRequest)(nil),     // 9: auth.RemoveKeyRequest
+	(*RemoveKeyResponse)(nil),    // 10: auth.RemoveKeyResponse
 }
 var file_auth_proto_depIdxs = []int32{
-	0, // 0: auth.Auth.CreateToken:input_type -> auth.CreateTokenRequest
-	2, // 1: auth.Auth.Authenticate:input_type -> auth.AuthenticateRequest
-	1, // 2: auth.Auth.CreateToken:output_type -> auth.CreateTokenResponse
-	3, // 3: auth.Auth.Authenticate:output_type -> auth.AuthenticateResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6,  // 0: auth.ListKeysResponse.keys:type_name -> auth.Key
+	0,  // 1: auth.Auth.CreateToken:input_type -> auth.CreateTokenRequest
+	2,  // 2: auth.Auth.Authenticate:input_type -> auth.AuthenticateRequest
+	4,  // 3: auth.Auth.ListKeys:input_type -> auth.ListKeysRequest
+	7,  // 4: auth.Auth.AddKey:input_type -> auth.AddKeyRequest
+	9,  // 5: auth.Auth.RemoveKey:input_type -> auth.RemoveKeyRequest
+	1,  // 6: auth.Auth.CreateToken:output_type -> auth.CreateTokenResponse
+	3,  // 7: auth.Auth.Authenticate:output_type -> auth.AuthenticateResponse
+	5,  // 8: auth.Auth.ListKeys:output_type -> auth.ListKeysResponse
+	8,  // 9: auth.Auth.AddKey:output_type -> auth.AddKeyResponse
+	10, // 10: auth.Auth.RemoveKey:output_type -> auth.RemoveKeyResponse
+	6,  // [6:11] is the sub-list for method output_type
+	1,  // [1:6] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_auth_proto_init() }
@@ -598,7 +1052,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

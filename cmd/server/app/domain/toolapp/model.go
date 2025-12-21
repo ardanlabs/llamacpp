@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
-	"github.com/ardanlabs/kronk/sdk/tools/security"
 )
 
 // VersionResponse returns information about the installed libraries.
@@ -333,8 +333,8 @@ func toCatalogModelsResponse(list []catalog.Model) CatalogModelsResponse {
 
 // KeyResponse represents a key in the system.
 type KeyResponse struct {
-	ID      string    `json:"id"`
-	Created time.Time `json:"created"`
+	ID      string `json:"id"`
+	Created string `json:"created"`
 }
 
 // KeysResponse is a collection of keys.
@@ -346,7 +346,7 @@ func (app KeysResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toKeys(keys []security.Key) KeysResponse {
+func toKeys(keys []authclient.Key) KeysResponse {
 	keyResponse := make([]KeyResponse, len(keys))
 
 	for i, key := range keys {

@@ -8,14 +8,12 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
-	"github.com/ardanlabs/kronk/sdk/tools/security"
 )
 
 // Config contains all the mandatory systems required by handlers.
 type Config struct {
 	Log        *logger.Logger
 	AuthClient *authclient.Client
-	Security   *security.Security
 	Cache      *cache.Cache
 }
 
@@ -23,10 +21,9 @@ type Config struct {
 func Routes(app *web.App, cfg Config) {
 	const version = ""
 
-	api := newApp(cfg.Log, cfg.Cache, cfg.Security)
+	api := newApp(cfg.Log, cfg.Cache, cfg.AuthClient)
 
 	auth := mid.Authenticate(true, cfg.AuthClient, false, "")
-	authAdmin := mid.Authenticate(true, cfg.AuthClient, true, "")
 
 	app.HandlerFunc(http.MethodGet, version, "/v1/libs", api.listLibs, auth)
 	app.HandlerFunc(http.MethodPost, version, "/v1/libs/pull", api.pullLibs, auth)
@@ -43,8 +40,9 @@ func Routes(app *web.App, cfg Config) {
 	app.HandlerFunc(http.MethodGet, version, "/v1/catalog/{model}", api.showCatalogModel, auth)
 	app.HandlerFunc(http.MethodPost, version, "/v1/catalog/pull/{model}", api.pullCatalog, auth)
 
-	app.HandlerFunc(http.MethodPost, version, "/v1/security/token/create", api.createToken, authAdmin)
-	app.HandlerFunc(http.MethodGet, version, "/v1/security/keys", api.listKeys, authAdmin)
-	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/add", api.addKey, authAdmin)
-	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/remove/{keyid}", api.removeKey, authAdmin)
+	// Auth is handled by the auth service for these calls.
+	app.HandlerFunc(http.MethodPost, version, "/v1/security/token/create", api.createToken)
+	app.HandlerFunc(http.MethodGet, version, "/v1/security/keys", api.listKeys)
+	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/add", api.addKey)
+	app.HandlerFunc(http.MethodPost, version, "/v1/security/keys/remove/{keyid}", api.removeKey)
 }

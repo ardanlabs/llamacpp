@@ -177,12 +177,8 @@ func (a *Auth) Authorize(ctx context.Context, claims Claims, requireAdmin bool, 
 		return fmt.Errorf("authorization failed: %w", err)
 	}
 
-	if !result.Admin {
-		return fmt.Errorf("%w: admin access required", ErrForbidden)
-	}
-
-	if !result.Endpoint {
-		return fmt.Errorf("%w: endpoint %q not authorized", ErrForbidden, endpoint)
+	if !result.Authorized {
+		return fmt.Errorf("%w: %s", ErrForbidden, result.Reason)
 	}
 
 	return nil
@@ -217,8 +213,8 @@ func (a *Auth) opaAuthentication(ctx context.Context, input any) error {
 }
 
 type authResult struct {
-	Admin    bool
-	Endpoint bool
+	Authorized bool
+	Reason     string
 }
 
 // opaAuthorization evaluates the authorization policy and returns the result document.
@@ -237,11 +233,11 @@ func (a *Auth) opaAuthorization(ctx context.Context, input any) (authResult, err
 		return authResult{}, fmt.Errorf("%w: unexpected result type", ErrInvalidAuthzOPA)
 	}
 
-	adminVal, _ := resultMap["Admin"].(bool)
-	endpointVal, _ := resultMap["Endpoint"].(bool)
+	authorizedVal, _ := resultMap["Authorized"].(bool)
+	reasonVal, _ := resultMap["Reason"].(string)
 
 	return authResult{
-		Admin:    adminVal,
-		Endpoint: endpointVal,
+		Authorized: authorizedVal,
+		Reason:     reasonVal,
 	}, nil
 }

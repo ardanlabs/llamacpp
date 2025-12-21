@@ -85,8 +85,9 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 			CORSAllowedOrigins []string      `conf:"default:*"`
 		}
 		Auth struct {
-			Issuer string `conf:"default:kronk project"`
-			Host   string
+			Issuer  string `conf:"default:kronk project"`
+			Host    string
+			Enabled bool `conf:"default:true"` // Used when running local auth service.
 		}
 		Tempo struct {
 			Host        string  // `conf:"default:tempo:4317"`
@@ -181,24 +182,20 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	// -------------------------------------------------------------------------
 	// Initialize authentication support
 
-	log.Info(ctx, "startup", "status", "initializing authentication support")
-
-	sec, err := security.New(security.Config{
-		Issuer: cfg.Auth.Issuer,
-	})
-
-	if err != nil {
-		return fmt.Errorf("unable to initialize security system: %w", err)
-	}
-
 	var authClientOpts []func(*authclient.Client)
 
-	// -------------------------------------------------------------------------
 	// If no host is provided for the auth service, we will start it ourselves
 	// with a bufconn listener.
-
 	if cfg.Auth.Host == "" {
-		log.Info(ctx, "startup", "status", "starting local auth service")
+		log.Info(ctx, "startup", "status", "initializing authentication support")
+
+		sec, err := security.New(security.Config{
+			Issuer: cfg.Auth.Issuer,
+		})
+
+		if err != nil {
+			return fmt.Errorf("unable to initialize security system: %w", err)
+		}
 
 		lis := bufconn.Listen(1024 * 1024)
 
@@ -207,6 +204,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 			Security: sec,
 			Listener: lis,
 			Tracer:   tracer,
+			Enabled:  cfg.Auth.Enabled,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create auth server: %w", err)
@@ -330,7 +328,6 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		Build:      tag,
 		Log:        log,
 		AuthClient: authClient,
-		Security:   sec,
 		Tracer:     tracer,
 		Cache:      cache,
 	}

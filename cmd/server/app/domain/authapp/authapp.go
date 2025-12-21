@@ -89,6 +89,8 @@ func (a *App) Authenticate(ctx context.Context, req *AuthenticateRequest) (*Auth
 		return arb.Build(), nil
 	}
 
+	a.log.Info(ctx, "auth", "method", "checking authentication")
+
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("no metadata")
@@ -99,19 +101,18 @@ func (a *App) Authenticate(ctx context.Context, req *AuthenticateRequest) (*Auth
 		return nil, fmt.Errorf("unauthorized: no authorization header")
 	}
 
-	a.log.Info(ctx, "auth", "method", "authenticate")
-
 	claims, err := a.security.Auth.Authenticate(ctx, bearerToken[0])
 	if err != nil {
 		a.log.Error(ctx, "authenticate", "err", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
-	a.log.Info(ctx, "auth", "method", "authorize")
+	a.log.Info(ctx, "auth", "method", "checking authorization")
 
 	err = a.security.Auth.Authorize(ctx, claims, req.GetAdmin(), req.GetEndpoint())
 	if err != nil {
 		if errors.Is(err, auth.ErrForbidden) {
+			a.log.Error(ctx, "authorize", "err", err)
 			return nil, status.Error(codes.PermissionDenied, "not authorized")
 		}
 
@@ -149,13 +150,65 @@ func (a *App) CreateToken(ctx context.Context, req *CreateTokenRequest) (*Create
 	return trb.Build(), nil
 }
 
+// ListKeys returns all keys in the system.
+func (a *App) ListKeys(ctx context.Context, req *ListKeysRequest) (*ListKeysResponse, error) {
+	keys, err := a.security.ListKeys()
+	if err != nil {
+		a.log.Error(ctx, "listkeys", "err", err)
+		return nil, status.Error(codes.Internal, "failed to list keys")
+	}
+
+	protoKeys := make([]*Key, len(keys))
+	for i, key := range keys {
+		kb := Key_builder{
+			Id:      proto.String(key.ID),
+			Created: proto.String(key.Created.Format("2006-01-02T15:04:05Z07:00")),
+		}
+		protoKeys[i] = kb.Build()
+	}
+
+	lkrb := ListKeysResponse_builder{
+		Keys: protoKeys,
+	}
+
+	return lkrb.Build(), nil
+}
+
+// AddKey adds a new private key to the system.
+func (a *App) AddKey(ctx context.Context, req *AddKeyRequest) (*AddKeyResponse, error) {
+	if err := a.security.AddPrivateKey(); err != nil {
+		a.log.Error(ctx, "addkey", "err", err)
+		return nil, status.Error(codes.Internal, "failed to add key")
+	}
+
+	return &AddKeyResponse{}, nil
+}
+
+// RemoveKey removes a private key from the system.
+func (a *App) RemoveKey(ctx context.Context, req *RemoveKeyRequest) (*RemoveKeyResponse, error) {
+	keyID := req.GetKeyId()
+	if keyID == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing key id")
+	}
+
+	if err := a.security.DeletePrivateKey(keyID); err != nil {
+		a.log.Error(ctx, "removekey", "err", err)
+		return nil, status.Error(codes.Internal, "failed to remove key")
+	}
+
+	return &RemoveKeyResponse{}, nil
+}
+
 // =============================================================================
 
 func (a *App) authInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	ctx = otel.InjectTracing(ctx, a.tracer)
 
 	switch info.FullMethod {
-	case "/auth.Auth/Token":
+	case "/auth.Auth/CreateToken",
+		"/auth.Auth/ListKeys",
+		"/auth.Auth/AddKey",
+		"/auth.Auth/RemoveKey":
 		return a.requireAuth(ctx, true, "", req, handler)
 
 	default:

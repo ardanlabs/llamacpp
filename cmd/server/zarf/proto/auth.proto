@@ -2,7 +2,7 @@ edition = "2024";
 
 package auth;
 
-option go_package = "github.com/ardanlabs/kronk/app/domain/grpcauthapp";
+option go_package = "github.com/ardanlabs/kronk/cmd/server/app/domain/authapp";
 
 // The authentication service definition.
 service Auth {
@@ -11,6 +11,15 @@ service Auth {
 
   // Authenticate a request using a bearer token.
   rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // List all keys in the system.
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
+
+  // Add a new private key.
+  rpc AddKey(AddKeyRequest) returns (AddKeyResponse);
+
+  // Remove a private key by ID.
+  rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyResponse);
 }
 
 // Request message for generating a token.
@@ -39,3 +48,31 @@ message AuthenticateResponse {
   string token_id = 1;
   string subject = 2;
 }
+
+// Request message for listing keys.
+message ListKeysRequest {}
+
+// Response message for listing keys.
+message ListKeysResponse {
+  repeated Key keys = 1;
+}
+
+// Key represents a key in the system.
+message Key {
+  string id = 1;
+  string created = 2;
+}
+
+// Request message for adding a key.
+message AddKeyRequest {}
+
+// Response message for adding a key.
+message AddKeyResponse {}
+
+// Request message for removing a key.
+message RemoveKeyRequest {
+  string key_id = 1;
+}
+
+// Response message for removing a key.
+message RemoveKeyResponse {}
