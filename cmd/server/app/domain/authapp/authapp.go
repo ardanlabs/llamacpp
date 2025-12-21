@@ -137,7 +137,15 @@ func (a *App) CreateToken(ctx context.Context, req *CreateTokenRequest) (*Create
 		return nil, fmt.Errorf("parse-duration: %w", err)
 	}
 
-	token, err := a.security.GenerateToken(req.GetUserName(), req.GetAdmin(), req.GetEndpoints(), duration)
+	endpoints := make(map[string]auth.RateLimit)
+	for name, rl := range req.GetEndpoints() {
+		endpoints[name] = auth.RateLimit{
+			Limit:  int(rl.GetLimit()),
+			Window: auth.RateWindow(rl.GetWindow()),
+		}
+	}
+
+	token, err := a.security.GenerateToken(req.GetAdmin(), endpoints, duration)
 	if err != nil {
 		a.log.Error(ctx, "token", "err", err)
 		return nil, status.Error(codes.Internal, "failed to generate token")

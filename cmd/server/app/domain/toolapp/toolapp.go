@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/ardanlabs/kronk/cmd/server/app/domain/authapp"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
@@ -17,6 +18,7 @@ import (
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
+	"google.golang.org/protobuf/proto"
 )
 
 type app struct {
@@ -341,7 +343,16 @@ func (a *app) createToken(ctx context.Context, r *http.Request) web.Encoder {
 
 	bearerToken := r.Header.Get("Authorization")
 
-	resp, err := a.authClient.CreateToken(ctx, bearerToken, req.UserName, req.Admin, req.Endpoints, req.Duration)
+	endpoints := make(map[string]*authapp.RateLimit)
+	for name, rl := range req.Endpoints {
+		window := string(rl.Window)
+		endpoints[name] = authapp.RateLimit_builder{
+			Limit:  proto.Int32(int32(rl.Limit)),
+			Window: proto.String(window),
+		}.Build()
+	}
+
+	resp, err := a.authClient.CreateToken(ctx, bearerToken, req.Admin, endpoints, req.Duration)
 	if err != nil {
 		return errs.New(errs.Internal, err)
 	}

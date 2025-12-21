@@ -7,6 +7,7 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/security/auth"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
@@ -363,10 +364,9 @@ func toKeys(keys []authclient.Key) KeysResponse {
 
 // TokenRequest represents the input for the create token command.
 type TokenRequest struct {
-	UserName  string        `json:"user_name"`
-	Admin     bool          `json:"admin"`
-	Endpoints []string      `json:"endpoints"`
-	Duration  time.Duration `json:"duration"`
+	Admin     bool                      `json:"admin"`
+	Endpoints map[string]auth.RateLimit `json:"endpoints"`
+	Duration  time.Duration             `json:"duration"`
 }
 
 // Decode implements the decoder interface.

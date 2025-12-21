@@ -1,33 +1,62 @@
 import { useState } from 'react';
 import { api } from '../services/api';
+import { RateLimit, RateWindow } from '../types';
 
 const AVAILABLE_ENDPOINTS = [
   { label: '/v1/chat/completions', value: 'chat-completions' },
   { label: '/v1/embeddings', value: 'embeddings' },
 ];
 
+const RATE_WINDOWS: { label: string; value: RateWindow }[] = [
+  { label: 'Unlimited', value: 'unlimited' },
+  { label: 'Per Day', value: 'day' },
+  { label: 'Per Month', value: 'month' },
+  { label: 'Per Year', value: 'year' },
+];
+
+interface EndpointConfig {
+  enabled: boolean;
+  limit: number;
+  window: RateWindow;
+}
+
+type EndpointConfigs = Record<string, EndpointConfig>;
+
+const defaultEndpointConfig = (): EndpointConfig => ({
+  enabled: false,
+  limit: 1000,
+  window: 'unlimited',
+});
+
 export default function SecurityTokenCreate() {
   const [adminToken, setAdminToken] = useState('');
-  const [userName, setUserName] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([]);
+  const [endpointConfigs, setEndpointConfigs] = useState<EndpointConfigs>(() => {
+    const configs: EndpointConfigs = {};
+    AVAILABLE_ENDPOINTS.forEach((ep) => {
+      configs[ep.value] = defaultEndpointConfig();
+    });
+    return configs;
+  });
   const [duration, setDuration] = useState('24');
   const [durationUnit, setDurationUnit] = useState<'h' | 'd' | 'M' | 'y'>('h');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newToken, setNewToken] = useState<string | null>(null);
 
-  const toggleEndpoint = (value: string) => {
-    setSelectedEndpoints((prev) =>
-      prev.includes(value)
-        ? prev.filter((e) => e !== value)
-        : [...prev, value]
-    );
+  const updateEndpointConfig = (
+    endpoint: string,
+    updates: Partial<EndpointConfig>
+  ) => {
+    setEndpointConfigs((prev) => ({
+      ...prev,
+      [endpoint]: { ...prev[endpoint], ...updates },
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminToken.trim() || !userName.trim()) return;
+    if (!adminToken.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -50,11 +79,20 @@ export default function SecurityTokenCreate() {
         break;
     }
 
+    const endpoints: Record<string, RateLimit> = {};
+    Object.entries(endpointConfigs).forEach(([name, config]) => {
+      if (config.enabled) {
+        endpoints[name] = {
+          limit: config.window === 'unlimited' ? 0 : config.limit,
+          window: config.window,
+        };
+      }
+    });
+
     try {
       const response = await api.createToken(adminToken.trim(), {
-        user_name: userName.trim(),
         admin: isAdmin,
-        endpoints: selectedEndpoints,
+        endpoints,
         duration: durationNs,
       });
       setNewToken(response.token);
@@ -86,17 +124,6 @@ export default function SecurityTokenCreate() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="userName">Username</label>
-            <input
-              type="text"
-              id="userName"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="Enter username for the token"
-            />
-          </div>
-
-          <div className="form-group">
             <label>
               <input
                 type="checkbox"
@@ -108,32 +135,112 @@ export default function SecurityTokenCreate() {
           </div>
 
           <div className="form-group">
-            <label>Endpoints</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {AVAILABLE_ENDPOINTS.map((endpoint) => (
-                <label
-                  key={endpoint.value}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px 12px',
-                    background: selectedEndpoints.includes(endpoint.value)
-                      ? 'rgba(240, 181, 49, 0.2)'
-                      : 'var(--color-gray-100)',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedEndpoints.includes(endpoint.value)}
-                    onChange={() => toggleEndpoint(endpoint.value)}
-                    style={{ marginRight: '6px' }}
-                  />
-                  {endpoint.label}
-                </label>
-              ))}
+            <label>Endpoints &amp; Rate Limits</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {AVAILABLE_ENDPOINTS.map((endpoint) => {
+                const config = endpointConfigs[endpoint.value];
+                return (
+                  <div
+                    key={endpoint.value}
+                    style={{
+                      padding: '12px',
+                      background: config.enabled
+                        ? 'rgba(240, 181, 49, 0.1)'
+                        : 'var(--color-gray-100)',
+                      borderRadius: '6px',
+                      border: config.enabled
+                        ? '1px solid rgba(240, 181, 49, 0.3)'
+                        : '1px solid transparent',
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={config.enabled}
+                        onChange={(e) =>
+                          updateEndpointConfig(endpoint.value, {
+                            enabled: e.target.checked,
+                          })
+                        }
+                        style={{ marginRight: '8px' }}
+                      />
+                      {endpoint.label}
+                    </label>
+
+                    {config.enabled && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '12px',
+                          marginTop: '10px',
+                          paddingLeft: '24px',
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              fontSize: '12px',
+                              color: 'var(--color-gray-600)',
+                              display: 'block',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            Rate Limit
+                          </label>
+                          <select
+                            value={config.window}
+                            onChange={(e) =>
+                              updateEndpointConfig(endpoint.value, {
+                                window: e.target.value as RateWindow,
+                              })
+                            }
+                            style={{ width: '100%' }}
+                          >
+                            {RATE_WINDOWS.map((w) => (
+                              <option key={w.value} value={w.value}>
+                                {w.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {config.window !== 'unlimited' && (
+                          <div style={{ flex: 1 }}>
+                            <label
+                              style={{
+                                fontSize: '12px',
+                                color: 'var(--color-gray-600)',
+                                display: 'block',
+                                marginBottom: '4px',
+                              }}
+                            >
+                              Max Requests
+                            </label>
+                            <input
+                              type="number"
+                              value={config.limit}
+                              onChange={(e) =>
+                                updateEndpointConfig(endpoint.value, {
+                                  limit: parseInt(e.target.value) || 0,
+                                })
+                              }
+                              min="1"
+                              style={{ width: '100%' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -166,7 +273,7 @@ export default function SecurityTokenCreate() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={loading || !adminToken.trim() || !userName.trim()}
+            disabled={loading || !adminToken.trim()}
           >
             {loading ? 'Creating...' : 'Create Token'}
           </button>

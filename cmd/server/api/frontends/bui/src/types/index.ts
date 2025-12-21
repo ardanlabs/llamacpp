@@ -104,10 +104,16 @@ export interface VersionResponse {
   current?: string;
 }
 
+export type RateWindow = 'day' | 'month' | 'year' | 'unlimited';
+
+export interface RateLimit {
+  limit: number;
+  window: RateWindow;
+}
+
 export interface TokenRequest {
-  user_name: string;
   admin: boolean;
-  endpoints: string[];
+  endpoints: Record<string, RateLimit>;
   duration: number;
 }
 

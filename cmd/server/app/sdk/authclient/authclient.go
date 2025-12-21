@@ -86,11 +86,18 @@ func (cln *Client) Authenticate(ctx context.Context, bearerToken string, admin b
 }
 
 // CreateToken calls the auth service to create a new token.
-func (cln *Client) CreateToken(ctx context.Context, bearerToken string, userName string, admin bool, endpoints []string, duration time.Duration) (CreateTokenResponse, error) {
+func (cln *Client) CreateToken(ctx context.Context, bearerToken string, admin bool, endpoints map[string]*authapp.RateLimit, duration time.Duration) (CreateTokenResponse, error) {
+	protoEndpoints := make(map[string]*authapp.RateLimit)
+	for name, rl := range endpoints {
+		protoEndpoints[name] = authapp.RateLimit_builder{
+			Limit:  proto.Int32(rl.GetLimit()),
+			Window: proto.String(rl.GetWindow()),
+		}.Build()
+	}
+
 	arb := authapp.CreateTokenRequest_builder{
-		UserName:  proto.String(userName),
 		Admin:     proto.Bool(admin),
-		Endpoints: endpoints,
+		Endpoints: protoEndpoints,
 		Duration:  proto.String(duration.String()),
 	}
 

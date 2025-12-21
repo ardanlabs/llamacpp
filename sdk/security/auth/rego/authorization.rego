@@ -25,6 +25,5 @@ auth := {"Authorized": false, "Reason": sprintf("endpoint %q not authorized", [i
 }
 
 endpoint_match if {
-	some ep in input.Claim.Endpoints
-	ep == input.Requires.Endpoint
+	input.Claim.Endpoints[input.Requires.Endpoint]
 }

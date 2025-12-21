@@ -63,12 +63,11 @@ func (sec *Security) BaseKeysFolder() string {
 }
 
 // GenerateToken generates a new token with the specified claims.
-func (sec *Security) GenerateToken(subject string, admin bool, endpoints []string, duration time.Duration) (string, error) {
-
+func (sec *Security) GenerateToken(admin bool, endpoints map[string]auth.RateLimit, duration time.Duration) (string, error) {
 	claims := auth.Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    sec.cfg.Issuer,
-			Subject:   subject,
+			Subject:   uuid.NewString(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 		},
@@ -204,11 +203,14 @@ func (sec *Security) addSystemKeys() error {
 func (sec *Security) generateAdminToken(keysPath string) error {
 	const admin = true
 
-	endpoints := []string{"chat-completions", "embeddings"}
+	endpoints := map[string]auth.RateLimit{
+		"chat-completions": {Limit: 0, Window: auth.RateUnlimited},
+		"embeddings":       {Limit: 0, Window: auth.RateUnlimited},
+	}
 
 	const tenYears = time.Minute * 526000
 
-	token, err := sec.GenerateToken("admin", admin, endpoints, tenYears)
+	token, err := sec.GenerateToken(admin, endpoints, tenYears)
 	if err != nil {
 		return fmt.Errorf("generate admin token: %w", err)
 	}

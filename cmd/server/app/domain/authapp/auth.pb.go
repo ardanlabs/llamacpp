@@ -20,14 +20,122 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// RateLimit defines rate limiting for an endpoint.
+type RateLimit struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Limit       int32                  `protobuf:"varint,1,opt,name=limit"`
+	xxx_hidden_Window      *string                `protobuf:"bytes,2,opt,name=window"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *RateLimit) Reset() {
+	*x = RateLimit{}
+	mi := &file_auth_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RateLimit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RateLimit) ProtoMessage() {}
+
+func (x *RateLimit) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *RateLimit) GetLimit() int32 {
+	if x != nil {
+		return x.xxx_hidden_Limit
+	}
+	return 0
+}
+
+func (x *RateLimit) GetWindow() string {
+	if x != nil {
+		if x.xxx_hidden_Window != nil {
+			return *x.xxx_hidden_Window
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *RateLimit) SetLimit(v int32) {
+	x.xxx_hidden_Limit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
+}
+
+func (x *RateLimit) SetWindow(v string) {
+	x.xxx_hidden_Window = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *RateLimit) HasLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *RateLimit) HasWindow() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *RateLimit) ClearLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Limit = 0
+}
+
+func (x *RateLimit) ClearWindow() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Window = nil
+}
+
+type RateLimit_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Limit  *int32
+	Window *string
+}
+
+func (b0 RateLimit_builder) Build() *RateLimit {
+	m0 := &RateLimit{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.Limit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Limit = *b.Limit
+	}
+	if b.Window != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Window = b.Window
+	}
+	return m0
+}
+
 // Request message for generating a token.
 type CreateTokenRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Token       *string                `protobuf:"bytes,1,opt,name=token"`
-	xxx_hidden_UserName    *string                `protobuf:"bytes,2,opt,name=user_name,json=userName"`
-	xxx_hidden_Admin       bool                   `protobuf:"varint,3,opt,name=admin"`
-	xxx_hidden_Duration    *string                `protobuf:"bytes,4,opt,name=duration"`
-	xxx_hidden_Endpoints   []string               `protobuf:"bytes,5,rep,name=endpoints"`
+	xxx_hidden_Admin       bool                   `protobuf:"varint,2,opt,name=admin"`
+	xxx_hidden_Duration    *string                `protobuf:"bytes,3,opt,name=duration"`
+	xxx_hidden_Endpoints   map[string]*RateLimit  `protobuf:"bytes,4,rep,name=endpoints" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -36,7 +144,7 @@ type CreateTokenRequest struct {
 
 func (x *CreateTokenRequest) Reset() {
 	*x = CreateTokenRequest{}
-	mi := &file_auth_proto_msgTypes[0]
+	mi := &file_auth_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +156,7 @@ func (x *CreateTokenRequest) String() string {
 func (*CreateTokenRequest) ProtoMessage() {}
 
 func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[0]
+	mi := &file_auth_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -63,16 +171,6 @@ func (x *CreateTokenRequest) GetToken() string {
 	if x != nil {
 		if x.xxx_hidden_Token != nil {
 			return *x.xxx_hidden_Token
-		}
-		return ""
-	}
-	return ""
-}
-
-func (x *CreateTokenRequest) GetUserName() string {
-	if x != nil {
-		if x.xxx_hidden_UserName != nil {
-			return *x.xxx_hidden_UserName
 		}
 		return ""
 	}
@@ -96,7 +194,7 @@ func (x *CreateTokenRequest) GetDuration() string {
 	return ""
 }
 
-func (x *CreateTokenRequest) GetEndpoints() []string {
+func (x *CreateTokenRequest) GetEndpoints() map[string]*RateLimit {
 	if x != nil {
 		return x.xxx_hidden_Endpoints
 	}
@@ -105,25 +203,20 @@ func (x *CreateTokenRequest) GetEndpoints() []string {
 
 func (x *CreateTokenRequest) SetToken(v string) {
 	x.xxx_hidden_Token = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
-}
-
-func (x *CreateTokenRequest) SetUserName(v string) {
-	x.xxx_hidden_UserName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *CreateTokenRequest) SetAdmin(v bool) {
 	x.xxx_hidden_Admin = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
 }
 
 func (x *CreateTokenRequest) SetDuration(v string) {
 	x.xxx_hidden_Duration = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
 }
 
-func (x *CreateTokenRequest) SetEndpoints(v []string) {
+func (x *CreateTokenRequest) SetEndpoints(v map[string]*RateLimit) {
 	x.xxx_hidden_Endpoints = v
 }
 
@@ -134,25 +227,18 @@ func (x *CreateTokenRequest) HasToken() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *CreateTokenRequest) HasUserName() bool {
+func (x *CreateTokenRequest) HasAdmin() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
-func (x *CreateTokenRequest) HasAdmin() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
-}
-
 func (x *CreateTokenRequest) HasDuration() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CreateTokenRequest) ClearToken() {
@@ -160,18 +246,13 @@ func (x *CreateTokenRequest) ClearToken() {
 	x.xxx_hidden_Token = nil
 }
 
-func (x *CreateTokenRequest) ClearUserName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_UserName = nil
-}
-
 func (x *CreateTokenRequest) ClearAdmin() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Admin = false
 }
 
 func (x *CreateTokenRequest) ClearDuration() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
 	x.xxx_hidden_Duration = nil
 }
 
@@ -179,10 +260,9 @@ type CreateTokenRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Token     *string
-	UserName  *string
 	Admin     *bool
 	Duration  *string
-	Endpoints []string
+	Endpoints map[string]*RateLimit
 }
 
 func (b0 CreateTokenRequest_builder) Build() *CreateTokenRequest {
@@ -190,19 +270,15 @@ func (b0 CreateTokenRequest_builder) Build() *CreateTokenRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Token != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
 		x.xxx_hidden_Token = b.Token
 	}
-	if b.UserName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
-		x.xxx_hidden_UserName = b.UserName
-	}
 	if b.Admin != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
 		x.xxx_hidden_Admin = *b.Admin
 	}
 	if b.Duration != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
 		x.xxx_hidden_Duration = b.Duration
 	}
 	x.xxx_hidden_Endpoints = b.Endpoints
@@ -221,7 +297,7 @@ type CreateTokenResponse struct {
 
 func (x *CreateTokenResponse) Reset() {
 	*x = CreateTokenResponse{}
-	mi := &file_auth_proto_msgTypes[1]
+	mi := &file_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -233,7 +309,7 @@ func (x *CreateTokenResponse) String() string {
 func (*CreateTokenResponse) ProtoMessage() {}
 
 func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[1]
+	mi := &file_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +378,7 @@ type AuthenticateRequest struct {
 
 func (x *AuthenticateRequest) Reset() {
 	*x = AuthenticateRequest{}
-	mi := &file_auth_proto_msgTypes[2]
+	mi := &file_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -314,7 +390,7 @@ func (x *AuthenticateRequest) String() string {
 func (*AuthenticateRequest) ProtoMessage() {}
 
 func (x *AuthenticateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[2]
+	mi := &file_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +519,7 @@ type AuthenticateResponse struct {
 
 func (x *AuthenticateResponse) Reset() {
 	*x = AuthenticateResponse{}
-	mi := &file_auth_proto_msgTypes[3]
+	mi := &file_auth_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +531,7 @@ func (x *AuthenticateResponse) String() string {
 func (*AuthenticateResponse) ProtoMessage() {}
 
 func (x *AuthenticateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[3]
+	mi := &file_auth_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -551,7 +627,7 @@ type ListKeysRequest struct {
 
 func (x *ListKeysRequest) Reset() {
 	*x = ListKeysRequest{}
-	mi := &file_auth_proto_msgTypes[4]
+	mi := &file_auth_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -563,7 +639,7 @@ func (x *ListKeysRequest) String() string {
 func (*ListKeysRequest) ProtoMessage() {}
 
 func (x *ListKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[4]
+	mi := &file_auth_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +672,7 @@ type ListKeysResponse struct {
 
 func (x *ListKeysResponse) Reset() {
 	*x = ListKeysResponse{}
-	mi := &file_auth_proto_msgTypes[5]
+	mi := &file_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -608,7 +684,7 @@ func (x *ListKeysResponse) String() string {
 func (*ListKeysResponse) ProtoMessage() {}
 
 func (x *ListKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[5]
+	mi := &file_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -659,7 +735,7 @@ type Key struct {
 
 func (x *Key) Reset() {
 	*x = Key{}
-	mi := &file_auth_proto_msgTypes[6]
+	mi := &file_auth_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -671,7 +747,7 @@ func (x *Key) String() string {
 func (*Key) ProtoMessage() {}
 
 func (x *Key) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[6]
+	mi := &file_auth_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -767,7 +843,7 @@ type AddKeyRequest struct {
 
 func (x *AddKeyRequest) Reset() {
 	*x = AddKeyRequest{}
-	mi := &file_auth_proto_msgTypes[7]
+	mi := &file_auth_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -779,7 +855,7 @@ func (x *AddKeyRequest) String() string {
 func (*AddKeyRequest) ProtoMessage() {}
 
 func (x *AddKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[7]
+	mi := &file_auth_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -811,7 +887,7 @@ type AddKeyResponse struct {
 
 func (x *AddKeyResponse) Reset() {
 	*x = AddKeyResponse{}
-	mi := &file_auth_proto_msgTypes[8]
+	mi := &file_auth_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -823,7 +899,7 @@ func (x *AddKeyResponse) String() string {
 func (*AddKeyResponse) ProtoMessage() {}
 
 func (x *AddKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[8]
+	mi := &file_auth_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -858,7 +934,7 @@ type RemoveKeyRequest struct {
 
 func (x *RemoveKeyRequest) Reset() {
 	*x = RemoveKeyRequest{}
-	mi := &file_auth_proto_msgTypes[9]
+	mi := &file_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -870,7 +946,7 @@ func (x *RemoveKeyRequest) String() string {
 func (*RemoveKeyRequest) ProtoMessage() {}
 
 func (x *RemoveKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[9]
+	mi := &file_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -934,7 +1010,7 @@ type RemoveKeyResponse struct {
 
 func (x *RemoveKeyResponse) Reset() {
 	*x = RemoveKeyResponse{}
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -946,7 +1022,7 @@ func (x *RemoveKeyResponse) String() string {
 func (*RemoveKeyResponse) ProtoMessage() {}
 
 func (x *RemoveKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -974,13 +1050,18 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\aauthapp\"\x97\x01\n" +
+	"auth.proto\x12\aauthapp\"9\n" +
+	"\tRateLimit\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06window\x18\x02 \x01(\tR\x06window\"\xf8\x01\n" +
 	"\x12CreateTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
-	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x14\n" +
-	"\x05admin\x18\x03 \x01(\bR\x05admin\x12\x1a\n" +
-	"\bduration\x18\x04 \x01(\tR\bduration\x12\x1c\n" +
-	"\tendpoints\x18\x05 \x03(\tR\tendpoints\"+\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
+	"\x05admin\x18\x02 \x01(\bR\x05admin\x12\x1a\n" +
+	"\bduration\x18\x03 \x01(\tR\bduration\x12H\n" +
+	"\tendpoints\x18\x04 \x03(\v2*.authapp.CreateTokenRequest.EndpointsEntryR\tendpoints\x1aP\n" +
+	"\x0eEndpointsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
+	"\x05value\x18\x02 \x01(\v2\x12.authapp.RateLimitR\x05value:\x028\x01\"+\n" +
 	"\x13CreateTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"]\n" +
 	"\x13AuthenticateRequest\x12\x14\n" +
@@ -1008,37 +1089,41 @@ const file_auth_proto_rawDesc = "" +
 	"\x06AddKey\x12\x16.authapp.AddKeyRequest\x1a\x17.authapp.AddKeyResponse\x12B\n" +
 	"\tRemoveKey\x12\x19.authapp.RemoveKeyRequest\x1a\x1a.authapp.RemoveKeyResponseB:Z8github.com/ardanlabs/kronk/cmd/server/app/domain/authappb\beditionsp\xe9\a"
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_auth_proto_goTypes = []any{
-	(*CreateTokenRequest)(nil),   // 0: authapp.CreateTokenRequest
-	(*CreateTokenResponse)(nil),  // 1: authapp.CreateTokenResponse
-	(*AuthenticateRequest)(nil),  // 2: authapp.AuthenticateRequest
-	(*AuthenticateResponse)(nil), // 3: authapp.AuthenticateResponse
-	(*ListKeysRequest)(nil),      // 4: authapp.ListKeysRequest
-	(*ListKeysResponse)(nil),     // 5: authapp.ListKeysResponse
-	(*Key)(nil),                  // 6: authapp.Key
-	(*AddKeyRequest)(nil),        // 7: authapp.AddKeyRequest
-	(*AddKeyResponse)(nil),       // 8: authapp.AddKeyResponse
-	(*RemoveKeyRequest)(nil),     // 9: authapp.RemoveKeyRequest
-	(*RemoveKeyResponse)(nil),    // 10: authapp.RemoveKeyResponse
+	(*RateLimit)(nil),            // 0: authapp.RateLimit
+	(*CreateTokenRequest)(nil),   // 1: authapp.CreateTokenRequest
+	(*CreateTokenResponse)(nil),  // 2: authapp.CreateTokenResponse
+	(*AuthenticateRequest)(nil),  // 3: authapp.AuthenticateRequest
+	(*AuthenticateResponse)(nil), // 4: authapp.AuthenticateResponse
+	(*ListKeysRequest)(nil),      // 5: authapp.ListKeysRequest
+	(*ListKeysResponse)(nil),     // 6: authapp.ListKeysResponse
+	(*Key)(nil),                  // 7: authapp.Key
+	(*AddKeyRequest)(nil),        // 8: authapp.AddKeyRequest
+	(*AddKeyResponse)(nil),       // 9: authapp.AddKeyResponse
+	(*RemoveKeyRequest)(nil),     // 10: authapp.RemoveKeyRequest
+	(*RemoveKeyResponse)(nil),    // 11: authapp.RemoveKeyResponse
+	nil,                          // 12: authapp.CreateTokenRequest.EndpointsEntry
 }
 var file_auth_proto_depIdxs = []int32{
-	6,  // 0: authapp.ListKeysResponse.keys:type_name -> authapp.Key
-	0,  // 1: authapp.Auth.CreateToken:input_type -> authapp.CreateTokenRequest
-	2,  // 2: authapp.Auth.Authenticate:input_type -> authapp.AuthenticateRequest
-	4,  // 3: authapp.Auth.ListKeys:input_type -> authapp.ListKeysRequest
-	7,  // 4: authapp.Auth.AddKey:input_type -> authapp.AddKeyRequest
-	9,  // 5: authapp.Auth.RemoveKey:input_type -> authapp.RemoveKeyRequest
-	1,  // 6: authapp.Auth.CreateToken:output_type -> authapp.CreateTokenResponse
-	3,  // 7: authapp.Auth.Authenticate:output_type -> authapp.AuthenticateResponse
-	5,  // 8: authapp.Auth.ListKeys:output_type -> authapp.ListKeysResponse
-	8,  // 9: authapp.Auth.AddKey:output_type -> authapp.AddKeyResponse
-	10, // 10: authapp.Auth.RemoveKey:output_type -> authapp.RemoveKeyResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	12, // 0: authapp.CreateTokenRequest.endpoints:type_name -> authapp.CreateTokenRequest.EndpointsEntry
+	7,  // 1: authapp.ListKeysResponse.keys:type_name -> authapp.Key
+	0,  // 2: authapp.CreateTokenRequest.EndpointsEntry.value:type_name -> authapp.RateLimit
+	1,  // 3: authapp.Auth.CreateToken:input_type -> authapp.CreateTokenRequest
+	3,  // 4: authapp.Auth.Authenticate:input_type -> authapp.AuthenticateRequest
+	5,  // 5: authapp.Auth.ListKeys:input_type -> authapp.ListKeysRequest
+	8,  // 6: authapp.Auth.AddKey:input_type -> authapp.AddKeyRequest
+	10, // 7: authapp.Auth.RemoveKey:input_type -> authapp.RemoveKeyRequest
+	2,  // 8: authapp.Auth.CreateToken:output_type -> authapp.CreateTokenResponse
+	4,  // 9: authapp.Auth.Authenticate:output_type -> authapp.AuthenticateResponse
+	6,  // 10: authapp.Auth.ListKeys:output_type -> authapp.ListKeysResponse
+	9,  // 11: authapp.Auth.AddKey:output_type -> authapp.AddKeyResponse
+	11, // 12: authapp.Auth.RemoveKey:output_type -> authapp.RemoveKeyResponse
+	8,  // [8:13] is the sub-list for method output_type
+	3,  // [3:8] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_auth_proto_init() }
@@ -1052,7 +1137,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

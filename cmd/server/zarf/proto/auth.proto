@@ -22,13 +22,19 @@ service Auth {
   rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyResponse);
 }
 
+// RateLimit defines rate limiting for an endpoint.
+message RateLimit {
+  int32 limit = 1;
+  string window = 2;
+}
+
 // Request message for generating a token.
 message CreateTokenRequest {
   string token = 1;
   string user_name = 2;
   bool admin = 3;
   string duration = 4;
-  repeated string endpoints = 5;
+  map<string, RateLimit> endpoints = 5;
 }
 
 // Response message for token generation.

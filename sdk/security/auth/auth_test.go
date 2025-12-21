@@ -33,8 +33,10 @@ func authenticate(ath *auth.Auth) func(t *testing.T) {
 				ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour)),
 				IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 			},
-			Admin:     true,
-			Endpoints: []string{"chat-completions"},
+			Admin: true,
+			Endpoints: map[string]auth.RateLimit{
+				"chat-completions": {Limit: 0, Window: auth.RateUnlimited},
+			},
 		}
 
 		token, err := ath.GenerateToken(claims)
@@ -66,18 +68,23 @@ func authorize(ath *auth.Auth) func(t *testing.T) {
 				Issuer:  "kronk project",
 				Subject: "bill",
 			},
-			Admin:     false,
-			Endpoints: []string{"chat-completions"},
-		}
+			Admin: false,
+			Endpoints: map[string]auth.RateLimit{
+				"chat-completions": {Limit: 1000, Window: auth.RateDay},
+			},
+			}
 
-		adminClaims := auth.Claims{
+			adminClaims := auth.Claims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				Issuer:  "kronk project",
 				Subject: "admin",
 			},
-			Admin:     true,
-			Endpoints: []string{"chat-completions", "embeddings"},
-		}
+			Admin: true,
+			Endpoints: map[string]auth.RateLimit{
+				"chat-completions": {Limit: 0, Window: auth.RateUnlimited},
+				"embeddings":       {Limit: 0, Window: auth.RateUnlimited},
+			},
+			}
 
 		ctx := context.Background()
 

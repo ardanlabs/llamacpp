@@ -14,18 +14,26 @@ var Cmd = &cobra.Command{
 	Long: `Create a security token
 
 Flags:
-	  --username     The user to apply to the token
-      --duration     Token duration (e.g., 1h, 1d, 1m, 1y)
-      --endpoints    Comma-separated list of allowed endpoints`,
+      --duration     Token duration (e.g., 1h, 24h, 720h)
+      --endpoints    Comma-separated list of endpoints with optional rate limits
+
+Endpoint format:
+      endpoint                  Unlimited access (default)
+      endpoint:unlimited        Unlimited access (explicit)
+      endpoint:limit/window     Rate limited (window: day, month, year)
+
+Examples:
+      --endpoints chat-completions,embeddings
+      --endpoints "chat-completions:1000/day,embeddings:unlimited"
+      --endpoints "chat-completions:100/month,embeddings:500/year"`,
 	Args: cobra.NoArgs,
 	Run:  main,
 }
 
 func init() {
 	Cmd.Flags().Bool("local", false, "Run without the model server")
-	Cmd.Flags().String("username", "", "The subject for the token")
-	Cmd.Flags().String("duration", "", "Token duration (e.g., 1h, 1d, 1m, 1y)")
-	Cmd.Flags().StringSlice("endpoints", []string{}, "Comma-separated list of allowed endpoints")
+	Cmd.Flags().String("duration", "", "Token duration (e.g., 1h, 24h, 720h)")
+	Cmd.Flags().StringSlice("endpoints", []string{}, "Endpoints with optional rate limits (e.g., chat-completions:1000/day)")
 }
 
 func main(cmd *cobra.Command, args []string) {
@@ -38,23 +46,22 @@ func main(cmd *cobra.Command, args []string) {
 func run(cmd *cobra.Command) error {
 	local, _ := cmd.Flags().GetBool("local")
 	adminToken := os.Getenv("KRONK_TOKEN")
-	username, _ := cmd.Flags().GetString("username")
 	flagDuration, _ := cmd.Flags().GetString("duration")
 	flagEndpoints, _ := cmd.Flags().GetStringSlice("endpoints")
-
-	if username == "" {
-		return fmt.Errorf("username required")
-	}
 
 	duration, err := time.ParseDuration(flagDuration)
 	if err != nil {
 		return fmt.Errorf("parse-duration: %w", err)
 	}
 
+	endpoints, err := parseEndpoints(flagEndpoints)
+	if err != nil {
+		return fmt.Errorf("parse-endpoints: %w", err)
+	}
+
 	cfg := config{
 		AdminToken: adminToken,
-		UserName:   username,
-		Endpoints:  flagEndpoints,
+		Endpoints:  endpoints,
 		Duration:   duration,
 	}
 

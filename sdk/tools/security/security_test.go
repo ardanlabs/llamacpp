@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ardanlabs/kronk/sdk/security/auth"
 	"github.com/ardanlabs/kronk/sdk/tools/security"
 )
 
@@ -20,9 +21,11 @@ func TestGenerateToken(t *testing.T) {
 		t.Fatalf("failed to create security: %v", err)
 	}
 
-	endpoints := []string{"chat-completions"}
+	endpoints := map[string]auth.RateLimit{
+		"chat-completions": {Limit: 0, Window: auth.RateUnlimited},
+	}
 
-	token, err := sec.GenerateToken("test-subject", true, endpoints, time.Hour)
+	token, err := sec.GenerateToken(true, endpoints, time.Hour)
 	if err != nil {
 		t.Fatalf("failed to generate token: %v", err)
 	}
