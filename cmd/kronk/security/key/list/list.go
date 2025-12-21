@@ -49,7 +49,7 @@ func runLocal() error {
 	for i, key := range keys {
 		resp[i] = toolapp.KeyResponse{
 			ID:      key.ID,
-			Created: key.Created,
+			Created: key.Created.Format(time.RFC3339),
 		}
 	}
 
@@ -68,6 +68,6 @@ func printKeys(keys toolapp.KeysResponse) {
 	fmt.Println("---------------------------------------- ----------------------------")
 
 	for _, key := range keys {
-		fmt.Printf("%-40s %s\n", key.ID, key.Created.Format(time.RFC3339))
+		fmt.Printf("%-40s %s\n", key.ID, key.Created)
 	}
 }

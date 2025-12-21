@@ -1,0 +1,78 @@
+edition = "2024";
+
+package authapp;
+
+option go_package = "github.com/ardanlabs/kronk/cmd/server/app/domain/authapp";
+
+// The authentication service definition.
+service Auth {
+  // Generate a token for a given key ID.
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse);
+
+  // Authenticate a request using a bearer token.
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // List all keys in the system.
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse);
+
+  // Add a new private key.
+  rpc AddKey(AddKeyRequest) returns (AddKeyResponse);
+
+  // Remove a private key by ID.
+  rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyResponse);
+}
+
+// Request message for generating a token.
+message CreateTokenRequest {
+  string token = 1;
+  string user_name = 2;
+  bool admin = 3;
+  string duration = 4;
+  repeated string endpoints = 5;
+}
+
+// Response message for token generation.
+message CreateTokenResponse {
+  string token = 1;
+}
+
+// Request message for authentication.
+message AuthenticateRequest {
+  string token = 1;
+  bool admin = 2;
+  string endpoint = 3;
+}
+
+// Response message for authentication.
+message AuthenticateResponse {
+  string token_id = 1;
+  string subject = 2;
+}
+
+// Request message for listing keys.
+message ListKeysRequest {}
+
+// Response message for listing keys.
+message ListKeysResponse {
+  repeated Key keys = 1;
+}
+
+// Key represents a key in the system.
+message Key {
+  string id = 1;
+  string created = 2;
+}
+
+// Request message for adding a key.
+message AddKeyRequest {}
+
+// Response message for adding a key.
+message AddKeyResponse {}
+
+// Request message for removing a key.
+message RemoveKeyRequest {
+  string key_id = 1;
+}
+
+// Response message for removing a key.
+message RemoveKeyResponse {}

@@ -26,8 +26,8 @@ var (
 // Claims represents the authorization claims transmitted via a JWT.
 type Claims struct {
 	jwt.RegisteredClaims
-	Admin     bool            `json:"admin"`
-	Endpoints map[string]bool `json:"endpoints"`
+	Admin     bool     `json:"admin"`
+	Endpoints []string `json:"endpoints"`
 }
 
 // KeyLookup declares a method set of behavior for looking up
@@ -42,7 +42,6 @@ type KeyLookup interface {
 type Config struct {
 	KeyLookup KeyLookup
 	Issuer    string
-	Enabled   bool
 }
 
 // Auth is used to authenticate clients. It can generate a token for a
@@ -83,7 +82,6 @@ func New(cfg Config) (*Auth, error) {
 		method:            jwt.GetSigningMethod(jwt.SigningMethodRS256.Name),
 		parser:            jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Name})),
 		issuer:            cfg.Issuer,
-		enabled:           cfg.Enabled,
 		authenticateQuery: authenticateQuery,
 		authorizeQuery:    authorizeQuery,
 	}, nil
@@ -179,12 +177,8 @@ func (a *Auth) Authorize(ctx context.Context, claims Claims, requireAdmin bool, 
 		return fmt.Errorf("authorization failed: %w", err)
 	}
 
-	if !result.Admin {
-		return fmt.Errorf("%w: admin access required", ErrForbidden)
-	}
-
-	if !result.Endpoint {
-		return fmt.Errorf("%w: endpoint %q not authorized", ErrForbidden, endpoint)
+	if !result.Authorized {
+		return fmt.Errorf("%w: %s", ErrForbidden, result.Reason)
 	}
 
 	return nil
@@ -219,8 +213,8 @@ func (a *Auth) opaAuthentication(ctx context.Context, input any) error {
 }
 
 type authResult struct {
-	Admin    bool
-	Endpoint bool
+	Authorized bool
+	Reason     string
 }
 
 // opaAuthorization evaluates the authorization policy and returns the result document.
@@ -239,11 +233,11 @@ func (a *Auth) opaAuthorization(ctx context.Context, input any) (authResult, err
 		return authResult{}, fmt.Errorf("%w: unexpected result type", ErrInvalidAuthzOPA)
 	}
 
-	adminVal, _ := resultMap["Admin"].(bool)
-	endpointVal, _ := resultMap["Endpoint"].(bool)
+	authorizedVal, _ := resultMap["Authorized"].(bool)
+	reasonVal, _ := resultMap["Reason"].(string)
 
 	return authResult{
-		Admin:    adminVal,
-		Endpoint: endpointVal,
+		Authorized: authorizedVal,
+		Reason:     reasonVal,
 	}, nil
 }

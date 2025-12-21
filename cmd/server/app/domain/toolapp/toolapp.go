@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
@@ -16,20 +17,19 @@ import (
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
-	"github.com/ardanlabs/kronk/sdk/tools/security"
 )
 
 type app struct {
-	log      *logger.Logger
-	cache    *cache.Cache
-	security *security.Security
+	log        *logger.Logger
+	cache      *cache.Cache
+	authClient *authclient.Client
 }
 
-func newApp(log *logger.Logger, cache *cache.Cache, security *security.Security) *app {
+func newApp(log *logger.Logger, cache *cache.Cache, authClient *authclient.Client) *app {
 	return &app{
-		log:      log,
-		cache:    cache,
-		security: security,
+		log:        log,
+		cache:      cache,
+		authClient: authClient,
 	}
 }
 
@@ -323,12 +323,14 @@ func (a *app) showCatalogModel(ctx context.Context, r *http.Request) web.Encoder
 }
 
 func (a *app) listKeys(ctx context.Context, r *http.Request) web.Encoder {
-	keys, err := a.security.ListKeys()
+	bearerToken := r.Header.Get("Authorization")
+
+	resp, err := a.authClient.ListKeys(ctx, bearerToken)
 	if err != nil {
 		return errs.New(errs.Internal, err)
 	}
 
-	return toKeys(keys)
+	return toKeys(resp.Keys)
 }
 
 func (a *app) createToken(ctx context.Context, r *http.Request) web.Encoder {
@@ -337,23 +339,22 @@ func (a *app) createToken(ctx context.Context, r *http.Request) web.Encoder {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	endpoints := make(map[string]bool)
-	for _, endpoint := range req.Endpoints {
-		endpoints[endpoint] = true
-	}
+	bearerToken := r.Header.Get("Authorization")
 
-	token, err := a.security.GenerateToken(req.UserName, req.Admin, endpoints, req.Duration)
+	resp, err := a.authClient.CreateToken(ctx, bearerToken, req.UserName, req.Admin, req.Endpoints, req.Duration)
 	if err != nil {
 		return errs.New(errs.Internal, err)
 	}
 
 	return TokenResponse{
-		Token: token,
+		Token: resp.Token,
 	}
 }
 
 func (a *app) addKey(ctx context.Context, r *http.Request) web.Encoder {
-	if err := a.security.AddPrivateKey(); err != nil {
+	bearerToken := r.Header.Get("Authorization")
+
+	if err := a.authClient.AddKey(ctx, bearerToken); err != nil {
 		return errs.New(errs.Internal, err)
 	}
 
@@ -366,7 +367,9 @@ func (a *app) removeKey(ctx context.Context, r *http.Request) web.Encoder {
 		return errs.Errorf(errs.InvalidArgument, "missing key id")
 	}
 
-	if err := a.security.DeletePrivateKey(keyID); err != nil {
+	bearerToken := r.Header.Get("Authorization")
+
+	if err := a.authClient.RemoveKey(ctx, bearerToken, keyID); err != nil {
 		return errs.New(errs.Internal, err)
 	}
 

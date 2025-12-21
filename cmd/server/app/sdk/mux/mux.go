@@ -6,11 +6,11 @@ import (
 	"embed"
 	"net/http"
 
+	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/mid"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
-	"github.com/ardanlabs/kronk/sdk/tools/security"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -49,11 +49,11 @@ func WithFileServer(react bool, static embed.FS, dir string, path string) func(o
 
 // Config contains all the mandatory systems required by handlers.
 type Config struct {
-	Build    string
-	Log      *logger.Logger
-	Security *security.Security
-	Tracer   trace.Tracer
-	Cache    *cache.Cache
+	Build      string
+	Log        *logger.Logger
+	AuthClient *authclient.Client
+	Tracer     trace.Tracer
+	Cache      *cache.Cache
 }
 
 // RouteAdder defines behavior that sets the routes to bind for an instance

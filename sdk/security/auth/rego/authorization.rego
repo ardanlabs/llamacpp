@@ -2,28 +2,29 @@ package ardan.rego
 
 import rego.v1
 
-default auth := {"Admin": true, "Endpoint": true}
+default auth := {"Authorized": false, "Reason": "unknown authorization failure"}
 
-auth := {"Admin": admin_check, "Endpoint": endpoint_check}
-
-admin_check := true if {
-	not input.Requires.Admin
-}
-
-admin_check := true if {
+auth := {"Authorized": true, "Reason": ""} if {
 	input.Requires.Admin
 	input.Claim.Admin
 }
 
-admin_check := false if {
+auth := {"Authorized": true, "Reason": ""} if {
+	not input.Requires.Admin
+	endpoint_match
+}
+
+auth := {"Authorized": false, "Reason": "admin access required"} if {
 	input.Requires.Admin
 	not input.Claim.Admin
 }
 
-endpoint_check := true if {
-	input.Claim.Endpoints[input.Requires.Endpoint]
+auth := {"Authorized": false, "Reason": sprintf("endpoint %q not authorized", [input.Requires.Endpoint])} if {
+	not input.Requires.Admin
+	not endpoint_match
 }
 
-endpoint_check := false if {
-	not input.Claim.Endpoints[input.Requires.Endpoint]
+endpoint_match if {
+	some ep in input.Claim.Endpoints
+	ep == input.Requires.Endpoint
 }
