@@ -32,8 +32,8 @@ Twitter: goinggodotnet
 
 To install the Kronk tool run the following command:
 
-```
-$ go install github.com/ardanlabs/kronk/cmd/kronk@latest
+```shell
+go install github.com/ardanlabs/kronk/cmd/kronk@latest
 ```
 
 Here is the help screen.
@@ -41,7 +41,9 @@ Here is the help screen.
 ```
 $ kronk help
 
-Go for hardware accelerated local inference with llama.cpp directly integrated into your applications via the yzma. Kronk provides a high-level API that feels similar to using an OpenAI compatible API.
+Go for hardware accelerated local inference with llama.cpp directly integrated
+into your applications via the yzma.
+Kronk provides a high-level API that feels similar to using an OpenAI-compatible API.
 
 Usage:
   kronk [flags]
@@ -90,8 +92,8 @@ You can configure the number of Models that stay loaded in memory (default: 3) t
 
 For more details on the settings, run the following command after installing Kronk:
 
-```
-$ kronk server --help
+```shell
+kronk server --help
 ```
 
 ## Models
@@ -102,7 +104,7 @@ https://huggingface.co/models?library=gguf&sort=trending
 
 ## Support
 
-Kronk currently has support for over 94% of llama.cpp functionality thanks to yzma. See the yzma [ROADMAP.md](https://github.com/ardanlabs/yzma/blob/main/ROADMAP.md) for the complete list.
+Kronk currently has support for over 94% of llama.cpp functionality thanks to yzma. See the yzma [ROADMAP.md](https://github.com/hybridgroup/yzma/blob/main/ROADMAP.md) for the complete list.
 
 You can use multimodal models (image/audio) and text language models with full hardware acceleration on Linux, on macOS, and on Windows.
 
@@ -121,22 +123,34 @@ There are examples in the examples direction:
 _The first time you run these programs the system will download and install the model and libraries._
 
 [AUDIO](examples/audio/main.go) - This example shows you how to execute a simple prompt against an audio model.  
-**$ make example-audio**
+```shell
+make example-audio
+```
 
 [CHAT](examples/chat/main.go) - This example shows you how to create a simple chat application against an inference model using kronk. Thanks to Kronk and yzma, reasoning and tool calling is enabled.  
-**$ make example-chat**
+```shell
+make example-chat
+```
 
 [EMBEDDING](examples/embedding/main.go) - This example shows you how to use an embedding model.  
-**$ make example-embedding**
+```shell
+make example-embedding
+```
 
 [QUESTION](examples/question/main.go) - This example shows you a basic program of using Kronk to ask a model a question.  
-**$ make example-question**
+```shell
+make example-question
+```
 
 [VISION](examples/vision/main.go) - This example shows you how to execute a simple prompt against a vision model.  
-**$ make example-vision**
+```shell
+make example-vision
+```
 
 [WEB](examples/web/main.go) - This example shows you a web service that provides a chat endpoint for asking questions to a model with a browser based chat UI.  
-**$ make example-web**
+```shell
+make example-web
+```
 
 You can find more examples in the ArdanLabs AI training repo at [Example13](https://github.com/ardanlabs/ai-training/tree/main/cmd/examples/example13).
 
@@ -144,14 +158,14 @@ You can find more examples in the ArdanLabs AI training repo at [Example13](http
 
 The model server is OpenAI compatible and you can use OpenWebUI to interact with it. To start the Kronk model server run:
 
-```
-$ kronk server
+```shell
+kronk server
 ```
 
 You will need to load a model if this is the first time you're using the system. To download a starter model run the catalog list command to see the current catalog of models:
 
-```
-$ kronk catalog list --local
+```shell
+kronk catalog list --local
 
 CATALOG              MODEL ID
 Audio-Text-to-Text   Qwen2-Audio-7B.Q8_0
@@ -163,21 +177,21 @@ Text-Generation      Qwen3-8B-Q8_0
 
 Then download the `Qwen3-8B-Q8_0` model using the catalog pull command:
 
-```
-$ kronk catalog pull Qwen3-8B-Q8_0 --local
+```shell
+kronk catalog pull Qwen3-8B-Q8_0 --local
 ```
 
 If you want to play with OpenWebUI, run the following commands:
 
-```
-$ make install-owu
-$ make owu-up
+```shell
+make install-owu
+make owu-up
 ```
 
 The open your browser to `localhost:8080` or open another terminal window and run:
 
-```
-$ make owu-browse
+```shell
+make owu-browse
 ```
 
 ## Sample API Program - Question Example
@@ -329,8 +343,9 @@ func installSystem() (models.Path, error) {
 
 This example can produce the following output:
 
-```
-$ make example-question
+```shell
+make example-question
+
 CGO_ENABLED=0 go run examples/question/main.go
 download-libraries: status[check libraries version information] arch[arm64] os[darwin] processor[cpu]
 download-libraries: status[check llama.cpp installation] arch[arm64] os[darwin] processor[cpu] latest[b7406] current[b7406]
