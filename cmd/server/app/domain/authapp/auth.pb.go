@@ -974,7 +974,7 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\x04auth\"\x97\x01\n" +
+	"auth.proto\x12\aauthapp\"\x97\x01\n" +
 	"\x12CreateTokenRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
 	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x14\n" +
@@ -990,9 +990,9 @@ const file_auth_proto_rawDesc = "" +
 	"\x14AuthenticateResponse\x12\x19\n" +
 	"\btoken_id\x18\x01 \x01(\tR\atokenId\x12\x18\n" +
 	"\asubject\x18\x02 \x01(\tR\asubject\"\x11\n" +
-	"\x0fListKeysRequest\"1\n" +
-	"\x10ListKeysResponse\x12\x1d\n" +
-	"\x04keys\x18\x01 \x03(\v2\t.auth.KeyR\x04keys\"/\n" +
+	"\x0fListKeysRequest\"4\n" +
+	"\x10ListKeysResponse\x12 \n" +
+	"\x04keys\x18\x01 \x03(\v2\f.authapp.KeyR\x04keys\"/\n" +
 	"\x03Key\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\acreated\x18\x02 \x01(\tR\acreated\"\x0f\n" +
@@ -1000,40 +1000,40 @@ const file_auth_proto_rawDesc = "" +
 	"\x0eAddKeyResponse\")\n" +
 	"\x10RemoveKeyRequest\x12\x15\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x05keyId\"\x13\n" +
-	"\x11RemoveKeyResponse2\xbf\x02\n" +
-	"\x04Auth\x12B\n" +
-	"\vCreateToken\x12\x18.auth.CreateTokenRequest\x1a\x19.auth.CreateTokenResponse\x12E\n" +
-	"\fAuthenticate\x12\x19.auth.AuthenticateRequest\x1a\x1a.auth.AuthenticateResponse\x129\n" +
-	"\bListKeys\x12\x15.auth.ListKeysRequest\x1a\x16.auth.ListKeysResponse\x123\n" +
-	"\x06AddKey\x12\x13.auth.AddKeyRequest\x1a\x14.auth.AddKeyResponse\x12<\n" +
-	"\tRemoveKey\x12\x16.auth.RemoveKeyRequest\x1a\x17.auth.RemoveKeyResponseB:Z8github.com/ardanlabs/kronk/cmd/server/app/domain/authappb\beditionsp\xe9\a"
+	"\x11RemoveKeyResponse2\xdd\x02\n" +
+	"\x04Auth\x12H\n" +
+	"\vCreateToken\x12\x1b.authapp.CreateTokenRequest\x1a\x1c.authapp.CreateTokenResponse\x12K\n" +
+	"\fAuthenticate\x12\x1c.authapp.AuthenticateRequest\x1a\x1d.authapp.AuthenticateResponse\x12?\n" +
+	"\bListKeys\x12\x18.authapp.ListKeysRequest\x1a\x19.authapp.ListKeysResponse\x129\n" +
+	"\x06AddKey\x12\x16.authapp.AddKeyRequest\x1a\x17.authapp.AddKeyResponse\x12B\n" +
+	"\tRemoveKey\x12\x19.authapp.RemoveKeyRequest\x1a\x1a.authapp.RemoveKeyResponseB:Z8github.com/ardanlabs/kronk/cmd/server/app/domain/authappb\beditionsp\xe9\a"
 
 var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_auth_proto_goTypes = []any{
-	(*CreateTokenRequest)(nil),   // 0: auth.CreateTokenRequest
-	(*CreateTokenResponse)(nil),  // 1: auth.CreateTokenResponse
-	(*AuthenticateRequest)(nil),  // 2: auth.AuthenticateRequest
-	(*AuthenticateResponse)(nil), // 3: auth.AuthenticateResponse
-	(*ListKeysRequest)(nil),      // 4: auth.ListKeysRequest
-	(*ListKeysResponse)(nil),     // 5: auth.ListKeysResponse
-	(*Key)(nil),                  // 6: auth.Key
-	(*AddKeyRequest)(nil),        // 7: auth.AddKeyRequest
-	(*AddKeyResponse)(nil),       // 8: auth.AddKeyResponse
-	(*RemoveKeyRequest)(nil),     // 9: auth.RemoveKeyRequest
-	(*RemoveKeyResponse)(nil),    // 10: auth.RemoveKeyResponse
+	(*CreateTokenRequest)(nil),   // 0: authapp.CreateTokenRequest
+	(*CreateTokenResponse)(nil),  // 1: authapp.CreateTokenResponse
+	(*AuthenticateRequest)(nil),  // 2: authapp.AuthenticateRequest
+	(*AuthenticateResponse)(nil), // 3: authapp.AuthenticateResponse
+	(*ListKeysRequest)(nil),      // 4: authapp.ListKeysRequest
+	(*ListKeysResponse)(nil),     // 5: authapp.ListKeysResponse
+	(*Key)(nil),                  // 6: authapp.Key
+	(*AddKeyRequest)(nil),        // 7: authapp.AddKeyRequest
+	(*AddKeyResponse)(nil),       // 8: authapp.AddKeyResponse
+	(*RemoveKeyRequest)(nil),     // 9: authapp.RemoveKeyRequest
+	(*RemoveKeyResponse)(nil),    // 10: authapp.RemoveKeyResponse
 }
 var file_auth_proto_depIdxs = []int32{
-	6,  // 0: auth.ListKeysResponse.keys:type_name -> auth.Key
-	0,  // 1: auth.Auth.CreateToken:input_type -> auth.CreateTokenRequest
-	2,  // 2: auth.Auth.Authenticate:input_type -> auth.AuthenticateRequest
-	4,  // 3: auth.Auth.ListKeys:input_type -> auth.ListKeysRequest
-	7,  // 4: auth.Auth.AddKey:input_type -> auth.AddKeyRequest
-	9,  // 5: auth.Auth.RemoveKey:input_type -> auth.RemoveKeyRequest
-	1,  // 6: auth.Auth.CreateToken:output_type -> auth.CreateTokenResponse
-	3,  // 7: auth.Auth.Authenticate:output_type -> auth.AuthenticateResponse
-	5,  // 8: auth.Auth.ListKeys:output_type -> auth.ListKeysResponse
-	8,  // 9: auth.Auth.AddKey:output_type -> auth.AddKeyResponse
-	10, // 10: auth.Auth.RemoveKey:output_type -> auth.RemoveKeyResponse
+	6,  // 0: authapp.ListKeysResponse.keys:type_name -> authapp.Key
+	0,  // 1: authapp.Auth.CreateToken:input_type -> authapp.CreateTokenRequest
+	2,  // 2: authapp.Auth.Authenticate:input_type -> authapp.AuthenticateRequest
+	4,  // 3: authapp.Auth.ListKeys:input_type -> authapp.ListKeysRequest
+	7,  // 4: authapp.Auth.AddKey:input_type -> authapp.AddKeyRequest
+	9,  // 5: authapp.Auth.RemoveKey:input_type -> authapp.RemoveKeyRequest
+	1,  // 6: authapp.Auth.CreateToken:output_type -> authapp.CreateTokenResponse
+	3,  // 7: authapp.Auth.Authenticate:output_type -> authapp.AuthenticateResponse
+	5,  // 8: authapp.Auth.ListKeys:output_type -> authapp.ListKeysResponse
+	8,  // 9: authapp.Auth.AddKey:output_type -> authapp.AddKeyResponse
+	10, // 10: authapp.Auth.RemoveKey:output_type -> authapp.RemoveKeyResponse
 	6,  // [6:11] is the sub-list for method output_type
 	1,  // [1:6] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name

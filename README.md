@@ -122,32 +122,38 @@ There are examples in the examples direction:
 
 _The first time you run these programs the system will download and install the model and libraries._
 
-[AUDIO](examples/audio/main.go) - This example shows you how to execute a simple prompt against an audio model.  
+[AUDIO](examples/audio/main.go) - This example shows you how to execute a simple prompt against an audio model.
+
 ```shell
 make example-audio
 ```
 
-[CHAT](examples/chat/main.go) - This example shows you how to create a simple chat application against an inference model using kronk. Thanks to Kronk and yzma, reasoning and tool calling is enabled.  
+[CHAT](examples/chat/main.go) - This example shows you how to create a simple chat application against an inference model using kronk. Thanks to Kronk and yzma, reasoning and tool calling is enabled.
+
 ```shell
 make example-chat
 ```
 
-[EMBEDDING](examples/embedding/main.go) - This example shows you how to use an embedding model.  
+[EMBEDDING](examples/embedding/main.go) - This example shows you how to use an embedding model.
+
 ```shell
 make example-embedding
 ```
 
-[QUESTION](examples/question/main.go) - This example shows you a basic program of using Kronk to ask a model a question.  
+[QUESTION](examples/question/main.go) - This example shows you a basic program of using Kronk to ask a model a question.
+
 ```shell
 make example-question
 ```
 
-[VISION](examples/vision/main.go) - This example shows you how to execute a simple prompt against a vision model.  
+[VISION](examples/vision/main.go) - This example shows you how to execute a simple prompt against a vision model.
+
 ```shell
 make example-vision
 ```
 
-[WEB](examples/web/main.go) - This example shows you a web service that provides a chat endpoint for asking questions to a model with a browser based chat UI.  
+[WEB](examples/web/main.go) - This example shows you a web service that provides a chat endpoint for asking questions to a model with a browser based chat UI.
+
 ```shell
 make example-web
 ```
@@ -188,7 +194,7 @@ make install-owu
 make owu-up
 ```
 
-The open your browser to `localhost:8080` or open another terminal window and run:
+The open your browser to `localhost:8081` or open another terminal window and run:
 
 ```shell
 make owu-browse

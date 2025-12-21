@@ -196,34 +196,34 @@ kronk-security-token-create-local:
 # Kronk Endpoints
 
 curl-liveness:
-	curl -i -X GET http://localhost:3000/v1/liveness
+	curl -i -X GET http://localhost:8080/v1/liveness
 
 curl-readiness:
-	curl -i -X GET http://localhost:3000/v1/readiness
+	curl -i -X GET http://localhost:8080/v1/readiness
 
 curl-libs:
-	curl -i -X POST http://localhost:3000/v1/libs/pull
+	curl -i -X POST http://localhost:8080/v1/libs/pull
 
 curl-model-list:
-	curl -i -X GET http://localhost:3000/v1/models
+	curl -i -X GET http://localhost:8080/v1/models
 
 curl-kronk-pull:
-	curl -i -X POST http://localhost:3000/v1/models/pull \
+	curl -i -X POST http://localhost:8080/v1/models/pull \
 	-d '{ \
 		"model_url": "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf" \
 	}'
 
 curl-kronk-remove:
-	curl -i -X DELETE http://localhost:3000/v1/models/qwen3-8b-q8_0
+	curl -i -X DELETE http://localhost:8080/v1/models/qwen3-8b-q8_0
 
 curl-kronk-show:
-	curl -i -X GET http://localhost:3000/v1/models/qwen3-8b-q8_0
+	curl -i -X GET http://localhost:8080/v1/models/qwen3-8b-q8_0
 
 curl-model-status:
-	curl -i -X GET http://localhost:3000/v1/models/status
+	curl -i -X GET http://localhost:8080/v1/models/status
 
 curl-kronk-chat:
-	curl -i -X POST http://localhost:3000/v1/chat/completions \
+	curl -i -X POST http://localhost:8080/v1/chat/completions \
 	 -H "Authorization: Bearer ${KRONK_TOKEN}" \
      -H "Content-Type: application/json" \
      -d '{ \
@@ -238,7 +238,7 @@ curl-kronk-chat:
     }'
 
 curl-kronk-embeddings:
-	curl -i -X POST http://localhost:3000/v1/embeddings \
+	curl -i -X POST http://localhost:8080/v1/embeddings \
 	 -H "Authorization: Bearer ${KRONK_TOKEN}" \
      -H "Content-Type: application/json" \
      -d '{ \
@@ -266,7 +266,7 @@ owu-down:
 	docker compose -f zarf/docker/compose.yaml down openwebui
 
 owu-browse:
-	$(OPEN_CMD) http://localhost:3000/
+	$(OPEN_CMD) http://localhost:8081/
 
 # ==============================================================================
 # Tests

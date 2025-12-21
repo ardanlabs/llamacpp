@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auth_CreateToken_FullMethodName  = "/auth.Auth/CreateToken"
-	Auth_Authenticate_FullMethodName = "/auth.Auth/Authenticate"
-	Auth_ListKeys_FullMethodName     = "/auth.Auth/ListKeys"
-	Auth_AddKey_FullMethodName       = "/auth.Auth/AddKey"
-	Auth_RemoveKey_FullMethodName    = "/auth.Auth/RemoveKey"
+	Auth_CreateToken_FullMethodName  = "/authapp.Auth/CreateToken"
+	Auth_Authenticate_FullMethodName = "/authapp.Auth/Authenticate"
+	Auth_ListKeys_FullMethodName     = "/authapp.Auth/ListKeys"
+	Auth_AddKey_FullMethodName       = "/authapp.Auth/AddKey"
+	Auth_RemoveKey_FullMethodName    = "/authapp.Auth/RemoveKey"
 )
 
 // AuthClient is the client API for Auth service.
@@ -258,7 +258,7 @@ func _Auth_RemoveKey_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Auth_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "auth.Auth",
+	ServiceName: "authapp.Auth",
 	HandlerType: (*AuthServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

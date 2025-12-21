@@ -1,6 +1,6 @@
 edition = "2024";
 
-package auth;
+package authapp;
 
 option go_package = "github.com/ardanlabs/kronk/cmd/server/app/domain/authapp";
 

@@ -27,6 +27,7 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/security"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -80,14 +81,16 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 			WriteTimeout       time.Duration `conf:"default:15m"`
 			IdleTimeout        time.Duration `conf:"default:1m"`
 			ShutdownTimeout    time.Duration `conf:"default:1m"`
-			APIHost            string        `conf:"default:0.0.0.0:3000"`
-			DebugHost          string        `conf:"default:0.0.0.0:3010"`
+			APIHost            string        `conf:"default:0.0.0.0:8080"`
+			DebugHost          string        `conf:"default:0.0.0.0:8090"`
 			CORSAllowedOrigins []string      `conf:"default:*"`
 		}
 		Auth struct {
-			Issuer  string `conf:"default:kronk project"`
-			Host    string
-			Enabled bool `conf:"default:true"` // Used when running local auth service.
+			Host  string // Leave empty to run the local auth service.
+			Local struct {
+				Issuer  string `conf:"default:kronk project"`
+				Enabled bool   `conf:"default:false"`
+			}
 		}
 		Tempo struct {
 			Host        string  // `conf:"default:tempo:4317"`
@@ -180,47 +183,21 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	tracer := traceProvider.Tracer(cfg.Tempo.ServiceName)
 
 	// -------------------------------------------------------------------------
-	// Initialize authentication support
+	// Start Auth Server
 
 	var authClientOpts []func(*authclient.Client)
 
 	// If no host is provided for the auth service, we will start it ourselves
 	// with a bufconn listener.
 	if cfg.Auth.Host == "" {
-		log.Info(ctx, "startup", "status", "initializing authentication support")
-
-		sec, err := security.New(security.Config{
-			Issuer: cfg.Auth.Issuer,
-		})
-
+		authApp, lis, err := startAuthServer(ctx, log, cfg.Auth.Local.Enabled, cfg.Auth.Local.Issuer, tracer)
 		if err != nil {
-			return fmt.Errorf("unable to initialize security system: %w", err)
+			return err
 		}
-
-		lis := bufconn.Listen(1024 * 1024)
-
-		authApp, err := authapp.New(authapp.Config{
-			Log:      log,
-			Security: sec,
-			Listener: lis,
-			Tracer:   tracer,
-			Enabled:  cfg.Auth.Enabled,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create auth server: %w", err)
-		}
-
-		go func() {
-			log.Info(ctx, "startup", "status", "auth service started")
-
-			if err := authApp.Start(ctx); err != nil {
-				log.Error(ctx, "startup", "status", "auth server error", "err", err)
-			}
-		}()
 
 		defer func() {
 			authApp.Stop(ctx)
-			log.Info(ctx, "startup", "status", "auth service stopped")
+			log.Info(ctx, "startup", "status", "auth server stopped")
 		}()
 
 		authClientOpts = append(authClientOpts, authclient.WithDialer(func(ctx context.Context, _ string) (net.Conn, error) {
@@ -229,7 +206,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	}
 
 	// -------------------------------------------------------------------------
-	// Now initialize the auth client for handling authorization checks.
+	// Initialize Auth Client
 
 	log.Info(ctx, "startup", "status", "initializing authentication client")
 
@@ -376,6 +353,42 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	}
 
 	return nil
+}
+
+func startAuthServer(ctx context.Context, log *logger.Logger, enabled bool, issuer string, tracer trace.Tracer) (*authapp.App, *bufconn.Listener, error) {
+	log.Info(ctx, "startup", "status", "starting auth server")
+
+	sec, err := security.New(security.Config{
+		Issuer: issuer,
+	})
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to initialize security system: %w", err)
+	}
+
+	lis := bufconn.Listen(1024 * 1024)
+
+	app, err := authapp.New(authapp.Config{
+		Log:      log,
+		Security: sec,
+		Listener: lis,
+		Tracer:   tracer,
+		Enabled:  enabled,
+	})
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to start auth server: %w", err)
+	}
+
+	go func() {
+		log.Info(ctx, "startup", "status", "auth server started")
+
+		if err := app.Start(ctx); err != nil {
+			log.Error(ctx, "startup", "status", "auth server error", "err", err)
+		}
+	}()
+
+	return app, lis, nil
 }
 
 var logo = `

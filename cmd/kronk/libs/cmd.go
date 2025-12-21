@@ -13,7 +13,7 @@ var Cmd = &cobra.Command{
 	Long: `Install or upgrade llama.cpp libraries
 
 Environment Variables (web mode - default):
-      KRONK_WEB_API_HOST  (default localhost:3000)  IP Address for the kronk server.
+      KRONK_WEB_API_HOST  (default localhost:8080)  IP Address for the kronk server.
 
 Environment Variables (--local mode):
       KRONK_ARCH       (default: runtime.GOARCH)         The architecture to install.
