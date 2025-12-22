@@ -37,7 +37,6 @@ type Config struct {
 	Arch         download.Arch
 	OS           download.OS
 	Processor    download.Processor
-	LlamaLog     kronk.LogLevel
 	AllowUpgrade bool
 }
 
@@ -48,9 +47,8 @@ type Config struct {
 // archStr     : string representation of a `download.Arch`.
 // osStr       : string representation of a `download.OS`.
 // procStr     : string representation of a `download.Processor`.
-// llamaLog    : int representation of `kronk.LogSilent` or `kronk.LogNormal`.
 // allowUpgrade: true or false to determine to upgrade libraries when available.
-func NewConfig(libPath string, archStr string, osStr string, procStr string, llamaLog int, allowUpgrade bool) (Config, error) {
+func NewConfig(libPath string, archStr string, osStr string, procStr string, allowUpgrade bool) (Config, error) {
 	arch, err := defaults.Arch(archStr)
 	if err != nil {
 		return Config{}, err
@@ -66,11 +64,6 @@ func NewConfig(libPath string, archStr string, osStr string, procStr string, lla
 		return Config{}, err
 	}
 
-	log, err := defaults.LlamaLog(llamaLog)
-	if err != nil {
-		return Config{}, err
-	}
-
 	libPath = defaults.LibsDir(libPath)
 
 	cfg := Config{
@@ -78,7 +71,6 @@ func NewConfig(libPath string, archStr string, osStr string, procStr string, lla
 		Arch:         arch,
 		OS:           opSys,
 		Processor:    processor,
-		LlamaLog:     log,
 		AllowUpgrade: allowUpgrade,
 	}
 

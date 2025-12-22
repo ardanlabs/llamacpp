@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -115,12 +114,4 @@ func Processor(override string) (download.Processor, error) {
 	}
 
 	return download.CPU, nil
-}
-
-func LlamaLog(override int) (kronk.LogLevel, error) {
-	if override < 1 || override > 2 {
-		return 0, fmt.Errorf("invalid log level %d, want slient(1) or normal(2)", override)
-	}
-
-	return kronk.LogLevel(override), nil
 }

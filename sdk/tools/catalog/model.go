@@ -41,6 +41,7 @@ type Model struct {
 	OwnedBy      string       `yaml:"owned_by"`
 	ModelFamily  string       `yaml:"model_family"`
 	WebPage      string       `yaml:"web_page"`
+	Template     string       `yaml:"template"`
 	Files        Files        `yaml:"files"`
 	Capabilities Capabilities `yaml:"capabilities"`
 	Metadata     Metadata     `yaml:"metadata"`

@@ -63,7 +63,6 @@ func runLocal() error {
 		arch.String(),
 		os.String(),
 		proc.String(),
-		kronk.LogSilent.Int(),
 		true,
 	)
 	if err != nil {

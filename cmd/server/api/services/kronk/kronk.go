@@ -245,7 +245,6 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		cfg.Arch,
 		cfg.OS,
 		cfg.Processor,
-		cfg.LlamaLog,
 		cfg.AllowUpgrade,
 	)
 
@@ -262,7 +261,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	if err := kronk.Init(libCfg.LibPath, libCfg.LlamaLog); err != nil {
+	if err := kronk.Init(libCfg.LibPath, kronk.LogLevel(cfg.LlamaLog)); err != nil {
 		return fmt.Errorf("installation invalid: %w", err)
 	}
 

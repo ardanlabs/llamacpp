@@ -84,7 +84,6 @@ func installSystem() (models.Path, error) {
 		runtime.GOARCH,
 		runtime.GOOS,
 		download.CPU.String(),
-		kronk.LogSilent.Int(),
 		true,
 	)
 	if err != nil {

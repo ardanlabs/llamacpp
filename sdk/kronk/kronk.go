@@ -65,8 +65,11 @@ func Init(libPath string, logLevel LogLevel) error {
 		}
 
 		libraryLocation = libPath
-
 		llama.Init()
+
+		if logLevel < 1 || logLevel > 2 {
+			logLevel = LogSilent
+		}
 
 		switch logLevel {
 		case LogSilent:
