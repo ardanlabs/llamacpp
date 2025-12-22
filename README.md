@@ -36,39 +36,15 @@ To install the Kronk tool run the following command:
 go install github.com/ardanlabs/kronk/cmd/kronk@latest
 ```
 
-Here is the help screen.
-
-```
-$ kronk help
-
-Go for hardware accelerated local inference with llama.cpp directly integrated
-into your applications via the yzma.
-Kronk provides a high-level API that feels similar to using an OpenAI-compatible API.
-
-Usage:
-  kronk [flags]
-  kronk [command]
-
-Available Commands:
-  catalog     Manage model catalog
-  help        Help about any command
-  libs        Install or upgrade llama.cpp libraries
-  model       Manage models
-  security    Manage security
-  server      Manage model server
-
-Flags:
-  -h, --help      help for kronk
-  -v, --version   version for kronk
-
-Use "kronk [command] --help" for more information about a command.
-```
-
 ## Roadmap
 
 Here is the existing [ROADMAP](ROADMAP.md) for the project and the things being worked on or things that would be nice to have. The roadmap is not in any particular order.
 
 If you are interested in helping in any way, please send an email to [Bill Kennedy](mailto:bill@ardanlabs.com).
+
+## Features
+
+Here is the existing [FEATURES](FEATURES.md) list for the project. The features are not in any particular order.
 
 ## Architecture
 
