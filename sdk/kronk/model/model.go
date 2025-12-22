@@ -44,6 +44,10 @@ func NewModel(cfg Config) (*Model, error) {
 		mparams.SetDevices([]llama.GGMLBackendDevice{dev})
 	}
 
+	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+	//       ADD A SPAN HERE
+	//       METRICS
+
 	mdl, err := llama.ModelLoadFromFile(cfg.ModelFile, mparams)
 	if err != nil {
 		return nil, fmt.Errorf("new-model: unable to load model: %w", err)
@@ -366,6 +370,10 @@ loop:
 
 	// -------------------------------------------------------------------------
 
+	// OTEL: WANT TO KNOW HOW LONG THIS ENTIRE FUNCTION CALL TAKES
+	//       ADD A SPAN HERE
+	//       METRICS EXPORT USAGE / ADD CONTEXT WINDOW
+
 	// Send the final response that contains eveything we have sent plus
 	// the final usage numbers.
 	m.sendFinalResponse(ctx, ch, id, object, index, prompt, &finalContent, &finalReasoning, respToolCalls,
@@ -385,8 +393,12 @@ func (m *Model) startProcessing(lctx llama.Context, object string, prompt string
 	sampler := toSampler(params)
 
 	// Process the prompt and get the number of tokens plus the initial batch
-	// for the model response. If this is a vision call, we are just doing this
+	// for the model response. If this is a media call, we are just doing this
 	// for the input token count and the batch will be ignored.
+
+	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+	//       ADD A SPAN HERE
+	//       METRICS PRE-FILL Non-Media
 
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
 	batch := llama.BatchGetOne(tokens)
@@ -401,6 +413,10 @@ func (m *Model) startProcessing(lctx llama.Context, object string, prompt string
 		batch = m.nextBatch(llama.SamplerSample(sampler, lctx, -1))
 		outputTokens = int(batch.NTokens)
 	}
+
+	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+	//       ADD A SPAN HERE
+	//       METRICS TTFT for both
 
 	return sampler, batch, inputTokens, outputTokens
 }

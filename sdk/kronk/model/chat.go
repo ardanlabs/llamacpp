@@ -61,6 +61,10 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 		if m.projFile != "" {
 			mctxParams := mtmd.ContextParamsDefault()
 
+			// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+			//       ADD A SPAN HERE
+			//       METRICS
+
 			mtmdCtx, err = mtmd.InitFromFile(m.projFile, m.model, mctxParams)
 			if err != nil {
 				m.sendChatError(ctx, ch, id, fmt.Errorf("init-from-file: unable to init projection: %w", err))
@@ -86,6 +90,10 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 		}
 
 		// ---------------------------------------------------------------------
+
+		// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+		//       ADD A SPAN HERE
+		//       METRICS
 
 		prompt, media, err := m.applyRequestJinjaTemplate(d)
 		if err != nil {
@@ -145,6 +153,10 @@ func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, prompt s
 	input := mtmd.NewInputText(prompt, true, true)
 
 	mtmd.Tokenize(mtmdCtx, output, input, bitmaps)
+
+	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
+	//       ADD A SPAN HERE
+	//       METRICS PRE-FILL Media
 
 	var n llama.Pos
 	mtmd.HelperEvalChunks(mtmdCtx, lctx, output, 0, 0, int32(m.ctxParams.NBatch), true, &n)
