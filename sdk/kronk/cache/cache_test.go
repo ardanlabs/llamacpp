@@ -347,8 +347,6 @@ func Test_Eviction(t *testing.T) {
 // =============================================================================
 
 func initKronk(t *testing.T) *logger.Logger {
-	libPath := defaults.LibsDir("")
-
 	arch, err := defaults.Arch("")
 	if err != nil {
 		t.Fatalf("invalid arch specified: %s", runtime.GOARCH)
@@ -364,10 +362,10 @@ func initKronk(t *testing.T) *logger.Logger {
 		t.Fatalf("invalid processor specified: %s", processor)
 	}
 
-	t.Logf("installing/updating libraries: libPath[%s], arch[%s] os[%s] processor[%s]", libPath, arch, opSys, processor)
+	t.Logf("installing/updating libraries: libPath[%s], arch[%s] os[%s] processor[%s]", defaults.LibsDir(""), arch, opSys, processor)
 
 	cfg := libs.Config{
-		LibPath:      libPath,
+		LibPath:      defaults.LibsDir(""),
 		Arch:         arch,
 		OS:           opSys,
 		Processor:    processor,
@@ -384,7 +382,7 @@ func initKronk(t *testing.T) *logger.Logger {
 
 	t.Logf("libraries installed: current[%s] latest[%s]", tag.Version, tag.Latest)
 
-	if err := kronk.Init(libPath, kronk.LogLevel(kronk.LogSilent)); err != nil {
+	if err := kronk.Init(); err != nil {
 		t.Fatalf("installation invalid: %s", err)
 	}
 
@@ -401,7 +399,12 @@ func initKronk(t *testing.T) *logger.Logger {
 }
 
 func findAvailableModel(t *testing.T, notModelID string) string {
-	modelFiles, err := models.RetrieveFiles(defaults.ModelsDir(""))
+	models, err := models.New()
+	if err != nil {
+		t.Fatalf("creating models system: %s", err)
+	}
+
+	modelFiles, err := models.RetrieveFiles()
 	if err != nil {
 		t.Skip("no models available for testing - skipping")
 	}

@@ -77,7 +77,7 @@ func runLocal() error {
 		return errs.Errorf(errs.Internal, "libs:unable to install llama.cpp: %s", err)
 	}
 
-	if err := kronk.Init(libCfg.LibPath, kronk.LogSilent); err != nil {
+	if err := kronk.Init(); err != nil {
 		return fmt.Errorf("libs:installation invalid: %w", err)
 	}
 

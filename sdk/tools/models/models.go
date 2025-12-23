@@ -8,21 +8,50 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"go.yaml.in/yaml/v2"
 )
 
-var biMutex sync.Mutex
+var (
+	indexFile = ".index.yaml"
+)
+
+// Models manages the model system.
+type Models struct {
+	modelsPath string
+	biMutex    sync.Mutex
+}
+
+// New constructs the models system using defaults paths.
+func New() (*Models, error) {
+	return NewWithPaths("")
+}
+
+// NewWithPaths constructs the models system, If the modelBasePath is empty, the
+// default location is used.
+func NewWithPaths(modelBasePath string) (*Models, error) {
+	m := Models{
+		modelsPath: defaults.ModelsDir(modelBasePath),
+	}
+
+	return &m, nil
+}
+
+// ModelsPath returns the location of the models path.
+func (m *Models) ModelsPath() string {
+	return m.modelsPath
+}
 
 // BuildIndex builds the model index for fast model access.
-func BuildIndex(modelBasePath string) error {
-	biMutex.Lock()
-	defer biMutex.Unlock()
+func (m *Models) BuildIndex() error {
+	m.biMutex.Lock()
+	defer m.biMutex.Unlock()
 
-	if err := removeEmptyDirs(modelBasePath); err != nil {
+	if err := m.removeEmptyDirs(); err != nil {
 		return fmt.Errorf("remove-empty-dirs: %w", err)
 	}
 
-	entries, err := os.ReadDir(modelBasePath)
+	entries, err := os.ReadDir(m.modelsPath)
 	if err != nil {
 		return fmt.Errorf("list-models: reading models directory: %w", err)
 	}
@@ -36,7 +65,7 @@ func BuildIndex(modelBasePath string) error {
 
 		org := orgEntry.Name()
 
-		modelEntries, err := os.ReadDir(fmt.Sprintf("%s/%s", modelBasePath, org))
+		modelEntries, err := os.ReadDir(fmt.Sprintf("%s/%s", m.modelsPath, org))
 		if err != nil {
 			continue
 		}
@@ -48,7 +77,7 @@ func BuildIndex(modelBasePath string) error {
 
 			modelFamily := modelEntry.Name()
 
-			fileEntries, err := os.ReadDir(fmt.Sprintf("%s/%s/%s", modelBasePath, org, modelFamily))
+			fileEntries, err := os.ReadDir(fmt.Sprintf("%s/%s/%s", m.modelsPath, org, modelFamily))
 			if err != nil {
 				continue
 			}
@@ -69,12 +98,12 @@ func BuildIndex(modelBasePath string) error {
 
 				if strings.HasPrefix(name, "mmproj") {
 					modelID := extractModelID(name[7:])
-					projFiles[modelID] = filepath.Join(modelBasePath, org, modelFamily, fileEntry.Name())
+					projFiles[modelID] = filepath.Join(m.modelsPath, org, modelFamily, fileEntry.Name())
 					continue
 				}
 
 				modelID := extractModelID(fileEntry.Name())
-				modelfiles[modelID] = filepath.Join(modelBasePath, org, modelFamily, fileEntry.Name())
+				modelfiles[modelID] = filepath.Join(m.modelsPath, org, modelFamily, fileEntry.Name())
 			}
 
 			for modelID, modelFile := range modelfiles {
@@ -98,7 +127,7 @@ func BuildIndex(modelBasePath string) error {
 		return fmt.Errorf("marshal index: %w", err)
 	}
 
-	indexPath := filepath.Join(modelBasePath, indexFile)
+	indexPath := filepath.Join(m.modelsPath, indexFile)
 	if err := os.WriteFile(indexPath, indexData, 0644); err != nil {
 		return fmt.Errorf("write index file: %w", err)
 	}
@@ -106,15 +135,17 @@ func BuildIndex(modelBasePath string) error {
 	return nil
 }
 
-func removeEmptyDirs(modelBasePath string) error {
+// =============================================================================
+
+func (m *Models) removeEmptyDirs() error {
 	var dirs []string
 
-	err := filepath.WalkDir(modelBasePath, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(m.modelsPath, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if d.IsDir() && path != modelBasePath {
+		if d.IsDir() && path != m.modelsPath {
 			dirs = append(dirs, path)
 		}
 

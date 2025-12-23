@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/sdk/client"
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
@@ -34,12 +33,10 @@ func runWeb() error {
 	return nil
 }
 
-func runLocal() error {
-	modelPath := defaults.ModelsDir("")
+func runLocal(models *models.Models) error {
+	fmt.Println("Model Path:", models.ModelsPath())
 
-	fmt.Println("Model Path:", modelPath)
-
-	if err := models.BuildIndex(modelPath); err != nil {
+	if err := models.BuildIndex(); err != nil {
 		return fmt.Errorf("build-index: %w", err)
 	}
 

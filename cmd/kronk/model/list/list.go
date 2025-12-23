@@ -11,7 +11,6 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/sdk/client"
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
@@ -38,15 +37,13 @@ func runWeb() error {
 	return nil
 }
 
-func runLocal() error {
-	modelPath := defaults.ModelsDir("")
-
-	models, err := models.RetrieveFiles(modelPath)
+func runLocal(models *models.Models) error {
+	files, err := models.RetrieveFiles()
 	if err != nil {
 		return err
 	}
 
-	printLocal(models)
+	printLocal(files)
 
 	return nil
 }
@@ -67,11 +64,11 @@ func printWeb(models []toolapp.ListModelDetail) {
 	w.Flush()
 }
 
-func printLocal(models []models.File) {
+func printLocal(files []models.File) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ID\tOWNED BY\tMODEL FAMILY\tSIZE\tMODIFIED")
 
-	for _, model := range models {
+	for _, model := range files {
 		size := formatSize(model.Size)
 		modified := formatTime(model.Modified)
 

@@ -21,6 +21,8 @@ import (
 
 // Config represents setting for the kronk manager.
 //
+// LibPath: Location of libraries. Leave empty for default location.
+//
 // ModelPath: Location of models. Leave empty for default location.
 //
 // Device: Specify a specific device. To see the list of devices run this command:
@@ -37,7 +39,7 @@ import (
 // what is in the model metadata if set to 0. If no metadata is found, 4096
 // is the default.
 //
-// TTL: Defines the time an existing model can live in the cache without
+// CacheTTL: Defines the time an existing model can live in the cache without
 // being used.
 type Config struct {
 	Log            *logger.Logger
@@ -54,7 +56,7 @@ type Config struct {
 }
 
 func validateConfig(cfg Config) Config {
-	cfg.LibPath = defaults.ModelsDir(cfg.LibPath)
+	cfg.LibPath = defaults.LibsDir(cfg.LibPath)
 	cfg.ModelPath = defaults.ModelsDir(cfg.ModelPath)
 
 	if cfg.MaxInCache <= 0 {
@@ -80,28 +82,33 @@ type Cache struct {
 	arch          download.Arch
 	os            download.OS
 	processor     download.Processor
-	modelPath     string
 	device        string
 	instances     int
 	contextWindow int
 	cache         *otter.Cache[string, *kronk.Kronk]
 	itemsInCache  atomic.Int32
+	models        *models.Models
 }
 
 // NewCache constructs the manager for use.
 func NewCache(cfg Config) (*Cache, error) {
 	cfg = validateConfig(cfg)
 
+	models, err := models.NewWithPaths(cfg.ModelPath)
+	if err != nil {
+		return nil, fmt.Errorf("creating models system: %w", err)
+	}
+
 	c := Cache{
 		log:           cfg.Log,
+		libPath:       cfg.LibPath,
 		arch:          cfg.Arch,
 		os:            cfg.OS,
 		processor:     cfg.Processor,
-		libPath:       cfg.LibPath,
-		modelPath:     cfg.ModelPath,
 		device:        cfg.Device,
 		instances:     cfg.ModelInstances,
 		contextWindow: cfg.ContextWindow,
+		models:        models,
 	}
 
 	opt := otter.Options[string, *kronk.Kronk]{
@@ -147,11 +154,6 @@ func (c *Cache) LibPath() string {
 	return c.libPath
 }
 
-// ModelPath returns the location of the models.
-func (c *Cache) ModelPath() string {
-	return c.modelPath
-}
-
 // Arch returns the hardware being used.
 func (c *Cache) Arch() download.Arch {
 	return c.arch
@@ -177,7 +179,7 @@ func (c *Cache) ModelStatus() ([]ModelDetail, error) {
 	}
 
 	// Retrieve the models installed locally.
-	list, err := models.RetrieveFiles(defaults.ModelsDir(""))
+	list, err := c.models.RetrieveFiles()
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +219,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 		return krn, nil
 	}
 
-	fi, err := models.RetrievePath(c.modelPath, modelID)
+	fi, err := c.models.RetrievePath(modelID)
 	if err != nil {
 		return nil, fmt.Errorf("aquire-model: %w", err)
 	}

@@ -48,11 +48,6 @@ const (
 	WebAPIHost         = "0.0.0.0:8080"
 )
 
-var (
-	libPath   = defaults.LibsDir("")
-	modelPath = defaults.ModelsDir("")
-)
-
 func main() {
 	log.Default().SetOutput(os.Stdout)
 
@@ -67,7 +62,7 @@ func run() error {
 	defer cancel()
 
 	libCfg, err := libs.NewConfig(
-		libPath,
+		defaults.LibsDir(""),
 		runtime.GOARCH,
 		runtime.GOOS,
 		download.CPU.String(),
@@ -82,14 +77,21 @@ func run() error {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	info, err := models.Download(ctx, kronk.FmtLogger, modelChatURL, "", modelPath)
+	// -------------------------------------------------------------------------
+
+	modelTool, err := models.New()
 	if err != nil {
-		return fmt.Errorf("unable to install chat model: %w", err)
+		return fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	mp, err := modelTool.Download(context.Background(), kronk.FmtLogger, modelChatURL, "")
+	if err != nil {
+		return fmt.Errorf("unable to install model: %w", err)
 	}
 
 	// -------------------------------------------------------------------------
 
-	catalog, err := catalog.New(defaults.BaseDir(""), "")
+	catalog, err := catalog.New()
 	if err != nil {
 		return fmt.Errorf("unable to create catalog system: %w", err)
 	}
@@ -100,7 +102,7 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	templates, err := templates.New(defaults.BaseDir(""), "")
+	templates, err := templates.New()
 	if err != nil {
 		return fmt.Errorf("unable to create template system: %w", err)
 	}
@@ -111,13 +113,13 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+	if err := kronk.Init(); err != nil {
 		return fmt.Errorf("unable to init kronk: %w", err)
 	}
 
 	krnChat, err := kronk.New(modelInstances, model.Config{
 		Log:       kronk.FmtLogger,
-		ModelFile: info.ModelFile,
+		ModelFile: mp.ModelFile,
 		NBatch:    32 * 1024,
 	})
 	if err != nil {

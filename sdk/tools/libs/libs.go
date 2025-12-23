@@ -14,7 +14,10 @@ import (
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
-const versionFile = "version.json"
+const (
+	versionFile = "version.json"
+	localFolder = "libraries"
+)
 
 // VersionTag represents information about the installed version of llama.cpp.
 type VersionTag struct {
@@ -43,12 +46,12 @@ type Config struct {
 // NewConfig constructs a valid library config for downloading based on raw
 // values that would come from configuration. It sets defaults for the specified
 // values when the parameters are empty.
-// libPath     : represents the path the llama.cpp libraries will/are installed in.
+// basePath    : represents the base path the llama.cpp libraries will/are installed in.
 // archStr     : string representation of a `download.Arch`.
 // osStr       : string representation of a `download.OS`.
 // procStr     : string representation of a `download.Processor`.
 // allowUpgrade: true or false to determine to upgrade libraries when available.
-func NewConfig(libPath string, archStr string, osStr string, procStr string, allowUpgrade bool) (Config, error) {
+func NewConfig(basePath string, archStr string, osStr string, procStr string, allowUpgrade bool) (Config, error) {
 	arch, err := defaults.Arch(archStr)
 	if err != nil {
 		return Config{}, err
@@ -64,10 +67,8 @@ func NewConfig(libPath string, archStr string, osStr string, procStr string, all
 		return Config{}, err
 	}
 
-	libPath = defaults.LibsDir(libPath)
-
 	cfg := Config{
-		LibPath:      libPath,
+		LibPath:      filepath.Join(basePath, localFolder),
 		Arch:         arch,
 		OS:           opSys,
 		Processor:    processor,

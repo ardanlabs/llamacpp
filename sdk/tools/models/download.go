@@ -12,16 +12,14 @@ import (
 	"github.com/ardanlabs/kronk/sdk/tools/downloader"
 )
 
-var indexFile = ".index.yaml"
-
 // Logger represents a logger for capturing events.
 type Logger func(ctx context.Context, msg string, args ...any)
 
 // Download performs a complete workflow for downloading and installing
 // the specified model.
-func Download(ctx context.Context, log Logger, modelFileURL string, projURL string, modelBasePath string) (Path, error) {
+func (m *Models) Download(ctx context.Context, log Logger, modelFileURL string, projURL string) (Path, error) {
 	defer func() {
-		if err := BuildIndex(modelBasePath); err != nil {
+		if err := m.BuildIndex(); err != nil {
 			log(ctx, "download-model: unable to create index", "ERROR", err)
 		}
 	}()
@@ -40,11 +38,11 @@ func Download(ctx context.Context, log Logger, modelFileURL string, projURL stri
 		log(ctx, fmt.Sprintf("\x1b[1A\r\x1b[Kdownload-model: Downloading %s... %d MiB of %d MiB (%.2f MiB/s)", src, currentSize/(1024*1024), totalSize/(1024*1024), mibPerSec))
 	}
 
-	mp, errOrg := downloadModel(ctx, modelFileURL, projURL, modelBasePath, progress)
+	mp, errOrg := m.downloadModel(ctx, modelFileURL, projURL, progress)
 	if errOrg != nil {
 		log(ctx, "download-model:", "ERROR", errOrg, "model-file-url", modelFileURL)
 
-		if mp, err := RetrievePath(modelBasePath, modelID); err == nil {
+		if mp, err := m.RetrievePath(modelID); err == nil {
 			size, err := fileSize(mp.ModelFile)
 			if err != nil {
 				return Path{}, fmt.Errorf("download-model: unable to check file size of model: %w", err)
@@ -75,8 +73,8 @@ func Download(ctx context.Context, log Logger, modelFileURL string, projURL stri
 
 // =============================================================================
 
-func downloadModel(ctx context.Context, modelFileURL string, projFileURL string, modelBasePath string, progress downloader.ProgressFunc) (Path, error) {
-	modelFileName, downloadedMF, err := pullModel(ctx, modelFileURL, modelBasePath, progress)
+func (m *Models) downloadModel(ctx context.Context, modelFileURL string, projFileURL string, progress downloader.ProgressFunc) (Path, error) {
+	modelFileName, downloadedMF, err := m.pullModel(ctx, modelFileURL, progress)
 	if err != nil {
 		return Path{}, err
 	}
@@ -97,7 +95,7 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 		return inf, nil
 	}
 
-	orjProjFile, downloadedPF, err := pullModel(ctx, projFileURL, modelBasePath, progress)
+	orjProjFile, downloadedPF, err := m.pullModel(ctx, projFileURL, progress)
 	if err != nil {
 		return Path{}, err
 	}
@@ -115,17 +113,8 @@ func downloadModel(ctx context.Context, modelFileURL string, projFileURL string,
 	return inf, nil
 }
 
-func fileSize(filePath string) (int, error) {
-	info, err := os.Stat(filePath)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(info.Size()), nil
-}
-
-func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, progress downloader.ProgressFunc) (string, bool, error) {
-	modelFilePath, modelFileName, err := modelFilePathAndName(modelFileURL, modelBasePath)
+func (m *Models) pullModel(ctx context.Context, modelFileURL string, progress downloader.ProgressFunc) (string, bool, error) {
+	modelFilePath, modelFileName, err := m.modelFilePathAndName(modelFileURL)
 	if err != nil {
 		return "", false, fmt.Errorf("pull-model: unable to extract file-path: %w", err)
 	}
@@ -138,7 +127,7 @@ func pullModel(ctx context.Context, modelFileURL string, modelBasePath string, p
 	return modelFileName, downloaded, nil
 }
 
-func modelFilePathAndName(modelFileURL string, modelBasePath string) (string, string, error) {
+func (m *Models) modelFilePathAndName(modelFileURL string) (string, string, error) {
 	mURL, err := url.Parse(modelFileURL)
 	if err != nil {
 		return "", "", fmt.Errorf("model-file-path-and-name: unable to parse fileURL: %w", err)
@@ -149,10 +138,21 @@ func modelFilePathAndName(modelFileURL string, modelBasePath string) (string, st
 		return "", "", fmt.Errorf("model-file-path-and-name: invalid huggingface url: %q", mURL.Path)
 	}
 
-	modelFilePath := filepath.Join(modelBasePath, parts[1], parts[2])
+	modelFilePath := filepath.Join(m.modelsPath, parts[1], parts[2])
 	modelFileName := filepath.Join(modelFilePath, path.Base(mURL.Path))
 
 	return modelFilePath, modelFileName, nil
+}
+
+// =============================================================================
+
+func fileSize(filePath string) (int, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(info.Size()), nil
 }
 
 func createProjFileName(modelFileName string) string {

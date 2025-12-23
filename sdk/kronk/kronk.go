@@ -50,8 +50,15 @@ var (
 // =============================================================================
 
 // Init initializes the Kronk backend suport.
-func Init(libPath string, logLevel LogLevel) error {
+func Init() error {
+	return InitWithSettings("", LogSilent)
+}
+
+// InitWithSettings initializes the Kronk backend suport.
+func InitWithSettings(libPath string, logLevel LogLevel) error {
 	initOnce.Do(func() {
+		libPath := defaults.LibsDir(libPath)
+
 		if v := os.Getenv("LD_LIBRARY_PATH"); !strings.Contains(v, libPath) {
 			os.Setenv("LD_LIBRARY_PATH", fmt.Sprintf("%s:%s", libPath, v))
 		}
@@ -137,7 +144,7 @@ func New(modelInstances int, cfg model.Config, opts ...Option) (*Kronk, error) {
 		return nil, fmt.Errorf("instances must be > 0, got %d", modelInstances)
 	}
 
-	tmlpRetriever, err := templates.New(defaults.BaseDir(""), o.templateRepo)
+	tmlpRetriever, err := templates.NewWithPaths("", o.templateRepo)
 	if err != nil {
 		return nil, fmt.Errorf("template new: %w", err)
 	}

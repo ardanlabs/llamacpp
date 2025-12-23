@@ -11,7 +11,6 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/sdk/client"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
@@ -52,8 +51,7 @@ func runWeb(args []string) error {
 	return nil
 }
 
-func runLocal(args []string) error {
-	modelBasePath := defaults.ModelsDir("")
+func runLocal(models *models.Models, args []string) error {
 	modelURL := args[0]
 
 	var projURL string
@@ -74,7 +72,7 @@ func runLocal(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 
-	_, err := models.Download(ctx, kronk.FmtLogger, modelURL, projURL, modelBasePath)
+	_, err := models.Download(ctx, kronk.FmtLogger, modelURL, projURL)
 	if err != nil {
 		return fmt.Errorf("download-model: %w", err)
 	}

@@ -31,8 +31,7 @@ const (
 )
 
 var (
-	libPath   = defaults.LibsDir("")
-	modelPath = defaults.ModelsDir("")
+	libPath = defaults.LibsDir("")
 )
 
 func main() {
@@ -95,7 +94,12 @@ func installSystem() (models.Path, error) {
 		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := models.Download(context.Background(), kronk.FmtLogger, modelURL, projURL, modelPath)
+	modelTool, err := models.New()
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	mp, err := modelTool.Download(context.Background(), kronk.FmtLogger, modelURL, projURL)
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
 	}
@@ -104,7 +108,7 @@ func installSystem() (models.Path, error) {
 }
 
 func newKronk(libPath string, mp models.Path) (*kronk.Kronk, error) {
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+	if err := kronk.Init(); err != nil {
 		return nil, fmt.Errorf("unable to init kronk: %w", err)
 	}
 

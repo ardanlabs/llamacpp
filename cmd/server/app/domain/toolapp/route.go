@@ -9,6 +9,7 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/ardanlabs/kronk/sdk/tools/templates"
 )
 
@@ -17,8 +18,9 @@ type Config struct {
 	Log        *logger.Logger
 	AuthClient *authclient.Client
 	Cache      *cache.Cache
-	catalog    *catalog.Catalog
-	templates  *templates.Templates
+	Models     *models.Models
+	Catalog    *catalog.Catalog
+	Templates  *templates.Templates
 }
 
 // Routes adds specific routes for this group.

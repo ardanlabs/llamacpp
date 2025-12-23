@@ -25,9 +25,9 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/ardanlabs/kronk/sdk/tools/security"
 	"github.com/ardanlabs/kronk/sdk/tools/templates"
 	"google.golang.org/grpc/test/bufconn"
@@ -238,14 +238,19 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 
 	defer authClient.Close()
 
-	// ---------------------------------------------------------------------
-	// Download Catalog and Templates
+	// -------------------------------------------------------------------------
+	// Models
 
-	log.Info(ctx, "startup", "status", "downloading catalog")
+	models, err := models.New()
+	if err != nil {
+		return fmt.Errorf("unable to create catalog system: %w", err)
+	}
 
 	// -------------------------------------------------------------------------
 
-	catalog, err := catalog.New(defaults.BaseDir(""), "")
+	log.Info(ctx, "startup", "status", "downloading catalog")
+
+	catalog, err := catalog.New()
 	if err != nil {
 		return fmt.Errorf("unable to create catalog system: %w", err)
 	}
@@ -258,7 +263,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 
 	log.Info(ctx, "startup", "status", "downloading templates")
 
-	templates, err := templates.New(defaults.BaseDir(""), "")
+	templates, err := templates.New()
 	if err != nil {
 		return fmt.Errorf("unable to create template system: %w", err)
 	}
@@ -293,7 +298,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	if err := kronk.Init(libCfg.LibPath, kronk.LogLevel(cfg.LlamaLog)); err != nil {
+	if err := kronk.InitWithSettings(libCfg.LibPath, kronk.LogLevel(cfg.LlamaLog)); err != nil {
 		return fmt.Errorf("installation invalid: %w", err)
 	}
 
@@ -351,6 +356,9 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 		AuthClient: authClient,
 		Tracer:     tracer,
 		Cache:      cache,
+		Models:     models,
+		Catalog:    catalog,
+		Templates:  templates,
 	}
 
 	webAPI := mux.WebAPI(cfgMux,

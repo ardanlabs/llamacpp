@@ -114,7 +114,7 @@ func (c *Catalog) downloadCatalog(ctx context.Context, url string) error {
 		return fmt.Errorf("reading response: %w", err)
 	}
 
-	filePath := filepath.Join(c.catalogDir, filepath.Base(url))
+	filePath := filepath.Join(c.catalogPath, filepath.Base(url))
 	if err := os.WriteFile(filePath, body, 0644); err != nil {
 		return fmt.Errorf("writing catalog file: %w", err)
 	}
@@ -123,7 +123,7 @@ func (c *Catalog) downloadCatalog(ctx context.Context, url string) error {
 }
 
 func (c *Catalog) readLocalSHAs() map[string]string {
-	data, err := os.ReadFile(filepath.Join(c.catalogDir, shaFile))
+	data, err := os.ReadFile(filepath.Join(c.catalogPath, shaFile))
 	if err != nil {
 		return make(map[string]string)
 	}
@@ -149,7 +149,7 @@ func (c *Catalog) writeLocalSHAs(items []gitHubFile) error {
 		return err
 	}
 
-	return os.WriteFile(filepath.Join(c.catalogDir, shaFile), data, 0644)
+	return os.WriteFile(filepath.Join(c.catalogPath, shaFile), data, 0644)
 }
 
 // =============================================================================

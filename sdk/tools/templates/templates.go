@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 )
 
@@ -22,9 +23,16 @@ type Templates struct {
 	catalog        *catalog.Catalog
 }
 
-// New constructs the template system, using the specified github
-// repo path. If the path is empty, the default repo is used.
-func New(basePath string, githubRepoPath string) (*Templates, error) {
+// New constructs the template system using defaults paths.
+func New() (*Templates, error) {
+	return NewWithPaths("", "")
+}
+
+// NewWithPaths constructs the template system, using the specified github
+// repo path. If either path is empty, the default paths are used.
+func NewWithPaths(basePath string, githubRepoPath string) (*Templates, error) {
+	basePath = defaults.BaseDir(basePath)
+
 	if githubRepoPath == "" {
 		githubRepoPath = defaultGithubPath
 	}
@@ -35,7 +43,7 @@ func New(basePath string, githubRepoPath string) (*Templates, error) {
 		return nil, fmt.Errorf("creating templates directory: %w", err)
 	}
 
-	catalog, err := catalog.New(basePath, "")
+	catalog, err := catalog.NewWithPaths(basePath, "")
 	if err != nil {
 		return nil, fmt.Errorf("catalog new: %w", err)
 	}
@@ -47,4 +55,9 @@ func New(basePath string, githubRepoPath string) (*Templates, error) {
 	}
 
 	return &t, nil
+}
+
+// TemplatesPath returns the location of the templates path.
+func (t *Templates) TemplatesPath() string {
+	return t.templatePath
 }

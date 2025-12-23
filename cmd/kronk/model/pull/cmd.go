@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/spf13/cobra"
 )
 
@@ -32,11 +33,14 @@ func main(cmd *cobra.Command, args []string) {
 func run(cmd *cobra.Command, args []string) error {
 	local, _ := cmd.Flags().GetBool("local")
 
-	var err error
+	models, err := models.New()
+	if err != nil {
+		return fmt.Errorf("unable to create models system: %w", err)
+	}
 
 	switch local {
 	case true:
-		err = runLocal(args)
+		err = runLocal(models, args)
 	default:
 		err = runWeb(args)
 	}

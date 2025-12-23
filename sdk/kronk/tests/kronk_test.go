@@ -27,20 +27,23 @@ var (
 )
 
 func init() {
-	mpThinkToolChat = models.MustRetrieveModel(defaults.ModelsDir(""), "Qwen3-8B-Q8_0")
-	mpSimpleVision = models.MustRetrieveModel(defaults.ModelsDir(""), "Qwen2.5-VL-3B-Instruct-Q8_0")
-	mpEmbed = models.MustRetrieveModel(defaults.ModelsDir(""), "embeddinggemma-300m-qat-Q8_0")
+	models, err := models.New()
+	if err != nil {
+		fmt.Printf("creating models system: %s\n", err)
+		os.Exit(1)
+	}
+
+	mpThinkToolChat = models.MustRetrieveModel("Qwen3-8B-Q8_0")
+	mpSimpleVision = models.MustRetrieveModel("Qwen2.5-VL-3B-Instruct-Q8_0")
+	mpEmbed = models.MustRetrieveModel("embeddinggemma-300m-qat-Q8_0")
 
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		mpGPTChat = models.MustRetrieveModel(defaults.ModelsDir(""), "gpt-oss-20b-Q8_0")
+		mpGPTChat = models.MustRetrieveModel("gpt-oss-20b-Q8_0")
 	}
 }
 
 var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
-	basePath       = defaults.BaseDir("")
-	libPath        = defaults.LibsDir("")
-	modelPath      = defaults.ModelsDir("")
 	imageFile      = filepath.Join(gw, "examples/samples/giraffe.jpg")
 	goroutines     = 1
 	modelInstances = 1
@@ -53,7 +56,7 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	catalog, err := catalog.New(basePath, "")
+	catalog, err := catalog.New()
 	if err != nil {
 		fmt.Printf("unable to create template system: %s", err)
 		os.Exit(1)
@@ -64,7 +67,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	templates, err := templates.New(basePath, "")
+	templates, err := templates.New()
 	if err != nil {
 		fmt.Printf("unable to create template system: %s", err)
 		os.Exit(1)
@@ -75,8 +78,8 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		fmt.Printf("Failed to init the llama.cpp library: %s: error: %s\n", libPath, err)
+	if err := kronk.Init(); err != nil {
+		fmt.Printf("Failed to init the llama.cpp library: error: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -96,8 +99,8 @@ func printInfo() {
 		runInParallel = true
 	}
 
-	fmt.Println("libpath        :", libPath)
-	fmt.Println("modelPath      :", modelPath)
+	fmt.Println("libpath        :", defaults.LibsDir(""))
+	fmt.Println("modelPath      :", defaults.ModelsDir(""))
 	fmt.Println("imageFile      :", imageFile)
 	fmt.Println("processor      :", "cpu")
 	fmt.Println("testDuration   :", testDuration)
@@ -105,7 +108,7 @@ func printInfo() {
 	fmt.Println("GOROUTINES     :", goroutines)
 	fmt.Println("RUN_IN_PARALLEL:", runInParallel)
 
-	currentVersion, err := libs.InstalledVersion(libPath)
+	currentVersion, err := libs.InstalledVersion(defaults.LibsDir(""))
 	if err != nil {
 		fmt.Printf("Failed to retrieve version info: %v\n", err)
 		os.Exit(1)

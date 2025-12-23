@@ -6,9 +6,9 @@ import (
 )
 
 // Remove remove the specified file from the models directory.
-func Remove(modelBasePath string, mp Path) (err error) {
+func (m *Models) Remove(mp Path) (err error) {
 	defer func() {
-		if errDfr := BuildIndex(modelBasePath); err != nil {
+		if errDfr := m.BuildIndex(); err != nil {
 			err = errDfr
 		}
 	}()

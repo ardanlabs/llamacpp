@@ -30,11 +30,6 @@ const (
 	modelInstances = 1
 )
 
-var (
-	libPath   = defaults.LibsDir("")
-	modelPath = defaults.ModelsDir("")
-)
-
 func main() {
 	if err := run(); err != nil {
 		fmt.Printf("\nERROR: %s\n", err)
@@ -48,7 +43,7 @@ func run() error {
 		return fmt.Errorf("unable to installation system: %w", err)
 	}
 
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+	if err := kronk.Init(); err != nil {
 		return fmt.Errorf("unable to init kronk: %w", err)
 	}
 
@@ -130,7 +125,7 @@ func installSystem() (models.Path, error) {
 	defer cancel()
 
 	libCfg, err := libs.NewConfig(
-		libPath,
+		defaults.LibsDir(""),
 		runtime.GOARCH,
 		runtime.GOOS,
 		download.CPU.String(),
@@ -145,14 +140,21 @@ func installSystem() (models.Path, error) {
 		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := models.Download(ctx, kronk.FmtLogger, modelURL, "", modelPath)
+	// -------------------------------------------------------------------------
+
+	modelTool, err := models.New()
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	mp, err := modelTool.Download(context.Background(), kronk.FmtLogger, modelURL, "")
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
 	}
 
 	// -------------------------------------------------------------------------
 
-	catalog, err := catalog.New(defaults.BaseDir(""), "")
+	catalog, err := catalog.New()
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to create catalog system: %w", err)
 	}
@@ -163,7 +165,7 @@ func installSystem() (models.Path, error) {
 
 	// -------------------------------------------------------------------------
 
-	templates, err := templates.New(defaults.BaseDir(""), "")
+	templates, err := templates.New()
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to create template system: %w", err)
 	}

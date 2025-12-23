@@ -8,8 +8,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
-	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"go.yaml.in/yaml/v2"
 )
 
@@ -21,9 +19,7 @@ func (c *Catalog) CatalogModelList(filterCategory string) ([]Model, error) {
 		return nil, fmt.Errorf("catalog list: %w", err)
 	}
 
-	modelBasePath := defaults.ModelsDir("")
-
-	modelFiles, err := models.RetrieveFiles(modelBasePath)
+	modelFiles, err := c.models.RetrieveFiles()
 	if err != nil {
 		return nil, fmt.Errorf("retrieve-model-files: %w", err)
 	}
@@ -90,7 +86,7 @@ func (c *Catalog) RetrieveModelDetails(modelID string) (Model, error) {
 
 // RetrieveCatalog returns an individual catalog by the base catalog file name.
 func (c *Catalog) RetrieveCatalog(catalogFile string) (CatalogModels, error) {
-	filePath := filepath.Join(c.catalogDir, catalogFile)
+	filePath := filepath.Join(c.catalogPath, catalogFile)
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -107,7 +103,7 @@ func (c *Catalog) RetrieveCatalog(catalogFile string) (CatalogModels, error) {
 
 // RetrieveCatalogs reads the catalogs from a previous download.
 func (c *Catalog) RetrieveCatalogs() ([]CatalogModels, error) {
-	entries, err := os.ReadDir(c.catalogDir)
+	entries, err := os.ReadDir(c.catalogPath)
 	if err != nil {
 		return nil, fmt.Errorf("read catalog dir: %w", err)
 	}
@@ -139,7 +135,7 @@ func (c *Catalog) buildIndex() error {
 	c.biMutex.Lock()
 	defer c.biMutex.Unlock()
 
-	entries, err := os.ReadDir(c.catalogDir)
+	entries, err := os.ReadDir(c.catalogPath)
 	if err != nil {
 		return fmt.Errorf("read catalog dir: %w", err)
 	}
@@ -155,7 +151,7 @@ func (c *Catalog) buildIndex() error {
 			continue
 		}
 
-		filePath := filepath.Join(c.catalogDir, entry.Name())
+		filePath := filepath.Join(c.catalogPath, entry.Name())
 
 		data, err := os.ReadFile(filePath)
 		if err != nil {
@@ -178,7 +174,7 @@ func (c *Catalog) buildIndex() error {
 		return fmt.Errorf("marshal index: %w", err)
 	}
 
-	indexPath := filepath.Join(c.catalogDir, indexFile)
+	indexPath := filepath.Join(c.catalogPath, indexFile)
 	if err := os.WriteFile(indexPath, indexData, 0644); err != nil {
 		return fmt.Errorf("write index file: %w", err)
 	}
@@ -187,7 +183,7 @@ func (c *Catalog) buildIndex() error {
 }
 
 func (c *Catalog) loadIndex() (map[string]string, error) {
-	indexPath := filepath.Join(c.catalogDir, indexFile)
+	indexPath := filepath.Join(c.catalogPath, indexFile)
 
 	data, err := os.ReadFile(indexPath)
 	if err != nil {

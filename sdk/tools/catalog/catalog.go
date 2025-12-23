@@ -6,6 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
 const (
@@ -16,14 +19,22 @@ const (
 
 // Catalog manages the catalog system.
 type Catalog struct {
-	catalogDir     string
+	catalogPath    string
 	githubRepoPath string
+	models         *models.Models
 	biMutex        sync.Mutex
 }
 
-// New constructs the catalog system, using the specified github
-// repo path. If the path is empty, the default repo is used.
-func New(basePath string, githubRepoPath string) (*Catalog, error) {
+// New constructs the catalog system using defaults paths.
+func New() (*Catalog, error) {
+	return NewWithPaths("", "")
+}
+
+// NewWithPaths constructs the catalog system, using the specified github
+// repo path. If either path is empty, the default paths are used.
+func NewWithPaths(basePath string, githubRepoPath string) (*Catalog, error) {
+	basePath = defaults.BaseDir(basePath)
+
 	if githubRepoPath == "" {
 		githubRepoPath = defaultGithubPath
 	}
@@ -34,10 +45,21 @@ func New(basePath string, githubRepoPath string) (*Catalog, error) {
 		return nil, fmt.Errorf("creating catalogs directory: %w", err)
 	}
 
+	models, err := models.NewWithPaths(basePath)
+	if err != nil {
+		return nil, fmt.Errorf("creating models system: %w", err)
+	}
+
 	c := Catalog{
-		catalogDir:     catalogDir,
+		catalogPath:    catalogDir,
 		githubRepoPath: githubRepoPath,
+		models:         models,
 	}
 
 	return &c, nil
+}
+
+// CatalogPath returns the location of the catalog path.
+func (c *Catalog) CatalogPath() string {
+	return c.catalogPath
 }

@@ -25,6 +25,7 @@ type app struct {
 	log        *logger.Logger
 	cache      *cache.Cache
 	authClient *authclient.Client
+	models     *models.Models
 	catalog    *catalog.Catalog
 	templates  *templates.Templates
 }
@@ -34,8 +35,9 @@ func newApp(cfg Config) *app {
 		log:        cfg.Log,
 		cache:      cfg.Cache,
 		authClient: cfg.AuthClient,
-		catalog:    cfg.catalog,
-		templates:  cfg.templates,
+		models:     cfg.Models,
+		catalog:    cfg.Catalog,
+		templates:  cfg.Templates,
 	}
 }
 
@@ -108,9 +110,7 @@ func (a *app) pullLibs(ctx context.Context, r *http.Request) web.Encoder {
 }
 
 func (a *app) indexModels(ctx context.Context, r *http.Request) web.Encoder {
-	modelPath := a.cache.ModelPath()
-
-	if err := models.BuildIndex(modelPath); err != nil {
+	if err := a.models.BuildIndex(); err != nil {
 		return errs.Errorf(errs.Internal, "unable to build model index: %s", err)
 	}
 
@@ -118,9 +118,7 @@ func (a *app) indexModels(ctx context.Context, r *http.Request) web.Encoder {
 }
 
 func (a *app) listModels(ctx context.Context, r *http.Request) web.Encoder {
-	modelPath := a.cache.ModelPath()
-
-	models, err := models.RetrieveFiles(modelPath)
+	models, err := a.models.RetrieveFiles()
 	if err != nil {
 		return errs.Errorf(errs.Internal, "unable to retrieve model list: %s", err)
 	}
@@ -160,8 +158,6 @@ func (a *app) pullModels(ctx context.Context, r *http.Request) web.Encoder {
 
 	// -------------------------------------------------------------------------
 
-	modelPath := a.cache.ModelPath()
-
 	logger := func(ctx context.Context, msg string, args ...any) {
 		var sb strings.Builder
 		for i := 0; i < len(args); i += 2 {
@@ -178,7 +174,7 @@ func (a *app) pullModels(ctx context.Context, r *http.Request) web.Encoder {
 		f.Flush()
 	}
 
-	mp, err := models.Download(ctx, logger, req.ModelURL, req.ProjURL, modelPath)
+	mp, err := a.models.Download(ctx, logger, req.ModelURL, req.ProjURL)
 	if err != nil {
 		ver := toAppPull(err.Error(), models.Path{})
 
@@ -199,17 +195,16 @@ func (a *app) pullModels(ctx context.Context, r *http.Request) web.Encoder {
 }
 
 func (a *app) removeModel(ctx context.Context, r *http.Request) web.Encoder {
-	modelPath := a.cache.ModelPath()
 	modelName := web.Param(r, "model")
 
 	a.log.Info(ctx, "tool-remove", "modelName", modelName)
 
-	mp, err := models.RetrievePath(modelPath, modelName)
+	mp, err := a.models.RetrievePath(modelName)
 	if err != nil {
 		return errs.New(errs.InvalidArgument, err)
 	}
 
-	if err := models.Remove(modelPath, mp); err != nil {
+	if err := a.models.Remove(mp); err != nil {
 		return errs.Errorf(errs.Internal, "failed to remove model: %s", err)
 	}
 
@@ -217,11 +212,9 @@ func (a *app) removeModel(ctx context.Context, r *http.Request) web.Encoder {
 }
 
 func (a *app) showModel(ctx context.Context, r *http.Request) web.Encoder {
-	libPath := a.cache.LibPath()
-	modelPath := a.cache.ModelPath()
 	modelName := web.Param(r, "model")
 
-	mi, err := models.RetrieveInfo(libPath, modelPath, modelName)
+	mi, err := a.models.RetrieveInfo(modelName)
 	if err != nil {
 		return errs.New(errs.Internal, err)
 	}
@@ -280,8 +273,6 @@ func (a *app) pullCatalog(ctx context.Context, r *http.Request) web.Encoder {
 
 	// -------------------------------------------------------------------------
 
-	modelPath := a.cache.ModelPath()
-
 	logger := func(ctx context.Context, msg string, args ...any) {
 		var sb strings.Builder
 		for i := 0; i < len(args); i += 2 {
@@ -298,7 +289,7 @@ func (a *app) pullCatalog(ctx context.Context, r *http.Request) web.Encoder {
 		f.Flush()
 	}
 
-	mp, err := models.Download(ctx, logger, model.Files.Model.URL, model.Files.Proj.URL, modelPath)
+	mp, err := a.models.Download(ctx, logger, model.Files.Model.URL, model.Files.Proj.URL)
 	if err != nil {
 		ver := toAppPull(err.Error(), models.Path{})
 

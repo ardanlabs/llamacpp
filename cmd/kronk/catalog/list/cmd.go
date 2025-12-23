@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +43,7 @@ func run(cmd *cobra.Command, args []string) error {
 		args = append(args, "--filter-category", filterCategory)
 	}
 
-	catalog, err := catalog.New(defaults.BaseDir(""), "")
+	catalog, err := catalog.New()
 	if err != nil {
 		return fmt.Errorf("unable to create catalog system: %w", err)
 	}

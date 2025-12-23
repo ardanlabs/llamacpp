@@ -10,7 +10,6 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/sdk/client"
 	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
@@ -40,21 +39,19 @@ func runWeb(args []string) error {
 	return nil
 }
 
-func runLocal(args []string) error {
-	libPath := defaults.LibsDir("")
-	modelBasePath := defaults.ModelsDir("")
+func runLocal(models *models.Models, args []string) error {
 	modelID := args[0]
 
-	mi, err := models.RetrieveInfo(libPath, modelBasePath, modelID)
+	mi, err := models.RetrieveInfo(modelID)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve model info: %w", err)
 	}
 
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+	if err := kronk.Init(); err != nil {
 		return fmt.Errorf("unable to init kronk: %w", err)
 	}
 
-	mp, err := models.RetrievePath(modelBasePath, modelID)
+	mp, err := models.RetrievePath(modelID)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve model path: %w", err)
 	}
