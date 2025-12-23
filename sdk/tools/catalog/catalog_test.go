@@ -80,8 +80,15 @@ func Test_Catalog(t *testing.T) {
 		},
 	}
 
+	if len(catalogs) == 0 {
+		t.Fatal("no catalogs returned")
+	}
+
 	var gotCat catalog.Catalog
 	for _, cat := range catalogs {
+		if len(cat.Models) == 0 {
+			continue
+		}
 		if cat.Models[0].ID == expCat.Models[0].ID {
 			gotCat = cat
 			break

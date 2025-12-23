@@ -49,9 +49,7 @@ export default function CatalogPull() {
         if (data.model_file) {
           addMessage(`Model file: ${data.model_file}`, 'info');
         }
-        if (data.proj_file) {
-          addMessage(`Projection file: ${data.proj_file}`, 'info');
-        }
+
       },
       (errorMsg: string) => {
         addMessage(errorMsg, 'error');

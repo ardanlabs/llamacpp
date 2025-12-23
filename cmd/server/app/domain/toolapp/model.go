@@ -259,6 +259,7 @@ type CatalogModelResponse struct {
 	OwnedBy      string              `json:"owned_by"`
 	ModelFamily  string              `json:"model_family"`
 	WebPage      string              `json:"web_page"`
+	Template     string              `json:"template"`
 	Files        CatalogFiles        `json:"files"`
 	Capabilities CatalogCapabilities `json:"capabilities"`
 	Metadata     CatalogMetadata     `json:"metadata"`
@@ -287,6 +288,7 @@ func toCatalogModelResponse(model catalog.Model) CatalogModelResponse {
 		OwnedBy:     model.OwnedBy,
 		ModelFamily: model.ModelFamily,
 		WebPage:     model.WebPage,
+		Template:    model.Template,
 		Files: CatalogFiles{
 			Model: CatalogFile{
 				URL:  model.Files.Model.URL,

@@ -6,7 +6,6 @@
 
 - Tool does the conversion - admin tooling
 - Convert Jinja templates to Go templates
-- Template management
 
 ### Telemetry
 

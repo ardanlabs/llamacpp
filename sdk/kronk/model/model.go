@@ -3,7 +3,6 @@ package model
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"io"
@@ -14,8 +13,10 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-//go:embed jinja/*
-var jinjaFS embed.FS
+// Templater returns a configured template for a model.
+type Templater interface {
+	Retrieve(modelID string) (Template, error)
+}
 
 // Model represents a model and provides a low-level API for working with it.
 type Model struct {
@@ -24,10 +25,11 @@ type Model struct {
 	model         llama.Model
 	vocab         llama.Vocab
 	ctxParams     llama.ContextParams
-	template      string
+	template      Template
 	projFile      string
 	modelInfo     ModelInfo
 	activeStreams atomic.Int32
+	templater     Templater
 }
 
 func NewModel(cfg Config) (*Model, error) {
@@ -65,6 +67,8 @@ func NewModel(cfg Config) (*Model, error) {
 		return nil, fmt.Errorf("new-model: failed to retrieve model template: %w", err)
 	}
 
+	modelInfo.Template = template
+
 	// -------------------------------------------------------------------------
 
 	l := cfg.Log
@@ -81,46 +85,46 @@ func NewModel(cfg Config) (*Model, error) {
 		vocab:     vocab,
 		ctxParams: modelCtxParams(cfg, modelInfo),
 		template:  template,
-		projFile:  cfg.ProjectionFile,
+		projFile:  cfg.ProjFile,
 		modelInfo: modelInfo,
 	}
 
 	return &m, nil
 }
 
-func retrieveTemplate(cfg Config, mdl llama.Model, modelInfo ModelInfo) (string, error) {
-	var template string
-
+func retrieveTemplate(cfg Config, mdl llama.Model, modelInfo ModelInfo) (Template, error) {
 	if cfg.JinjaFile != "" {
 		data, err := readJinjaTemplate(cfg.JinjaFile)
 		if err != nil {
-			return "", fmt.Errorf("retrieve-template: failed to read jinja template: %w", err)
+			return Template{}, fmt.Errorf("retrieve-template: failed to read jinja template: %w", err)
 		}
 
 		if data == "" {
-			return "", fmt.Errorf("retrieve-template: jinja template is empty")
+			return Template{}, fmt.Errorf("retrieve-template: jinja template is empty")
 		}
 
-		template = data
+		return Template{
+			FileName: cfg.JinjaFile,
+			Script:   data,
+		}, nil
 	}
 
-	if template == "" {
-		if modelInfo.IsGPTModel {
-			data, err := jinjaFS.ReadFile("jinja/gpt-oss.jinja")
-			if err != nil {
-				return "", fmt.Errorf("retrieve-template: failed to read gpt-oss.jinja template: %w", err)
-			}
-
-			return string(data), nil
-		}
-
-		template = llama.ModelChatTemplate(mdl, "")
-		if template == "" {
-			template, _ = llama.ModelMetaValStr(mdl, "tokenizer.chat_template")
+	if cfg.Templater != nil {
+		template, err := cfg.Templater.Retrieve(modelInfo.ID)
+		if err == nil {
+			return template, nil
 		}
 	}
 
-	return template, nil
+	data := llama.ModelChatTemplate(mdl, "")
+	if data == "" {
+		data, _ = llama.ModelMetaValStr(mdl, "tokenizer.chat_template")
+	}
+
+	return Template{
+		FileName: "tokenizer.chat_template",
+		Script:   data,
+	}, nil
 }
 
 func (m *Model) Unload(ctx context.Context) error {

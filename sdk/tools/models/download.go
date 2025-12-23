@@ -13,7 +13,7 @@ import (
 	"github.com/ardanlabs/kronk/sdk/tools/downloader"
 )
 
-var indexFile = "index.yaml"
+var indexFile = ".index.yaml"
 
 // Download performs a complete workflow for downloading and installing
 // the specified model.

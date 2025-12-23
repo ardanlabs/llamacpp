@@ -3,8 +3,10 @@ package downloader
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"time"
 
 	"github.com/hashicorp/go-getter"
@@ -22,6 +24,10 @@ type ProgressFunc func(src string, currentSize int64, totalSize int64, mibPerSec
 
 // Download pulls down a single file from a url to a specified destination.
 func Download(ctx context.Context, src string, dest string, progress ProgressFunc, sizeInterval int64) (bool, error) {
+	if !hasNetwork() {
+		return false, errors.New("no network available")
+	}
+
 	var pr ProgressReader
 
 	if progress != nil {
@@ -115,4 +121,17 @@ func (pr *ProgressReader) mibPerSec() float64 {
 	}
 
 	return float64(pr.currentSize) / SizeIntervalMIB / elapsed
+}
+
+// =============================================================================
+
+func hasNetwork() bool {
+	conn, err := net.DialTimeout("tcp", "8.8.8.8:53", 3*time.Second)
+	if err != nil {
+		return false
+	}
+
+	conn.Close()
+
+	return true
 }

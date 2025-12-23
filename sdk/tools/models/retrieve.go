@@ -117,8 +117,9 @@ func RetrieveInfo(libPath string, modelBasePath string, modelID string) (Info, e
 
 	const modelInstances = 1
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:      mp.ModelFile,
-		ProjectionFile: mp.ProjFile,
+		ModelFile: mp.ModelFile,
+		ProjFile:  mp.ProjFile,
+		Templater: &templater{},
 	})
 
 	if err != nil {
@@ -196,6 +197,7 @@ func loadIndex(modelBasePath string) (map[string]Path, error) {
 		if err := BuildIndex(modelBasePath); err != nil {
 			return nil, fmt.Errorf("build-index: %w", err)
 		}
+
 		data, err = os.ReadFile(indexPath)
 		if err != nil {
 			return nil, fmt.Errorf("read-index: %w", err)
@@ -208,4 +210,14 @@ func loadIndex(modelBasePath string) (map[string]Path, error) {
 	}
 
 	return index, nil
+}
+
+// =============================================================================
+
+type templater struct{}
+
+// Retrieve implement the templater interface for the construction of
+// Kronk which is used to get model details.
+func (t *templater) Retrieve(modelID string) (model.Template, error) {
+	return model.Template{}, nil
 }

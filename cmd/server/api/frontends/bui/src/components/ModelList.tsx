@@ -281,13 +281,15 @@ export default function ModelList() {
             </div>
           )}
 
-          {modelInfo.metadata && Object.keys(modelInfo.metadata).length > 0 && (
+          {modelInfo.metadata && Object.keys(modelInfo.metadata).filter(k => k !== 'tokenizer.chat_template').length > 0 && (
             <div style={{ marginTop: '16px' }}>
               <label style={{ fontWeight: 500, display: 'block', marginBottom: '8px' }}>
                 Metadata
               </label>
               <div className="model-meta">
-                {Object.entries(modelInfo.metadata).map(([key, value]) => (
+                {Object.entries(modelInfo.metadata)
+                  .filter(([key]) => key !== 'tokenizer.chat_template')
+                  .map(([key, value]) => (
                   <div key={key} className="model-meta-item">
                     <label>{key}</label>
                     <span>{value}</span>

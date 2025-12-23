@@ -50,13 +50,13 @@ func (m *Model) applyRequestJinjaTemplate(d D) (string, [][]byte, error) {
 }
 
 func (m *Model) applyJinjaTemplate(d D) (string, error) {
-	if m.template == "" {
+	if m.template.Script == "" {
 		return "", errors.New("apply-jinja-template: no template found")
 	}
 
 	gonja.DefaultLoader = &noFSLoader{}
 
-	t, err := newTemplateWithFixedItems(m.template)
+	t, err := newTemplateWithFixedItems(m.template.Script)
 	if err != nil {
 		return "", fmt.Errorf("apply-jinja-template: failed to parse template: %w", err)
 	}

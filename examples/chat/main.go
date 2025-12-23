@@ -23,8 +23,11 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/templater"
+	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
+	"github.com/ardanlabs/kronk/sdk/tools/templates"
 	"github.com/hybridgroup/yzma/pkg/download"
 )
 
@@ -50,7 +53,7 @@ func main() {
 func run() error {
 	info, err := installSystem()
 	if err != nil {
-		return fmt.Errorf("run:unable to installation system: %w", err)
+		return fmt.Errorf("run: unable to installation system: %w", err)
 	}
 
 	krn, err := newKronk(libPath, info)
@@ -60,7 +63,7 @@ func run() error {
 	defer func() {
 		fmt.Println("\nUnloading Kronk")
 		if err := krn.Unload(context.Background()); err != nil {
-			fmt.Printf("run:failed to unload model: %v", err)
+			fmt.Printf("run: failed to unload model: %v", err)
 		}
 	}()
 
@@ -92,19 +95,19 @@ func run() error {
 
 			ch, err := performChat(ctx, krn, d)
 			if err != nil {
-				return nil, fmt.Errorf("run:unable to perform chat: %w", err)
+				return nil, fmt.Errorf("run: unable to perform chat: %w", err)
 			}
 
 			messages, err = modelResponse(krn, messages, ch)
 			if err != nil {
-				return nil, fmt.Errorf("run:model response: %w", err)
+				return nil, fmt.Errorf("run: model response: %w", err)
 			}
 
 			return messages, nil
 		}()
 
 		if err != nil {
-			return fmt.Errorf("run:unable to perform chat: %w", err)
+			return fmt.Errorf("run: unable to perform chat: %w", err)
 		}
 	}
 }
@@ -126,12 +129,20 @@ func installSystem() (models.Path, error) {
 
 	_, err = libs.Download(ctx, kronk.FmtLogger, libCfg)
 	if err != nil {
-		return models.Path{}, fmt.Errorf("install-system:unable to install llama.cpp: %w", err)
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
 	info, err := models.Download(ctx, kronk.FmtLogger, modelURL, "", modelPath)
 	if err != nil {
-		return models.Path{}, fmt.Errorf("install-system:unable to install model: %w", err)
+		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
+	}
+
+	if err := catalog.Download(ctx, defaults.BaseDir("")); err != nil {
+		return models.Path{}, fmt.Errorf("unable to download catalog: %w", err)
+	}
+
+	if err := templates.Download(ctx, defaults.BaseDir("")); err != nil {
+		return models.Path{}, fmt.Errorf("unable to download templates: %w", err)
 	}
 
 	return info, nil
@@ -144,6 +155,7 @@ func newKronk(libPath string, mp models.Path) (*kronk.Kronk, error) {
 
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: mp.ModelFile,
+		Templater: templater.New(),
 	})
 
 	if err != nil {
@@ -159,6 +171,7 @@ func newKronk(libPath string, mp models.Path) (*kronk.Kronk, error) {
 	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
 	fmt.Println("- embeddings   :", krn.ModelInfo().IsEmbedModel)
 	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
+	fmt.Println("- template     :", krn.ModelInfo().Template.FileName)
 
 	return krn, nil
 }

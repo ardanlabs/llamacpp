@@ -117,7 +117,10 @@ func RetrieveCatalogs(basePath string) ([]Catalog, error) {
 	var catalogs []Catalog
 
 	for _, entry := range entries {
-		if entry.IsDir() || entry.Name() == indexFile {
+		if entry.IsDir() ||
+			entry.Name() == indexFile ||
+			entry.Name() == shaFile ||
+			entry.Name() == ".DS_Store" {
 			continue
 		}
 

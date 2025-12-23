@@ -21,7 +21,7 @@ import (
 )
 
 // Version contains the current version of the kronk package.
-const Version = "1.7.3"
+const Version = "1.8.0"
 
 // =============================================================================
 
@@ -66,6 +66,8 @@ func Init(libPath string, logLevel LogLevel) error {
 
 		libraryLocation = libPath
 		llama.Init()
+
+		// ---------------------------------------------------------------------
 
 		if logLevel < 1 || logLevel > 2 {
 			logLevel = LogSilent

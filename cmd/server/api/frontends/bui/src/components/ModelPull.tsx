@@ -6,7 +6,6 @@ import type { PullResponse } from '../types';
 export default function ModelPull() {
   const { invalidate } = useModelList();
   const [modelUrl, setModelUrl] = useState('');
-  const [projUrl, setProjUrl] = useState('');
   const [pulling, setPulling] = useState(false);
   const [messages, setMessages] = useState<Array<{ text: string; type: 'info' | 'error' | 'success' }>>([]);
   const closeRef = useRef<(() => void) | null>(null);
@@ -37,7 +36,6 @@ export default function ModelPull() {
 
     closeRef.current = api.pullModel(
       modelUrl.trim(),
-      projUrl.trim(),
       (data: PullResponse) => {
         if (data.status) {
           if (data.status.startsWith(ANSI_INLINE)) {
@@ -50,9 +48,7 @@ export default function ModelPull() {
         if (data.model_file) {
           addMessage(`Model file: ${data.model_file}`, 'info');
         }
-        if (data.proj_file) {
-          addMessage(`Projection file: ${data.proj_file}`, 'info');
-        }
+
       },
       (error: string) => {
         addMessage(error, 'error');
@@ -95,17 +91,7 @@ export default function ModelPull() {
               disabled={pulling}
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="projUrl">Projection URL (optional)</label>
-            <input
-              type="text"
-              id="projUrl"
-              value={projUrl}
-              onChange={(e) => setProjUrl(e.target.value)}
-              placeholder="https://huggingface.co/..."
-              disabled={pulling}
-            />
-          </div>
+
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn btn-primary" type="submit" disabled={pulling || !modelUrl.trim()}>
               {pulling ? 'Pulling...' : 'Pull Model'}

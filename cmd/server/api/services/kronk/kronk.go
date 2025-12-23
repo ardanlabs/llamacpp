@@ -25,8 +25,11 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/security"
+	"github.com/ardanlabs/kronk/sdk/tools/templates"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -234,6 +237,21 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	}
 
 	defer authClient.Close()
+
+	// ---------------------------------------------------------------------
+	// Download Catalog and Templates
+
+	log.Info(ctx, "startup", "status", "downloading catalog")
+
+	if err := catalog.Download(ctx, defaults.BaseDir("")); err != nil {
+		return fmt.Errorf("unable to download catalog: %w", err)
+	}
+
+	log.Info(ctx, "startup", "status", "downloading templates")
+
+	if err := templates.Download(ctx, defaults.BaseDir("")); err != nil {
+		return fmt.Errorf("unable to download templates: %w", err)
+	}
 
 	// -------------------------------------------------------------------------
 	// Init Kronk

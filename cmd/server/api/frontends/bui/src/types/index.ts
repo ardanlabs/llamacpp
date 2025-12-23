@@ -64,7 +64,6 @@ export interface CatalogFile {
 export interface CatalogFiles {
   model: CatalogFile;
   proj: CatalogFile;
-  jinja: CatalogFile;
 }
 
 export interface CatalogModelResponse {
@@ -73,6 +72,7 @@ export interface CatalogModelResponse {
   owned_by: string;
   model_family: string;
   web_page: string;
+  template: string;
   files: CatalogFiles;
   capabilities: CatalogCapabilities;
   metadata: CatalogMetadata;
@@ -91,7 +91,6 @@ export type KeysResponse = KeyResponse[];
 export interface PullResponse {
   status: string;
   model_file?: string;
-  proj_file?: string;
   downloaded?: boolean;
 }
 

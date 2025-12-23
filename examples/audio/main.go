@@ -109,8 +109,8 @@ func newKronk(libPath string, mp models.Path) (*kronk.Kronk, error) {
 	}
 
 	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile:      mp.ModelFile,
-		ProjectionFile: mp.ProjFile,
+		ModelFile: mp.ModelFile,
+		ProjFile:  mp.ProjFile,
 	})
 
 	if err != nil {

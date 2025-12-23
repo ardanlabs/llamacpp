@@ -5,6 +5,7 @@ models:
     owned_by: Qwen
     model_family: Qwen3-8B-GGUF
     web_page: https://huggingface.co/Qwen/Qwen3-8B-GGUF
+    template:
     files:
       model:
         url: https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf
@@ -26,7 +27,8 @@ models:
     category: Text-Generation
     owned_by: unsloth
     model_family: gpt-oss-20b-GGUF
-    hf_url: https://huggingface.co/unsloth/gpt-oss-20b-GGUF
+    web_page: https://huggingface.co/unsloth/gpt-oss-20b-GGUF
+    template: gpt-oss.jinja
     files:
       model:
         url: https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf

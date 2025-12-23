@@ -66,7 +66,6 @@ class ApiService {
 
   pullModel(
     modelUrl: string,
-    projUrl: string,
     onMessage: (data: PullResponse) => void,
     onError: (error: string) => void,
     onComplete: () => void
@@ -76,7 +75,7 @@ class ApiService {
     fetch(`${this.baseUrl}/models/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model_url: modelUrl, proj_url: projUrl }),
+      body: JSON.stringify({ model_url: modelUrl }),
       signal: controller.signal,
     })
       .then(async (response) => {

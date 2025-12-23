@@ -101,9 +101,7 @@ export default function CatalogList() {
         if (data.model_file) {
           addMessage(`Model file: ${data.model_file}`, 'info');
         }
-        if (data.proj_file) {
-          addMessage(`Projection file: ${data.proj_file}`, 'info');
-        }
+
       },
       (errorMsg: string) => {
         addMessage(errorMsg, 'error');
@@ -375,7 +373,10 @@ export default function CatalogList() {
                       {modelInfo.files.proj.url || '-'} {modelInfo.files.proj.size && `(${modelInfo.files.proj.size})`}
                     </span>
                   </div>
-
+                  <div className="model-meta-item">
+                    <label>Template</label>
+                    <span>{modelInfo.template || '-'}</span>
+                  </div>
                 </div>
               </div>
 

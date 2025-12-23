@@ -1,6 +1,7 @@
 package kronk_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,8 +13,10 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
+	"github.com/ardanlabs/kronk/sdk/tools/templates"
 )
 
 var (
@@ -35,6 +38,7 @@ func init() {
 
 var (
 	gw             = os.Getenv("GITHUB_WORKSPACE")
+	basePath       = defaults.BaseDir("")
 	libPath        = defaults.LibsDir("")
 	modelPath      = defaults.ModelsDir("")
 	imageFile      = filepath.Join(gw, "examples/samples/giraffe.jpg")
@@ -46,6 +50,18 @@ var (
 
 func TestMain(m *testing.M) {
 	printInfo()
+
+	ctx := context.Background()
+
+	if err := catalog.Download(ctx, basePath); err != nil {
+		fmt.Printf("unable to download catalog: %s", err)
+		os.Exit(1)
+	}
+
+	if err := templates.Download(ctx, basePath); err != nil {
+		fmt.Printf("unable to download templates: %s", err)
+		os.Exit(1)
+	}
 
 	err := kronk.Init(libPath, kronk.LogSilent)
 	if err != nil {

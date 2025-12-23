@@ -46,6 +46,8 @@ type ModelInfo struct {
 	IsGPTModel    bool
 	IsEmbedModel  bool
 	Metadata      map[string]string
+	TemplateFile  string
+	Template      Template
 }
 
 func toModelInfo(cfg Config, model llama.Model) ModelInfo {
@@ -95,7 +97,7 @@ func toModelInfo(cfg Config, model llama.Model) ModelInfo {
 
 	return ModelInfo{
 		ID:            modelID,
-		HasProjection: cfg.ProjectionFile != "",
+		HasProjection: cfg.ProjFile != "",
 		Desc:          desc,
 		Size:          size,
 		HasEncoder:    encoder,
@@ -436,4 +438,12 @@ func toChatMessages(d D) (chatMessages, error) {
 	}
 
 	return msgs, nil
+}
+
+// =============================================================================
+
+// Template provides the template file name.
+type Template struct {
+	FileName string
+	Script   string
 }

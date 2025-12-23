@@ -9,6 +9,7 @@ import (
 
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/kronk/templater"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
@@ -189,6 +190,7 @@ func testChatStreaming(t *testing.T, mp models.Path, tooling bool) {
 func initChatTest(t *testing.T, mp models.Path, tooling bool) (*kronk.Kronk, model.D) {
 	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: mp.ModelFile,
+		Templater: templater.New(),
 	})
 
 	if err != nil {

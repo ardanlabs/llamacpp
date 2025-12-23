@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,23 +14,37 @@ import (
 	"go.yaml.in/yaml/v2"
 )
 
-var files = []string{
-	"https://raw.githubusercontent.com/ardanlabs/kronk_catalogs/refs/heads/main/catalogs/audio_text_to_text.yaml",
-	"https://raw.githubusercontent.com/ardanlabs/kronk_catalogs/refs/heads/main/catalogs/embedding.yaml",
-	"https://raw.githubusercontent.com/ardanlabs/kronk_catalogs/refs/heads/main/catalogs/image_text_to_text.yaml",
-	"https://raw.githubusercontent.com/ardanlabs/kronk_catalogs/refs/heads/main/catalogs/text_generation.yaml",
-}
+const (
+	shaFile = ".catalog_shas.json"
+)
 
 // Download retrieves the catalog from github.com/ardanlabs/kronk_catalogs.
+// Only files modified after the last download are fetched.
 func Download(ctx context.Context, basePath string) error {
+	if !hasNetwork() {
+		return nil
+	}
+
+	catalogDir := filepath.Join(basePath, localFolder)
+	if err := os.MkdirAll(catalogDir, 0755); err != nil {
+		return fmt.Errorf("creating catalogs directory: %w", err)
+	}
+
+	files, err := listGitHubFolder(ctx, "ardanlabs", "kronk_catalogs", "catalogs", catalogDir)
+	if err != nil {
+		return fmt.Errorf("listing catalogs: %w", err)
+	}
+
 	for _, file := range files {
-		if err := downloadCatalog(ctx, basePath, file); err != nil {
+		if err := downloadCatalog(ctx, catalogDir, file); err != nil {
 			return fmt.Errorf("download-catalog: %w", err)
 		}
 	}
 
-	if err := buildIndex(basePath); err != nil {
-		return fmt.Errorf("build-index: %w", err)
+	if len(files) > 0 {
+		if err := buildIndex(basePath); err != nil {
+			return fmt.Errorf("build-index: %w", err)
+		}
 	}
 
 	return nil
@@ -37,7 +52,57 @@ func Download(ctx context.Context, basePath string) error {
 
 // =============================================================================
 
-func downloadCatalog(ctx context.Context, basePath string, url string) error {
+type gitHubFile struct {
+	Name        string `json:"name"`
+	SHA         string `json:"sha"`
+	DownloadURL string `json:"download_url"`
+	Type        string `json:"type"`
+}
+
+func listGitHubFolder(ctx context.Context, owner string, repo string, path string, catalogDir string) ([]string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s", owner, repo, path)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetching folder listing: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+
+	var items []gitHubFile
+	if err := json.NewDecoder(resp.Body).Decode(&items); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	localSHAs := readLocalSHAs(catalogDir)
+
+	var files []string
+	for _, item := range items {
+		if item.Type != "file" || item.DownloadURL == "" {
+			continue
+		}
+		if localSHAs[item.Name] != item.SHA {
+			files = append(files, item.DownloadURL)
+		}
+	}
+
+	if err := writeLocalSHAs(catalogDir, items); err != nil {
+		return nil, fmt.Errorf("writing SHA file: %w", err)
+	}
+
+	return files, nil
+}
+
+func downloadCatalog(ctx context.Context, catalogDir string, url string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
@@ -58,17 +123,42 @@ func downloadCatalog(ctx context.Context, basePath string, url string) error {
 		return fmt.Errorf("reading response: %w", err)
 	}
 
-	catalogDir := filepath.Join(basePath, localFolder)
-	if err := os.MkdirAll(catalogDir, 0755); err != nil {
-		return fmt.Errorf("creating catalogs directory: %w", err)
-	}
-
 	filePath := filepath.Join(catalogDir, filepath.Base(url))
 	if err := os.WriteFile(filePath, body, 0644); err != nil {
 		return fmt.Errorf("writing catalog file: %w", err)
 	}
 
 	return nil
+}
+
+func readLocalSHAs(dir string) map[string]string {
+	data, err := os.ReadFile(filepath.Join(dir, shaFile))
+	if err != nil {
+		return make(map[string]string)
+	}
+
+	var shas map[string]string
+	if err := json.Unmarshal(data, &shas); err != nil {
+		return make(map[string]string)
+	}
+
+	return shas
+}
+
+func writeLocalSHAs(dir string, items []gitHubFile) error {
+	shas := make(map[string]string)
+	for _, item := range items {
+		if item.Type == "file" {
+			shas[item.Name] = item.SHA
+		}
+	}
+
+	data, err := json.Marshal(shas)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath.Join(dir, shaFile), data, 0644)
 }
 
 var biMutex sync.Mutex
