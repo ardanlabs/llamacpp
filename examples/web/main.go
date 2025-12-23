@@ -69,12 +69,12 @@ func run() error {
 
 	// -------------------------------------------------------------------------
 
-	modelTool, err := models.New()
+	mdls, err := models.New()
 	if err != nil {
 		return fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := modelTool.Download(ctx, kronk.FmtLogger, modelChatURL, "")
+	mp, err := mdls.Download(ctx, kronk.FmtLogger, modelChatURL, "")
 	if err != nil {
 		return fmt.Errorf("unable to install model: %w", err)
 	}

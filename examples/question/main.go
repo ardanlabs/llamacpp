@@ -132,12 +132,12 @@ func installSystem() (models.Path, error) {
 
 	// -------------------------------------------------------------------------
 
-	modelTool, err := models.New()
+	mdls, err := models.New()
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
 	}
 
-	mp, err := modelTool.Download(ctx, kronk.FmtLogger, modelURL, "")
+	mp, err := mdls.Download(ctx, kronk.FmtLogger, modelURL, "")
 	if err != nil {
 		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
 	}
