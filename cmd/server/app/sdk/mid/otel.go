@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
+	"github.com/ardanlabs/kronk/sdk/kronk/otel"
 	"go.opentelemetry.io/otel/trace"
 )
 

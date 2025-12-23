@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
-	"github.com/ardanlabs/kronk/sdk/client"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 )
 

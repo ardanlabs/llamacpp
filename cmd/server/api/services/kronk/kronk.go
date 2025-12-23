@@ -22,9 +22,9 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/debug"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/mux"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
-	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/otel"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
@@ -307,7 +307,7 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 	}
 
 	cache, err := cache.NewCache(cache.Config{
-		Log:            log,
+		Log:            log.Info,
 		Templates:      templates,
 		Arch:           libs.Arch(),
 		OS:             libs.OS(),

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
-	"github.com/ardanlabs/kronk/cmd/server/foundation/otel"
+	"github.com/ardanlabs/kronk/sdk/kronk/otel"
 	"github.com/ardanlabs/kronk/sdk/security/auth"
 	"github.com/ardanlabs/kronk/sdk/tools/security"
 	"github.com/google/uuid"

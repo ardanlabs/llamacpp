@@ -12,6 +12,7 @@ import (
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
@@ -54,7 +55,7 @@ func Test_AcquireModel(t *testing.T) {
 	modelID := findAvailableModel(t, "")
 
 	cfg := cache.Config{
-		Log:            log,
+		Log:            log.Info,
 		MaxInCache:     3,
 		ModelInstances: 1,
 		CacheTTL:       5 * time.Minute,
@@ -334,7 +335,7 @@ func Test_Eviction(t *testing.T) {
 
 // =============================================================================
 
-func initKronk(t *testing.T) *logger.Logger {
+func initKronk(t *testing.T) model.Logger {
 	libs, err := libs.New()
 	if err != nil {
 		t.Fatalf("unable to create libs api: %s", err)
@@ -365,7 +366,7 @@ func initKronk(t *testing.T) *logger.Logger {
 		t.Log("=====================")
 	})
 
-	return log
+	return log.Info
 }
 
 func findAvailableModel(t *testing.T, notModelID string) string {

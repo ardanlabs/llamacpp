@@ -10,7 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
@@ -44,7 +43,7 @@ import (
 // CacheTTL: Defines the time an existing model can live in the cache without
 // being used.
 type Config struct {
-	Log            *logger.Logger
+	Log            model.Logger
 	Templates      *templates.Templates
 	Arch           download.Arch
 	OS             download.OS
@@ -84,7 +83,7 @@ func validateConfig(cfg Config) (Config, error) {
 // Cache manages a set of Kronk APIs for use. It maintains a cache of these
 // APIs and will unload over time if not in use.
 type Cache struct {
-	log           *logger.Logger
+	log           model.Logger
 	templates     *templates.Templates
 	arch          download.Arch
 	os            download.OS
@@ -230,7 +229,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 	}
 
 	cfg := model.Config{
-		Log:           c.log.Info,
+		Log:           c.log,
 		ModelFile:     fi.ModelFile,
 		ProjFile:      fi.ProjFile,
 		Device:        c.device,
@@ -266,7 +265,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 	info = append(info, "isEmbedModel")
 	info = append(info, krn.ModelInfo().IsEmbedModel)
 
-	c.log.Info(ctx, "acquire-model", info...)
+	c.log(ctx, "acquire-model", info...)
 
 	return krn, nil
 }
@@ -276,9 +275,9 @@ func (c *Cache) eviction(event otter.DeletionEvent[string, *kronk.Kronk]) {
 	ctx, cancel := context.WithTimeout(context.Background(), unloadTimeout)
 	defer cancel()
 
-	c.log.Info(ctx, "kronk cache eviction", "key", event.Key, "cause", event.Cause, "was-evicted", event.WasEvicted())
+	c.log(ctx, "kronk cache eviction", "key", event.Key, "cause", event.Cause, "was-evicted", event.WasEvicted())
 	if err := event.Value.Unload(ctx); err != nil {
-		c.log.Info(ctx, "kronk cache eviction", "key", event.Key, "ERROR", err)
+		c.log(ctx, "kronk cache eviction", "key", event.Key, "ERROR", err)
 	}
 
 	c.itemsInCache.Add(-1)

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ardanlabs/kronk/cmd/kronk/client"
 	"github.com/ardanlabs/kronk/cmd/kronk/security/sec"
-	"github.com/ardanlabs/kronk/sdk/client"
 	"github.com/ardanlabs/kronk/sdk/security/auth"
 )
 
