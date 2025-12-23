@@ -13,8 +13,8 @@ import (
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
-// Templater returns a configured template for a model.
-type Templater interface {
+// TemplateRetriever returns a configured template for a model.
+type TemplateRetriever interface {
 	Retrieve(modelID string) (Template, error)
 }
 
@@ -31,8 +31,8 @@ type Model struct {
 	activeStreams atomic.Int32
 }
 
-func NewModel(templater Templater, cfg Config) (*Model, error) {
-	if templater == nil {
+func NewModel(tmlpRetriever TemplateRetriever, cfg Config) (*Model, error) {
+	if tmlpRetriever == nil {
 		return nil, fmt.Errorf("templater required, use templater.New()")
 	}
 
@@ -65,7 +65,7 @@ func NewModel(templater Templater, cfg Config) (*Model, error) {
 
 	modelInfo := toModelInfo(cfg, mdl)
 
-	template, err := retrieveTemplate(templater, cfg, mdl, modelInfo)
+	template, err := retrieveTemplate(tmlpRetriever, cfg, mdl, modelInfo)
 	if err != nil {
 		return nil, fmt.Errorf("new-model: failed to retrieve model template: %w", err)
 	}
@@ -95,7 +95,7 @@ func NewModel(templater Templater, cfg Config) (*Model, error) {
 	return &m, nil
 }
 
-func retrieveTemplate(templater Templater, cfg Config, mdl llama.Model, modelInfo ModelInfo) (Template, error) {
+func retrieveTemplate(tmlpRetriever TemplateRetriever, cfg Config, mdl llama.Model, modelInfo ModelInfo) (Template, error) {
 	if cfg.JinjaFile != "" {
 		data, err := readJinjaTemplate(cfg.JinjaFile)
 		if err != nil {
@@ -112,8 +112,8 @@ func retrieveTemplate(templater Templater, cfg Config, mdl llama.Model, modelInf
 		}, nil
 	}
 
-	if templater != nil {
-		template, err := templater.Retrieve(modelInfo.ID)
+	if tmlpRetriever != nil {
+		template, err := tmlpRetriever.Retrieve(modelInfo.ID)
 		if err == nil {
 			return template, nil
 		}

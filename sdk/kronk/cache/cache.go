@@ -14,7 +14,6 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
-	"github.com/ardanlabs/kronk/sdk/kronk/template"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/maypok86/otter/v2"
@@ -223,7 +222,7 @@ func (c *Cache) AquireModel(ctx context.Context, modelID string) (*kronk.Kronk, 
 		return nil, fmt.Errorf("aquire-model: %w", err)
 	}
 
-	krn, err = kronk.New(c.instances, template.New(), model.Config{
+	krn, err = kronk.New(c.instances, model.Config{
 		Log:           c.log.Info,
 		ModelFile:     fi.ModelFile,
 		ProjFile:      fi.ProjFile,

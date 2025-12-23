@@ -9,7 +9,9 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/toolapp"
 	"github.com/ardanlabs/kronk/sdk/client"
+	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
 )
 
@@ -45,10 +47,27 @@ func runLocal(args []string) error {
 
 	mi, err := models.RetrieveInfo(libPath, modelBasePath, modelID)
 	if err != nil {
+		return fmt.Errorf("unable to retrieve model info: %w", err)
+	}
+
+	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
+		return fmt.Errorf("unable to init kronk: %w", err)
+	}
+
+	mp, err := models.RetrievePath(modelBasePath, modelID)
+	if err != nil {
+		return fmt.Errorf("unable to retrieve model path: %w", err)
+	}
+
+	krn, err := kronk.New(1, model.Config{
+		ModelFile: mp.ModelFile,
+	})
+
+	if err != nil {
 		return err
 	}
 
-	printLocal(mi)
+	printLocal(mi, krn.ModelInfo())
 
 	return nil
 }
@@ -74,21 +93,21 @@ func printWeb(mi toolapp.ModelInfoResponse) {
 	}
 }
 
-func printLocal(mi models.Info) {
+func printLocal(mi models.Info, details model.ModelInfo) {
 	fmt.Printf("ID:          %s\n", mi.ID)
 	fmt.Printf("Object:      %s\n", mi.Object)
 	fmt.Printf("Created:     %v\n", time.UnixMilli(mi.Created))
 	fmt.Printf("OwnedBy:     %s\n", mi.OwnedBy)
-	fmt.Printf("Desc:        %s\n", mi.Details.Desc)
-	fmt.Printf("Size:        %.2f MiB\n", float64(mi.Details.Size)/(1024*1024))
-	fmt.Printf("HasProj:     %t\n", mi.Details.HasProjection)
-	fmt.Printf("HasEncoder:  %t\n", mi.Details.HasEncoder)
-	fmt.Printf("HasDecoder:  %t\n", mi.Details.HasDecoder)
-	fmt.Printf("IsRecurrent: %t\n", mi.Details.IsRecurrent)
-	fmt.Printf("IsHybrid:    %t\n", mi.Details.IsHybrid)
-	fmt.Printf("IsGPT:       %t\n", mi.Details.IsGPTModel)
+	fmt.Printf("Desc:        %s\n", details.Desc)
+	fmt.Printf("Size:        %.2f MiB\n", float64(details.Size)/(1024*1024))
+	fmt.Printf("HasProj:     %t\n", details.HasProjection)
+	fmt.Printf("HasEncoder:  %t\n", details.HasEncoder)
+	fmt.Printf("HasDecoder:  %t\n", details.HasDecoder)
+	fmt.Printf("IsRecurrent: %t\n", details.IsRecurrent)
+	fmt.Printf("IsHybrid:    %t\n", details.IsHybrid)
+	fmt.Printf("IsGPT:       %t\n", details.IsGPTModel)
 	fmt.Println("Metadata:")
-	for k, v := range mi.Details.Metadata {
+	for k, v := range details.Metadata {
 		fmt.Printf("  %s: %s\n", k, v)
 	}
 }

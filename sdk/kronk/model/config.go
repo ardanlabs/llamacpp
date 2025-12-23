@@ -29,8 +29,8 @@ type Logger func(ctx context.Context, msg string, args ...any)
 //
 // ModelFile is the path to the model file. This is mandatory to provide.
 //
-// ProjFile is the path to the projection file. This is mandatory for vision
-// models.
+// ProjFile is the path to the projection file. This is mandatory for media
+// based models like vision and audio.
 //
 // JinjaFile is the path to the jinja file. This is not required and can be
 // used if you want to override the templated provided by the model metadata.

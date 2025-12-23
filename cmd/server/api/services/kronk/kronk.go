@@ -249,7 +249,12 @@ func run(ctx context.Context, log *logger.Logger, showHelp bool) error {
 
 	log.Info(ctx, "startup", "status", "downloading templates")
 
-	if err := templates.Download(ctx, defaults.BaseDir("")); err != nil {
+	templates, err := templates.New(defaults.BaseDir(""), "")
+	if err != nil {
+		return fmt.Errorf("unable to create template system: %w", err)
+	}
+
+	if err := templates.Download(ctx); err != nil {
 		return fmt.Errorf("unable to download templates: %w", err)
 	}
 

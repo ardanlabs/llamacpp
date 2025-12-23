@@ -58,13 +58,18 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := templates.Download(ctx, basePath); err != nil {
+	templates, err := templates.New(basePath, "")
+	if err != nil {
+		fmt.Printf("unable to create template system: %s", err)
+		os.Exit(1)
+	}
+
+	if err := templates.Download(ctx); err != nil {
 		fmt.Printf("unable to download templates: %s", err)
 		os.Exit(1)
 	}
 
-	err := kronk.Init(libPath, kronk.LogSilent)
-	if err != nil {
+	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
 		fmt.Printf("Failed to init the llama.cpp library: %s: error: %s\n", libPath, err)
 		os.Exit(1)
 	}

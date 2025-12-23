@@ -9,15 +9,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/tools/downloader"
 )
 
 var indexFile = ".index.yaml"
 
+// Logger represents a logger for capturing events.
+type Logger func(ctx context.Context, msg string, args ...any)
+
 // Download performs a complete workflow for downloading and installing
 // the specified model.
-func Download(ctx context.Context, log kronk.Logger, modelFileURL string, projURL string, modelBasePath string) (Path, error) {
+func Download(ctx context.Context, log Logger, modelFileURL string, projURL string, modelBasePath string) (Path, error) {
 	defer func() {
 		if err := BuildIndex(modelBasePath); err != nil {
 			log(ctx, "download-model: unable to create index", "ERROR", err)

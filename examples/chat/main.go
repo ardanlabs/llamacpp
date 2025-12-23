@@ -23,7 +23,6 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk"
 	"github.com/ardanlabs/kronk/sdk/kronk/defaults"
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
-	"github.com/ardanlabs/kronk/sdk/kronk/template"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
@@ -141,7 +140,12 @@ func installSystem() (models.Path, error) {
 		return models.Path{}, fmt.Errorf("unable to download catalog: %w", err)
 	}
 
-	if err := templates.Download(ctx, defaults.BaseDir("")); err != nil {
+	templates, err := templates.New(defaults.BaseDir(""), "")
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to create template system: %w", err)
+	}
+
+	if err := templates.Download(ctx); err != nil {
 		return models.Path{}, fmt.Errorf("unable to download templates: %w", err)
 	}
 
@@ -153,7 +157,7 @@ func newKronk(libPath string, mp models.Path) (*kronk.Kronk, error) {
 		return nil, fmt.Errorf("unable to init kronk: %w", err)
 	}
 
-	krn, err := kronk.New(modelInstances, template.New(), model.Config{
+	krn, err := kronk.New(modelInstances, model.Config{
 		ModelFile: mp.ModelFile,
 	})
 

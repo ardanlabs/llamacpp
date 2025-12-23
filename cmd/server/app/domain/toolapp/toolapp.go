@@ -222,7 +222,12 @@ func (a *app) showModel(ctx context.Context, r *http.Request) web.Encoder {
 		return errs.New(errs.Internal, err)
 	}
 
-	return toModelInfo(mi)
+	krn, err := a.cache.AquireModel(ctx, mi.ID)
+	if err != nil {
+		return errs.New(errs.Internal, err)
+	}
+
+	return toModelInfo(mi, krn.ModelInfo())
 }
 
 func (a *app) modelPS(ctx context.Context, r *http.Request) web.Encoder {

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"go.yaml.in/yaml/v2"
 )
 
@@ -99,38 +96,11 @@ type Info struct {
 	Object  string
 	Created int64
 	OwnedBy string
-	Details model.ModelInfo
 }
 
 // RetrieveInfo provides details for the specified model.
 func RetrieveInfo(libPath string, modelBasePath string, modelID string) (Info, error) {
 	modelID = strings.ToLower(modelID)
-
-	mp, err := RetrievePath(modelBasePath, modelID)
-	if err != nil {
-		return Info{}, err
-	}
-
-	if err := kronk.Init(libPath, kronk.LogSilent); err != nil {
-		return Info{}, fmt.Errorf("show-model: unable to init kronk: %w", err)
-	}
-
-	const modelInstances = 1
-	krn, err := kronk.New(modelInstances, &templater{}, model.Config{
-		ModelFile: mp.ModelFile,
-		ProjFile:  mp.ProjFile,
-	})
-
-	if err != nil {
-		return Info{}, fmt.Errorf("show-model: unable to load kronk: %w", err)
-	}
-
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		krn.Unload(ctx)
-	}()
 
 	mf, err := retrieveFile(modelBasePath, modelID)
 	if err != nil {
@@ -142,7 +112,6 @@ func RetrieveInfo(libPath string, modelBasePath string, modelID string) (Info, e
 		Object:  "model",
 		Created: mf.Modified.UnixMilli(),
 		OwnedBy: mf.OwnedBy,
-		Details: krn.ModelInfo(),
 	}
 
 	return mi, nil
@@ -213,10 +182,10 @@ func loadIndex(modelBasePath string) (map[string]Path, error) {
 
 // =============================================================================
 
-type templater struct{}
+// type templater struct{}
 
-// Retrieve implement the templater interface for the construction of
-// Kronk which is used to get model details.
-func (t *templater) Retrieve(modelID string) (model.Template, error) {
-	return model.Template{}, nil
-}
+// // Retrieve implement the templater interface for the construction of
+// // Kronk which is used to get model details.
+// func (t *templater) Retrieve(modelID string) (model.Template, error) {
+// 	return model.Template{}, nil
+// }

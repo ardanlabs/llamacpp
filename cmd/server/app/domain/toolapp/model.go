@@ -7,6 +7,7 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
 	"github.com/ardanlabs/kronk/sdk/kronk/cache"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/security/auth"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
@@ -164,21 +165,21 @@ func (app ModelInfoResponse) Encode() ([]byte, string, error) {
 	return data, "application/json", err
 }
 
-func toModelInfo(model models.Info) ModelInfoResponse {
+func toModelInfo(model models.Info, mi model.ModelInfo) ModelInfoResponse {
 	return ModelInfoResponse{
 		ID:            model.ID,
 		Object:        model.Object,
 		Created:       model.Created,
 		OwnedBy:       model.OwnedBy,
-		Desc:          model.Details.Desc,
-		Size:          model.Details.Size,
-		HasProjection: model.Details.HasProjection,
-		HasEncoder:    model.Details.HasEncoder,
-		HasDecoder:    model.Details.HasDecoder,
-		IsRecurrent:   model.Details.IsRecurrent,
-		IsHybrid:      model.Details.IsHybrid,
-		IsGPT:         model.Details.IsGPTModel,
-		Metadata:      model.Details.Metadata,
+		Desc:          mi.Desc,
+		Size:          mi.Size,
+		HasProjection: mi.HasProjection,
+		HasEncoder:    mi.HasEncoder,
+		HasDecoder:    mi.HasDecoder,
+		IsRecurrent:   mi.IsRecurrent,
+		IsHybrid:      mi.IsHybrid,
+		IsGPT:         mi.IsGPTModel,
+		Metadata:      mi.Metadata,
 	}
 }
 
