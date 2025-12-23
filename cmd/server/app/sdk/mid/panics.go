@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
-	"github.com/ardanlabs/kronk/cmd/server/app/sdk/metrics"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
+	"github.com/ardanlabs/kronk/sdk/kronk/metrics"
 )
 
 // Panics recovers from panics and converts the panic to an error so it is
@@ -23,7 +23,7 @@ func Panics() web.MidFunc {
 					trace := debug.Stack()
 					resp = errs.Errorf(errs.InternalOnlyLog, "PANIC [%v] TRACE[%s]", rec, string(trace))
 
-					metrics.AddPanics(ctx)
+					metrics.AddPanics()
 				}
 			}()
 

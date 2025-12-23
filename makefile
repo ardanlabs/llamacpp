@@ -43,6 +43,7 @@ install-gotooling:
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	go install github.com/divan/expvarmon@latest
 
 install-tooling:
 	brew list protobuf || brew install protobuf
@@ -296,6 +297,25 @@ test: install-libraries install-models
 	CGO_ENABLED=0 go test -v -count=1 ./sdk/kronk/cache && \
 	CGO_ENABLED=0 go test -v -count=1 ./sdk/kronk/model && \
 	CGO_ENABLED=0 go test -v -count=1 ./sdk/kronk/tests
+
+# ==============================================================================
+# Metrics and Tracing
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	OPEN_CMD := open
+else
+	OPEN_CMD := xdg-open
+endif
+
+metrics-view:
+	expvarmon -ports="localhost:8090" -vars="service_goroutines,service_requests,service_errors,service_panics,file_modelLoadTime_avg,file_projLoadTime_avg,prompt_creationTime_avg,prefill_nonMediaTime_avg,prefill_mediaTime_avg,process_ttft_avg,usage_chatCompletions_tokens_prompt_avg,usage_chatCompletions_tokens_completion_avg,usage_chatCompletions_tokens_total_avg,usage_chatCompletions_tokens_perSecond_avg"
+
+grafana:
+	$(OPEN_CMD) http://localhost:3100/
+
+statsviz:
+	$(OPEN_CMD) http://localhost:8090/debug/statsviz
 
 # ==============================================================================
 # Go Modules support

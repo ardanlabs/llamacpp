@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ardanlabs/kronk/sdk/kronk/metrics"
 	"github.com/hybridgroup/yzma/pkg/llama"
 )
 
@@ -49,14 +50,15 @@ func NewModel(tmlpRetriever TemplateRetriever, cfg Config) (*Model, error) {
 		mparams.SetDevices([]llama.GGMLBackendDevice{dev})
 	}
 
-	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-	//       ADD A SPAN HERE
-	//       METRICS
+	// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+	start := time.Now()
 
 	mdl, err := llama.ModelLoadFromFile(cfg.ModelFile, mparams)
 	if err != nil {
 		return nil, fmt.Errorf("new-model: unable to load model: %w", err)
 	}
+
+	metrics.AddModelFileLoadTime(time.Since(start))
 
 	cfg = adjustConfig(cfg, mdl)
 	vocab := llama.ModelGetVocab(mdl)
@@ -212,7 +214,7 @@ func (m *Model) processChatRequest(ctx context.Context, id string, lctx llama.Co
 	// -------------------------------------------------------------------------
 
 	// Capture the time we start processing the request for a wall clock.
-	now := time.Now()
+	start := time.Now()
 
 	// We need to know if we are processing a standard or GPT model.
 	isGTP := m.modelInfo.IsGPTModel
@@ -285,7 +287,7 @@ loop:
 		// Capture the time it took to process these tokens and calculate
 		// the tokens per second.
 
-		elapsedSeconds := time.Since(now).Seconds()
+		elapsedSeconds := time.Since(start).Seconds()
 		tokensPerSecond = float64(outputTokens) / elapsedSeconds
 
 		// ---------------------------------------------------------------------
@@ -377,9 +379,10 @@ loop:
 
 	// -------------------------------------------------------------------------
 
-	// OTEL: WANT TO KNOW HOW LONG THIS ENTIRE FUNCTION CALL TAKES
-	//       ADD A SPAN HERE
-	//       METRICS EXPORT USAGE / ADD CONTEXT WINDOW
+	// OTEL: ADD DATA TO OTEL SPAN
+
+	totalTokens := inputTokens + outputTokens
+	metrics.AddChatCompletionsUsage(inputTokens, reasonTokens, completionTokens, outputTokens, totalTokens, tokensPerSecond)
 
 	// Send the final response that contains eveything we have sent plus
 	// the final usage numbers.
@@ -389,7 +392,7 @@ loop:
 			ReasoningTokens:  reasonTokens,
 			CompletionTokens: completionTokens,
 			OutputTokens:     outputTokens,
-			TotalTokens:      inputTokens + outputTokens,
+			TotalTokens:      totalTokens,
 			TokensPerSecond:  tokensPerSecond,
 		},
 	)
@@ -403,13 +406,21 @@ func (m *Model) startProcessing(lctx llama.Context, object string, prompt string
 	// for the model response. If this is a media call, we are just doing this
 	// for the input token count and the batch will be ignored.
 
-	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-	//       ADD A SPAN HERE
-	//       METRICS PRE-FILL Non-Media
+	// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+	start := time.Now()
 
 	tokens := llama.Tokenize(m.vocab, prompt, true, true)
+
+	if object != ObjectChatMedia {
+		metrics.AddPrefillNonMediaTime(time.Since(start))
+	}
+
 	batch := llama.BatchGetOne(tokens)
 	inputTokens := int(batch.NTokens)
+
+	if object != ObjectChatMedia {
+		metrics.AddTimeToFirstToken(time.Since(start))
+	}
 
 	// If this is a chat with media, then input processing has already happened
 	// using the mtmd package. This will provide the initial batch for the
@@ -417,13 +428,15 @@ func (m *Model) startProcessing(lctx llama.Context, object string, prompt string
 
 	var outputTokens int
 	if object == ObjectChatMedia {
+
+		// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+		start := time.Now()
+
 		batch = m.nextBatch(llama.SamplerSample(sampler, lctx, -1))
 		outputTokens = int(batch.NTokens)
-	}
 
-	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-	//       ADD A SPAN HERE
-	//       METRICS TTFT for both
+		metrics.AddTimeToFirstToken(time.Since(start))
+	}
 
 	return sampler, batch, inputTokens, outputTokens
 }

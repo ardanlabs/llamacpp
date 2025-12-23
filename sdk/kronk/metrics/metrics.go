@@ -2,86 +2,108 @@
 package metrics
 
 import (
-	"context"
 	"expvar"
 	"runtime"
+	"time"
 )
 
-// This holds the single instance of the metrics value needed for
-// collecting metrics. The expvar package is already based on a singleton
-// for the different metrics that are registered with the package so there
-// isn't much choice here.
 var m metrics
 
-// metrics represents the set of metrics we gather. These fields are
-// safe to be accessed concurrently thanks to expvar. No extra abstraction is required.
 type metrics struct {
-	goroutines *expvar.Int
-	requests   *expvar.Int
-	errors     *expvar.Int
-	panics     *expvar.Int
+	goroutines          *expvar.Int
+	requests            *expvar.Int
+	errors              *expvar.Int
+	panics              *expvar.Int
+	modelFileLoadTime   *avgMetric
+	projFileLoadTime    *avgMetric
+	promptCreationTime  *avgMetric
+	prefillNonMediaTime *avgMetric
+	prefillMediaTime    *avgMetric
+	timeToFirstToken    *avgMetric
+	chatCompletions     *usage
 }
 
-// init constructs the metrics value that will be used to capture metrics.
-// The metrics value is stored in a package level variable since everything
-// inside of expvar is registered as a singleton. The use of once will make
-// sure this initialization only happens once.
 func init() {
 	m = metrics{
-		goroutines: expvar.NewInt("goroutines"),
-		requests:   expvar.NewInt("requests"),
-		errors:     expvar.NewInt("errors"),
-		panics:     expvar.NewInt("panics"),
+		goroutines:          expvar.NewInt("service_goroutines"),
+		requests:            expvar.NewInt("service_requests"),
+		errors:              expvar.NewInt("service_errors"),
+		panics:              expvar.NewInt("service_panics"),
+		modelFileLoadTime:   newAvgMetric("file_modelLoadTime"),
+		projFileLoadTime:    newAvgMetric("file_projLoadTime"),
+		promptCreationTime:  newAvgMetric("prompt_creationTime"),
+		prefillNonMediaTime: newAvgMetric("prefill_nonMediaTime"),
+		prefillMediaTime:    newAvgMetric("prefill_mediaTime"),
+		timeToFirstToken:    newAvgMetric("process_ttft"),
+		chatCompletions:     newUsage("usage_chatCompletions"),
 	}
-}
-
-type ctxKey int
-
-const key ctxKey = 1
-
-// Set sets the metrics data into the context.
-func Set(ctx context.Context) context.Context {
-	return context.WithValue(ctx, key, &m)
 }
 
 // AddGoroutines refreshes the goroutine metric.
-func AddGoroutines(ctx context.Context) int64 {
-	if v, ok := ctx.Value(key).(*metrics); ok {
-		g := int64(runtime.NumGoroutine())
-		v.goroutines.Set(g)
-		return g
-	}
-
-	return 0
+func AddGoroutines() int64 {
+	g := int64(runtime.NumGoroutine())
+	m.goroutines.Set(g)
+	return g
 }
 
 // AddRequests increments the request metric by 1.
-func AddRequests(ctx context.Context) int64 {
-	v, ok := ctx.Value(key).(*metrics)
-	if ok {
-		v.requests.Add(1)
-		return v.requests.Value()
-	}
-
-	return 0
+func AddRequests() int64 {
+	m.requests.Add(1)
+	return m.requests.Value()
 }
 
 // AddErrors increments the errors metric by 1.
-func AddErrors(ctx context.Context) int64 {
-	if v, ok := ctx.Value(key).(*metrics); ok {
-		v.errors.Add(1)
-		return v.errors.Value()
-	}
-
-	return 0
+func AddErrors() int64 {
+	m.errors.Add(1)
+	return m.errors.Value()
 }
 
 // AddPanics increments the panics metric by 1.
-func AddPanics(ctx context.Context) int64 {
-	if v, ok := ctx.Value(key).(*metrics); ok {
-		v.panics.Add(1)
-		return v.panics.Value()
+func AddPanics() int64 {
+	m.panics.Add(1)
+	return m.panics.Value()
+}
+
+// AddModelFileLoadTime captures the specified duration for loading a model file.
+func AddModelFileLoadTime(duration time.Duration) {
+	m.modelFileLoadTime.add(duration.Milliseconds())
+}
+
+// AddProjFileLoadTime captures the specified duration for loading a proj file.
+func AddProjFileLoadTime(duration time.Duration) {
+	m.projFileLoadTime.add(duration.Milliseconds())
+}
+
+// AddPromptCreationTime captures the specified duration for creating a prompt.
+func AddPromptCreationTime(duration time.Duration) {
+	m.promptCreationTime.add(duration.Milliseconds())
+}
+
+// AddPrefillNonMediaTime captures the specified duration for prefilling a non media call.
+func AddPrefillNonMediaTime(duration time.Duration) {
+	m.prefillNonMediaTime.add(duration.Milliseconds())
+}
+
+// AddPrefillMediaTime captures the specified duration for prefilling a media call.
+func AddPrefillMediaTime(duration time.Duration) {
+	m.prefillMediaTime.add(duration.Milliseconds())
+}
+
+// AddTimeToFirstToken captures the specified duration for ttft.
+func AddTimeToFirstToken(duration time.Duration) {
+	m.timeToFirstToken.add(duration.Milliseconds())
+}
+
+// AddChatCompletionsUsage captures the specified usage values for chat-completions.
+func AddChatCompletionsUsage(promptTokens, reasoningTokens, completionTokens, outputTokens, totalTokens int, tokensPerSecond float64) {
+	data := usageData{
+		PromptTokens:     promptTokens,
+		ReasoningTokens:  reasoningTokens,
+		CompletionTokens: completionTokens,
+		OutputTokens:     outputTokens,
+		TotalTokens:      totalTokens,
+		TokensPerSecond:  tokensPerSecond,
 	}
 
-	return 0
+	m.chatCompletions.add(data)
 }

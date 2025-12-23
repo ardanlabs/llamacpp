@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/ardanlabs/kronk/sdk/kronk/metrics"
 	"github.com/google/uuid"
 	"github.com/hybridgroup/yzma/pkg/llama"
 	"github.com/hybridgroup/yzma/pkg/mtmd"
@@ -61,9 +63,8 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 		if m.projFile != "" {
 			mctxParams := mtmd.ContextParamsDefault()
 
-			// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-			//       ADD A SPAN HERE
-			//       METRICS
+			// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+			start := time.Now()
 
 			mtmdCtx, err = mtmd.InitFromFile(m.projFile, m.model, mctxParams)
 			if err != nil {
@@ -71,6 +72,8 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 				return
 			}
 			defer mtmd.Free(mtmdCtx)
+
+			metrics.AddProjFileLoadTime(time.Since(start))
 		}
 
 		// ---------------------------------------------------------------------
@@ -91,15 +94,16 @@ func (m *Model) ChatStreaming(ctx context.Context, d D) <-chan ChatResponse {
 
 		// ---------------------------------------------------------------------
 
-		// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-		//       ADD A SPAN HERE
-		//       METRICS
+		// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+		start := time.Now()
 
 		prompt, media, err := m.applyRequestJinjaTemplate(ctx, d)
 		if err != nil {
 			m.sendChatError(ctx, ch, id, fmt.Errorf("apply-request-jinja-template: unable to apply jinja template: %w", err))
 			return
 		}
+
+		metrics.AddPromptCreationTime(time.Since(start))
 
 		object := ObjectChatText
 
@@ -154,12 +158,13 @@ func (m *Model) processBitmap(lctx llama.Context, mtmdCtx mtmd.Context, prompt s
 
 	mtmd.Tokenize(mtmdCtx, output, input, bitmaps)
 
-	// OTEL: WANT TO KNOW HOW LONG THIS FUNCTION CALL TAKES
-	//       ADD A SPAN HERE
-	//       METRICS PRE-FILL Media
+	// OTEL: WANT TO KNOW HOW LONG THESE FUNCTION CALLS TAKES
+	start := time.Now()
 
 	var n llama.Pos
 	mtmd.HelperEvalChunks(mtmdCtx, lctx, output, 0, 0, int32(m.ctxParams.NBatch), true, &n)
+
+	metrics.AddPrefillMediaTime(time.Since(start))
 
 	return bitmaps, nil
 }

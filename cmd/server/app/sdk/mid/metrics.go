@@ -4,26 +4,24 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ardanlabs/kronk/cmd/server/app/sdk/metrics"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
+	"github.com/ardanlabs/kronk/sdk/kronk/metrics"
 )
 
 // Metrics updates program counters.
 func Metrics() web.MidFunc {
 	m := func(next web.HandlerFunc) web.HandlerFunc {
 		h := func(ctx context.Context, r *http.Request) web.Encoder {
-			ctx = metrics.Set(ctx)
-
 			resp := next(ctx, r)
 
-			n := metrics.AddRequests(ctx)
+			n := metrics.AddRequests()
 
 			if n%1000 == 0 {
-				metrics.AddGoroutines(ctx)
+				metrics.AddGoroutines()
 			}
 
 			if checkIsError(resp) != nil {
-				metrics.AddErrors(ctx)
+				metrics.AddErrors()
 			}
 
 			return resp
