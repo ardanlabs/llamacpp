@@ -18,7 +18,6 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
-	"github.com/ardanlabs/kronk/sdk/tools/templates"
 )
 
 const (
@@ -69,76 +68,6 @@ func run() error {
 	}
 
 	return nil
-}
-
-func installSystem() (models.Path, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	defer cancel()
-
-	libs, err := libs.New()
-	if err != nil {
-		return models.Path{}, err
-	}
-
-	if _, err := libs.Download(ctx, kronk.FmtLogger); err != nil {
-		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	mdls, err := models.New()
-	if err != nil {
-		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	mp, err := mdls.Download(ctx, kronk.FmtLogger, modelURL, projURL)
-	if err != nil {
-		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	templates, err := templates.New()
-	if err != nil {
-		return models.Path{}, fmt.Errorf("unable to create template system: %w", err)
-	}
-
-	if err := templates.Download(ctx); err != nil {
-		return models.Path{}, fmt.Errorf("unable to download templates: %w", err)
-	}
-
-	if err := templates.Catalog().Download(ctx); err != nil {
-		return models.Path{}, fmt.Errorf("unable to download catalog: %w", err)
-	}
-
-	return mp, nil
-}
-
-func newKronk(mp models.Path) (*kronk.Kronk, error) {
-	if err := kronk.Init(); err != nil {
-		return nil, fmt.Errorf("unable to init kronk: %w", err)
-	}
-
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: mp.ModelFile,
-		ProjFile:  mp.ProjFile,
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create inference model: %w", err)
-	}
-
-	fmt.Print("- system info:\n\t")
-	for k, v := range krn.SystemInfo() {
-		fmt.Printf("%s:%v, ", k, v)
-	}
-	fmt.Println()
-
-	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
-	fmt.Println("- embeddings   :", krn.ModelInfo().IsEmbedModel)
-	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
-
-	return krn, nil
 }
 
 func performChat(ctx context.Context, krn *kronk.Kronk, question string, imageFile string) (<-chan model.ChatResponse, error) {
@@ -221,4 +150,59 @@ func readImage(imageFile string) ([]byte, error) {
 	}
 
 	return image, nil
+}
+
+func installSystem() (models.Path, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
+	libs, err := libs.New()
+	if err != nil {
+		return models.Path{}, err
+	}
+
+	if _, err := libs.Download(ctx, kronk.FmtLogger); err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	// -------------------------------------------------------------------------
+
+	mdls, err := models.New()
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	mp, err := mdls.Download(ctx, kronk.FmtLogger, modelURL, projURL)
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
+	}
+
+	return mp, nil
+}
+
+func newKronk(mp models.Path) (*kronk.Kronk, error) {
+	if err := kronk.Init(); err != nil {
+		return nil, fmt.Errorf("unable to init kronk: %w", err)
+	}
+
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile: mp.ModelFile,
+		ProjFile:  mp.ProjFile,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to create inference model: %w", err)
+	}
+
+	fmt.Print("- system info:\n\t")
+	for k, v := range krn.SystemInfo() {
+		fmt.Printf("%s:%v, ", k, v)
+	}
+	fmt.Println()
+
+	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
+	fmt.Println("- embeddings   :", krn.ModelInfo().IsEmbedModel)
+	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
+
+	return krn, nil
 }

@@ -31,7 +31,6 @@ import (
 	"github.com/ardanlabs/kronk/sdk/kronk/model"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
-	"github.com/ardanlabs/kronk/sdk/tools/templates"
 )
 
 const (
@@ -76,21 +75,6 @@ func run() error {
 	mp, err := mdls.Download(ctx, kronk.FmtLogger, modelChatURL, "")
 	if err != nil {
 		return fmt.Errorf("unable to install model: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	templates, err := templates.New()
-	if err != nil {
-		return fmt.Errorf("unable to create template system: %w", err)
-	}
-
-	if err := templates.Download(ctx); err != nil {
-		return fmt.Errorf("unable to download templates: %w", err)
-	}
-
-	if err := templates.Catalog().Download(ctx); err != nil {
-		return fmt.Errorf("unable to download catalog: %w", err)
 	}
 
 	// -------------------------------------------------------------------------
