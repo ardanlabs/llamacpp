@@ -334,7 +334,7 @@ statsviz:
 tidy:
 	go mod tidy
 
-deps-upgrade:
+deps-upgrade: bui-upgrade
 	go get -u -v ./...
 	go mod tidy
 
