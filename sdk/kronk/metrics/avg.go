@@ -3,18 +3,18 @@ package metrics
 import "expvar"
 
 type avgMetric struct {
-	sum   *expvar.Int
-	count *expvar.Int
-	min   *expvar.Int
-	max   *expvar.Int
+	sum   *expvar.Float
+	count *expvar.Float
+	min   *expvar.Float
+	max   *expvar.Float
 }
 
 func newAvgMetric(name string) *avgMetric {
 	a := &avgMetric{
-		sum:   expvar.NewInt(name + "_sum"),
-		count: expvar.NewInt(name + "_count"),
-		min:   expvar.NewInt(name + "_min"),
-		max:   expvar.NewInt(name + "_max"),
+		sum:   expvar.NewFloat(name + "_sum"),
+		count: expvar.NewFloat(name + "_count"),
+		min:   expvar.NewFloat(name + "_min"),
+		max:   expvar.NewFloat(name + "_max"),
 	}
 
 	expvar.Publish(name+"_avg", expvar.Func(func() any {
@@ -24,7 +24,7 @@ func newAvgMetric(name string) *avgMetric {
 	return a
 }
 
-func (a *avgMetric) add(value int64) {
+func (a *avgMetric) add(value float64) {
 	a.sum.Add(value)
 	a.count.Add(1)
 
@@ -37,7 +37,7 @@ func (a *avgMetric) add(value int64) {
 	}
 }
 
-func (a *avgMetric) average() int64 {
+func (a *avgMetric) average() float64 {
 	c := a.count.Value()
 	if c == 0 {
 		return 0

@@ -20,20 +20,20 @@ type usage struct {
 
 func newUsage(name string) *usage {
 	return &usage{
-		promptTokens:     newAvgMetric(name + "_tokens_prompt"),
-		reasoningTokens:  newAvgMetric(name + "_tokens_reasoning"),
-		completionTokens: newAvgMetric(name + "_tokens_completion"),
-		outputTokens:     newAvgMetric(name + "_tokens_output"),
-		totalTokens:      newAvgMetric(name + "_tokens_total"),
-		tokensPerSecond:  newAvgMetric(name + "_tokens_perSecond"),
+		promptTokens:     newAvgMetric(name + "_tkns_prompt"),
+		reasoningTokens:  newAvgMetric(name + "_tkns_reasoning"),
+		completionTokens: newAvgMetric(name + "_tkns_completion"),
+		outputTokens:     newAvgMetric(name + "_tkns_output"),
+		totalTokens:      newAvgMetric(name + "_tkns_total"),
+		tokensPerSecond:  newAvgMetric(name + "_tkns_persecond"),
 	}
 }
 
 func (u *usage) add(data usageData) {
-	u.promptTokens.add(int64(data.PromptTokens))
-	u.reasoningTokens.add(int64(data.ReasoningTokens))
-	u.completionTokens.add(int64(data.CompletionTokens))
-	u.outputTokens.add(int64(data.OutputTokens))
-	u.totalTokens.add(int64(data.TotalTokens))
-	u.tokensPerSecond.add(int64(data.TokensPerSecond))
+	u.promptTokens.add(float64(data.PromptTokens))
+	u.reasoningTokens.add(float64(data.ReasoningTokens))
+	u.completionTokens.add(float64(data.CompletionTokens))
+	u.outputTokens.add(float64(data.OutputTokens))
+	u.totalTokens.add(float64(data.TotalTokens))
+	u.tokensPerSecond.add(float64(data.TokensPerSecond))
 }

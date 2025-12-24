@@ -77,6 +77,7 @@ func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) h
 		cfg.Tracer,
 		mid.Otel(cfg.Tracer),
 		mid.Logger(cfg.Log),
+		mid.Metrics(),
 		mid.Errors(cfg.Log),
 		mid.Panics(),
 	)

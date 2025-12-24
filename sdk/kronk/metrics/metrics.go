@@ -29,13 +29,13 @@ func init() {
 		requests:            expvar.NewInt("service_requests"),
 		errors:              expvar.NewInt("service_errors"),
 		panics:              expvar.NewInt("service_panics"),
-		modelFileLoadTime:   newAvgMetric("file_modelLoadTime"),
-		projFileLoadTime:    newAvgMetric("file_projLoadTime"),
-		promptCreationTime:  newAvgMetric("prompt_creationTime"),
-		prefillNonMediaTime: newAvgMetric("prefill_nonMediaTime"),
-		prefillMediaTime:    newAvgMetric("prefill_mediaTime"),
-		timeToFirstToken:    newAvgMetric("process_ttft"),
-		chatCompletions:     newUsage("usage_chatCompletions"),
+		modelFileLoadTime:   newAvgMetric("model_load"),
+		projFileLoadTime:    newAvgMetric("model_load_proj"),
+		promptCreationTime:  newAvgMetric("model_prompt_creation"),
+		prefillNonMediaTime: newAvgMetric("model_prefill_nonmedia"),
+		prefillMediaTime:    newAvgMetric("model_prefill_media"),
+		timeToFirstToken:    newAvgMetric("model_ttft"),
+		chatCompletions:     newUsage("usage_chatcompletions"),
 	}
 }
 
@@ -66,32 +66,32 @@ func AddPanics() int64 {
 
 // AddModelFileLoadTime captures the specified duration for loading a model file.
 func AddModelFileLoadTime(duration time.Duration) {
-	m.modelFileLoadTime.add(duration.Milliseconds())
+	m.modelFileLoadTime.add(duration.Seconds())
 }
 
 // AddProjFileLoadTime captures the specified duration for loading a proj file.
 func AddProjFileLoadTime(duration time.Duration) {
-	m.projFileLoadTime.add(duration.Milliseconds())
+	m.projFileLoadTime.add(duration.Seconds())
 }
 
 // AddPromptCreationTime captures the specified duration for creating a prompt.
 func AddPromptCreationTime(duration time.Duration) {
-	m.promptCreationTime.add(duration.Milliseconds())
+	m.promptCreationTime.add(duration.Seconds())
 }
 
 // AddPrefillNonMediaTime captures the specified duration for prefilling a non media call.
 func AddPrefillNonMediaTime(duration time.Duration) {
-	m.prefillNonMediaTime.add(duration.Milliseconds())
+	m.prefillNonMediaTime.add(duration.Seconds())
 }
 
 // AddPrefillMediaTime captures the specified duration for prefilling a media call.
 func AddPrefillMediaTime(duration time.Duration) {
-	m.prefillMediaTime.add(duration.Milliseconds())
+	m.prefillMediaTime.add(duration.Seconds())
 }
 
 // AddTimeToFirstToken captures the specified duration for ttft.
 func AddTimeToFirstToken(duration time.Duration) {
-	m.timeToFirstToken.add(duration.Milliseconds())
+	m.timeToFirstToken.add(duration.Seconds())
 }
 
 // AddChatCompletionsUsage captures the specified usage values for chat-completions.
