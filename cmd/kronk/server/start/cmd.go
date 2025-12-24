@@ -3,7 +3,6 @@ package start
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ardanlabs/kronk/cmd/server/api/services/kronk"
 	"github.com/spf13/cobra"
@@ -18,21 +17,13 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
-	if len(os.Args) > 1 {
-		v := strings.Join(os.Args[1:], " ")
-		if v == "server start --help" || v == "help server start" {
-			err := kronk.Run(true)
-			Cmd = &cobra.Command{
-				Use:   "start",
-				Short: "Start kronk server",
-				Long:  fmt.Sprintf("Start kronk server\n\n%s", err.Error()),
-				Args:  cobra.NoArgs,
-				Run:   main,
-			}
-		}
-	}
-
 	Cmd.Flags().BoolP("detach", "d", false, "Run server in the background")
+
+	Cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		err := kronk.Run(true)
+		cmd.Long = fmt.Sprintf("Start Kronk model server\n\n%s", err.Error())
+		cmd.Parent().HelpFunc()(cmd, args)
+	})
 }
 
 func main(cmd *cobra.Command, args []string) {
