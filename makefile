@@ -81,7 +81,12 @@ bui-upgrade-latest:
 # ==============================================================================
 # Kronk CLI
 
-kronk-server: bui-build
+kronk-build: kronk-docs bui-build
+
+kronk-docs:
+	go run cmd/server/api/tooling/docs/*.go
+
+kronk-server: kronk-build
 	go run cmd/kronk/main.go server start | go run cmd/server/api/tooling/logfmt/main.go
 
 kronk-server-detach: bui-build

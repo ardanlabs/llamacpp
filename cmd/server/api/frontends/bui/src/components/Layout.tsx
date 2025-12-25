@@ -1,10 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import type { Page } from '../App';
+import { Link, useLocation } from 'react-router-dom';
+import { type Page, routeMap, pathToPage } from '../App';
 
 interface LayoutProps {
   children: ReactNode;
-  currentPage: Page;
-  onNavigate: (page: Page) => void;
 }
 
 interface MenuCategory {
@@ -15,7 +14,7 @@ interface MenuCategory {
 }
 
 interface MenuItem {
-  id: Page;
+  page: Page;
   label: string;
 }
 
@@ -24,20 +23,20 @@ const menuStructure: MenuCategory[] = [
     id: 'model',
     label: 'Models',
     items: [
-      { id: 'model-list', label: 'List' },
-      { id: 'model-ps', label: 'Running' },
-      { id: 'model-pull', label: 'Pull' },
+      { page: 'model-list', label: 'List' },
+      { page: 'model-ps', label: 'Running' },
+      { page: 'model-pull', label: 'Pull' },
     ],
   },
   {
     id: 'catalog',
     label: 'Catalog',
-    items: [{ id: 'catalog-list', label: 'List' }],
+    items: [{ page: 'catalog-list', label: 'List' }],
   },
   {
     id: 'libs',
     label: 'Libs',
-    items: [{ id: 'libs-pull', label: 'Pull' }],
+    items: [{ page: 'libs-pull', label: 'Pull' }],
   },
   {
     id: 'security',
@@ -47,15 +46,15 @@ const menuStructure: MenuCategory[] = [
         id: 'security-key',
         label: 'Key',
         items: [
-          { id: 'security-key-list', label: 'List' },
-          { id: 'security-key-create', label: 'Create' },
-          { id: 'security-key-delete', label: 'Delete' },
+          { page: 'security-key-list', label: 'List' },
+          { page: 'security-key-create', label: 'Create' },
+          { page: 'security-key-delete', label: 'Delete' },
         ],
       },
       {
         id: 'security-token',
         label: 'Token',
-        items: [{ id: 'security-token-create', label: 'Create' }],
+        items: [{ page: 'security-token-create', label: 'Create' }],
       },
     ],
   },
@@ -67,26 +66,28 @@ const menuStructure: MenuCategory[] = [
         id: 'docs-sdk',
         label: 'SDK',
         items: [
-          { id: 'docs-sdk-kronk', label: 'Kronk' },
-          { id: 'docs-sdk-model', label: 'Model' },
-          { id: 'docs-sdk-examples', label: 'Examples' },
+          { page: 'docs-sdk-kronk', label: 'Kronk' },
+          { page: 'docs-sdk-model', label: 'Model' },
+          { page: 'docs-sdk-examples', label: 'Examples' },
         ],
       },
       {
         id: 'docs-cli-sub',
         label: 'CLI',
-        items: [{ id: 'docs-cli', label: 'Overview' }],
+        items: [{ page: 'docs-cli', label: 'Overview' }],
       },
       {
         id: 'docs-webapi-sub',
         label: 'WebAPI',
-        items: [{ id: 'docs-webapi', label: 'Overview' }],
+        items: [{ page: 'docs-webapi', label: 'Overview' }],
       },
     ],
   },
 ];
 
-export default function Layout({ children, currentPage, onNavigate }: LayoutProps) {
+export default function Layout({ children }: LayoutProps) {
+  const location = useLocation();
+  const currentPage = pathToPage[location.pathname] || 'home';
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   const toggleCategory = (id: string) => {
@@ -103,7 +104,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
 
   const isCategoryActive = (category: MenuCategory): boolean => {
     if (category.items) {
-      return category.items.some((item) => item.id === currentPage);
+      return category.items.some((item) => item.page === currentPage);
     }
     if (category.subcategories) {
       return category.subcategories.some((sub) => isCategoryActive(sub));
@@ -112,13 +113,13 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
   };
 
   const renderMenuItem = (item: MenuItem) => (
-    <div
-      key={item.id}
-      className={`menu-item ${currentPage === item.id ? 'active' : ''}`}
-      onClick={() => onNavigate(item.id)}
+    <Link
+      key={item.page}
+      to={routeMap[item.page]}
+      className={`menu-item ${currentPage === item.page ? 'active' : ''}`}
     >
       {item.label}
-    </div>
+    </Link>
   );
 
   const renderCategory = (category: MenuCategory, isSubmenu = false) => {
@@ -146,7 +147,9 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1>Kronk</h1>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <h1>Kronk</h1>
+          </Link>
         </div>
         <nav>{menuStructure.map((category) => renderCategory(category))}</nav>
       </aside>

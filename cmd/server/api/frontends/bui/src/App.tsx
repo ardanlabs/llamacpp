@@ -1,14 +1,9 @@
-import { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ModelList from './components/ModelList';
 import ModelPs from './components/ModelPs';
-
-
 import ModelPull from './components/ModelPull';
-
 import CatalogList from './components/CatalogList';
-
-
 import LibsPull from './components/LibsPull';
 import SecurityKeyList from './components/SecurityKeyList';
 import SecurityKeyCreate from './components/SecurityKeyCreate';
@@ -40,62 +35,69 @@ export type Page =
   | 'docs-cli'
   | 'docs-webapi';
 
-function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('home');
+export const routeMap: Record<Page, string> = {
+  'home': '/',
+  'model-list': '/models',
+  'model-ps': '/models/running',
+  'model-pull': '/models/pull',
+  'catalog-list': '/catalog',
+  'libs-pull': '/libs/pull',
+  'security-key-list': '/security/keys',
+  'security-key-create': '/security/keys/create',
+  'security-key-delete': '/security/keys/delete',
+  'security-token-create': '/security/tokens/create',
+  'docs-sdk': '/docs/sdk',
+  'docs-sdk-kronk': '/docs/sdk/kronk',
+  'docs-sdk-model': '/docs/sdk/model',
+  'docs-sdk-examples': '/docs/sdk/examples',
+  'docs-cli': '/docs/cli',
+  'docs-webapi': '/docs/webapi',
+};
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'model-list':
-        return <ModelList />;
-      case 'model-ps':
-        return <ModelPs />;
-      case 'model-pull':
-        return <ModelPull />;
-      case 'catalog-list':
-        return <CatalogList />;
-      case 'libs-pull':
-        return <LibsPull />;
-      case 'security-key-list':
-        return <SecurityKeyList />;
-      case 'security-key-create':
-        return <SecurityKeyCreate />;
-      case 'security-key-delete':
-        return <SecurityKeyDelete />;
-      case 'security-token-create':
-        return <SecurityTokenCreate />;
-      case 'docs-sdk':
-        return <DocsSDK />;
-      case 'docs-sdk-kronk':
-        return <DocsSDKKronk />;
-      case 'docs-sdk-model':
-        return <DocsSDKModel />;
-      case 'docs-sdk-examples':
-        return <DocsSDKExamples />;
-      case 'docs-cli':
-        return <DocsCLI />;
-      case 'docs-webapi':
-        return <DocsWebAPI />;
-      default:
-        return (
-          <div className="welcome">
-            <img
-              src="https://raw.githubusercontent.com/ardanlabs/kronk/refs/heads/main/images/project/kronk_banner.jpg"
-              alt="Kronk Banner"
-              className="welcome-banner"
-            />
-            <h2>Welcome to Kronk</h2>
-            <p>Select an option from the sidebar to manage your Kronk environment.</p>
-          </div>
-        );
-    }
-  };
+export const pathToPage: Record<string, Page> = Object.fromEntries(
+  Object.entries(routeMap).map(([page, path]) => [path, page as Page])
+);
 
+function HomePage() {
   return (
-    <ModelListProvider>
-      <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-        {renderPage()}
-      </Layout>
-    </ModelListProvider>
+    <div className="welcome">
+      <img
+        src="https://raw.githubusercontent.com/ardanlabs/kronk/refs/heads/main/images/project/kronk_banner.jpg"
+        alt="Kronk Banner"
+        className="welcome-banner"
+      />
+      <h2>Welcome to Kronk</h2>
+      <p>Select an option from the sidebar to manage your Kronk environment.</p>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ModelListProvider>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/models" element={<ModelList />} />
+            <Route path="/models/running" element={<ModelPs />} />
+            <Route path="/models/pull" element={<ModelPull />} />
+            <Route path="/catalog" element={<CatalogList />} />
+            <Route path="/libs/pull" element={<LibsPull />} />
+            <Route path="/security/keys" element={<SecurityKeyList />} />
+            <Route path="/security/keys/create" element={<SecurityKeyCreate />} />
+            <Route path="/security/keys/delete" element={<SecurityKeyDelete />} />
+            <Route path="/security/tokens/create" element={<SecurityTokenCreate />} />
+            <Route path="/docs/sdk" element={<DocsSDK />} />
+            <Route path="/docs/sdk/kronk" element={<DocsSDKKronk />} />
+            <Route path="/docs/sdk/model" element={<DocsSDKModel />} />
+            <Route path="/docs/sdk/examples" element={<DocsSDKExamples />} />
+            <Route path="/docs/cli" element={<DocsCLI />} />
+            <Route path="/docs/webapi" element={<DocsWebAPI />} />
+          </Routes>
+        </Layout>
+      </ModelListProvider>
+    </BrowserRouter>
   );
 }
 

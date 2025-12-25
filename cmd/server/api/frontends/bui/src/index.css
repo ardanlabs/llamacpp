@@ -100,11 +100,13 @@ body {
 }
 
 .menu-item {
+  display: block;
   padding: 8px 20px 8px 36px;
   cursor: pointer;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
   transition: all 0.2s;
+  text-decoration: none;
 }
 
 .menu-item:hover {
@@ -497,6 +499,88 @@ tr.selected:hover td {
 }
 
 /* Documentation Styles */
+.doc-layout {
+  display: flex;
+  gap: 24px;
+}
+
+.doc-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.doc-sidebar-content {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.doc-index-section {
+  margin-bottom: 16px;
+}
+
+.doc-index-section:last-child {
+  margin-bottom: 0;
+}
+
+.doc-index-header {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-blue);
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.doc-index-header:hover {
+  text-decoration: underline;
+}
+
+.doc-index-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.doc-index-section li {
+  margin-bottom: 4px;
+}
+
+.doc-index-section li a {
+  color: var(--color-gray-600);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.doc-index-section li a:hover {
+  color: var(--color-orange);
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .doc-layout {
+    flex-direction: column;
+  }
+
+  .doc-sidebar {
+    position: static;
+    width: 100%;
+    max-height: none;
+    order: -1;
+  }
+}
+
 .doc-section {
   margin-bottom: 24px;
   padding-bottom: 16px;

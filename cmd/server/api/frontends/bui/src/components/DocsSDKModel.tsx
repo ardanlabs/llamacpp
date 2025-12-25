@@ -3,433 +3,423 @@ export default function DocsSDKModel() {
     <div>
       <div className="page-header">
         <h2>Model Package</h2>
-        <p>Low-level API for working with models</p>
+        <p>Package model provides the low-level api for working with models.</p>
       </div>
 
-      <div className="card">
-        <h3>Import</h3>
-        <pre className="code-block">
-          <code>import "github.com/ardanlabs/kronk/sdk/kronk/model"</code>
-        </pre>
-      </div>
+      <div className="doc-layout">
+        <div className="doc-content">
+          <div className="card">
+            <h3>Import</h3>
+            <pre className="code-block">
+              <code>import "github.com/ardanlabs/kronk/sdk/kronk/model"</code>
+            </pre>
+          </div>
 
-      <div className="card">
-        <h3>Constants</h3>
+          <div className="card" id="functions">
+            <h3>Functions</h3>
 
-        <div className="doc-section">
-          <h4>Object Types</h4>
-          <pre className="code-block">
-            <code>{`const (
-    ObjectChatUnknown = "chat.unknown"
-    ObjectChatText    = "chat.completion.chunk"
-    ObjectChatMedia   = "chat.media"
+            <div className="doc-section" id="func-addparams">
+              <h4>AddParams</h4>
+              <pre className="code-block">
+                <code>func AddParams(p Params, d D)</code>
+              </pre>
+              <p className="doc-description">AddParams can be used to add the configured parameters to the specified document.</p>
+            </div>
+
+            <div className="doc-section" id="func-newmodel">
+              <h4>NewModel</h4>
+              <pre className="code-block">
+                <code>func NewModel(tmlpRetriever TemplateRetriever, cfg Config) (*Model, error)</code>
+              </pre>
+            </div>
+          </div>
+
+          <div className="card" id="types">
+            <h3>Types</h3>
+
+            <div className="doc-section" id="type-chatresponse">
+              <h4>ChatResponse</h4>
+              <pre className="code-block">
+                <code>{`type ChatResponse struct {
+	ID      string   \`json:"id"\`
+	Object  string   \`json:"object"\`
+	Created int64    \`json:"created"\`
+	Model   string   \`json:"model"\`
+	Choice  []Choice \`json:"choices"\`
+	Usage   Usage    \`json:"usage"\`
+	Prompt  string   \`json:"prompt"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">ChatResponse represents output for inference models.</p>
+            </div>
+
+            <div className="doc-section" id="type-choice">
+              <h4>Choice</h4>
+              <pre className="code-block">
+                <code>{`type Choice struct {
+	Index        int             \`json:"index"\`
+	Delta        ResponseMessage \`json:"delta"\`
+	FinishReason string          \`json:"finish_reason"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">Choice represents a single choice in a response.</p>
+            </div>
+
+            <div className="doc-section" id="type-config">
+              <h4>Config</h4>
+              <pre className="code-block">
+                <code>{`type Config struct {
+	Log           Logger
+	ModelFile     string
+	ProjFile      string
+	JinjaFile     string
+	Device        string
+	ContextWindow int
+	NBatch        int
+	NUBatch       int
+	NThreads      int
+	NThreadsBatch int
+}`}</code>
+              </pre>
+              <p className="doc-description">Config represents model level configuration. These values if configured incorrectly can cause the system to panic. The defaults are used when these values are set to 0. ModelInstances is the number of instances of the model to create. Unless you have more than 1 GPU, the recommended number of instances is 1. ModelFile is the path to the model file. This is mandatory to provide. ProjFile is the path to the projection file. This is mandatory for media based models like vision and audio. JinjaFile is the path to the jinja file. This is not required and can be used if you want to override the templated provided by the model metadata. Device is the device to use for the model. If not set, the default device will be used. To see what devices are available, run the following command which will be found where you installed llama.cpp. $ llama-bench --list-devices ContextWindow (often referred to as context length) is the maximum number of tokens that a large language model can process and consider at one time when generating a response. It defines the model's effective "memory" for a single conversation or text generation task. When set to 0, the default value is 4096. NBatch is the logical batch size or the maximum number of tokens that can be in a single forward pass through the model at any given time. It defines the maximum capacity of the processing batch. If you are processing a very long prompt or multiple prompts simultaneously, the total number of tokens processed in one go will not exceed NBatch. Increasing n_batch can improve performance (throughput) if your hardware can handle it, as it better utilizes parallel computation. However, a very high n_batch can lead to out-of-memory errors on systems with limited VRAM. When set to 0, the default value is 2048. NUBatch is the physical batch size or the maximum number of tokens processed together during the initial prompt processing phase (also called "prompt ingestion") to populate the KV cache. It specifically optimizes the initial loading of prompt tokens into the KV cache. If a prompt is longer than NUBatch, it will be broken down and processed in chunks of n_ubatch tokens sequentially. This parameter is crucial for tuning performance on specific hardware (especially GPUs) because different values might yield better prompt processing times depending on the memory architecture. When set to 0, the default value is 512. NThreads is the number of threads to use for generation. When set to 0, the default llama.cpp value is used. NThreadsBatch is the number of threads to use for batch processing. When set to 0, the default llama.cpp value is used. Embeddings is a boolean that determines if the model you are using is an embedding model. This must be true when using an embedding model.</p>
+            </div>
+
+            <div className="doc-section" id="type-d">
+              <h4>D</h4>
+              <pre className="code-block">
+                <code>{`type D map[string]any`}</code>
+              </pre>
+              <p className="doc-description">D represents a generic docment of fields and values.</p>
+            </div>
+
+            <div className="doc-section" id="type-embeddata">
+              <h4>EmbedData</h4>
+              <pre className="code-block">
+                <code>{`type EmbedData struct {
+	Object    string    \`json:"object"\`
+	Index     int       \`json:"index"\`
+	Embedding []float32 \`json:"embedding"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">EmbedData represents the data associated with an embedding call.</p>
+            </div>
+
+            <div className="doc-section" id="type-embedreponse">
+              <h4>EmbedReponse</h4>
+              <pre className="code-block">
+                <code>{`type EmbedReponse struct {
+	Object  string      \`json:"object"\`
+	Created int64       \`json:"created"\`
+	Model   string      \`json:"model"\`
+	Data    []EmbedData \`json:"data"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">EmbedReponse represents the output for an embedding call.</p>
+            </div>
+
+            <div className="doc-section" id="type-logger">
+              <h4>Logger</h4>
+              <pre className="code-block">
+                <code>{`type Logger func(ctx context.Context, msg string, args ...any)`}</code>
+              </pre>
+              <p className="doc-description">Logger provides a function for logging messages from different APIs.</p>
+            </div>
+
+            <div className="doc-section" id="type-model">
+              <h4>Model</h4>
+              <pre className="code-block">
+                <code>{`type Model struct {
+	// Has unexported fields.
+}`}</code>
+              </pre>
+              <p className="doc-description">Model represents a model and provides a low-level API for working with it.</p>
+            </div>
+
+            <div className="doc-section" id="type-modelinfo">
+              <h4>ModelInfo</h4>
+              <pre className="code-block">
+                <code>{`type ModelInfo struct {
+	ID            string
+	HasProjection bool
+	Desc          string
+	Size          uint64
+	HasEncoder    bool
+	HasDecoder    bool
+	IsRecurrent   bool
+	IsHybrid      bool
+	IsGPTModel    bool
+	IsEmbedModel  bool
+	Metadata      map[string]string
+	TemplateFile  string
+	Template      Template
+}`}</code>
+              </pre>
+              <p className="doc-description">ModelInfo represents the model's card information.</p>
+            </div>
+
+            <div className="doc-section" id="type-params">
+              <h4>Params</h4>
+              <pre className="code-block">
+                <code>{`type Params struct {
+	Temperature     float32 \`json:"temperature"\`
+	TopK            int32   \`json:"top_k"\`
+	TopP            float32 \`json:"top_p"\`
+	MinP            float32 \`json:"min_p"\`
+	MaxTokens       int     \`json:"max_tokens"\`
+	Thinking        string  \`json:"enable_thinking"\`
+	ReasoningEffort string  \`json:"reasoning_effort"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">Params represents the different options when using a model. The defaults are used when these values are set to 0. Temperature controls the randomness of the output. It rescales the probability distribution of possible next tokens. When set to 0, the default value is 0.7. TopK limits the pool of possible next tokens to the K number of most probable tokens. If a model predicts 10,000 possible next tokens, setting Top-K to 50 means only the 50 tokens with the highest probabilities are considered for selection (after temperature scaling). The rest are ignored. When set to 0, the default value is 40. TopP, also known as nucleus sampling, works differently than Top-K by selecting a dynamic pool of tokens whose cumulative probability exceeds a threshold P. Instead of a fixed number of tokens (K), it selects the minimum number of most probable tokens required to reach the cumulative probability P. When set to 0, the default value is 0.9. MinP, is a dynamic sampling threshold that helps balance the coherence (quality) and diversity (creativity) of the generated text. When set to 0, the default value is 0.0. These parameters (TopK, TopP, Temperature) are typically used together. The sampling process usually applies temperature first, then filters the token list using Top-K, and finally filters it again using Top-P before selecting the next token randomly from the remaining pool based on their (now adjusted) probabilities. MaxTokens defines the maximum number of output tokens to generate for a single response. When set to 0, the default value is 512. EnableThinking determines if the model should think or not. It is used for most non-GPT models. It accepts 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False. When set to an empty string, the default value is "true". ReasoningEffort is a string that specifies the level of reasoning effort to use for GPT models.</p>
+            </div>
+
+            <div className="doc-section" id="type-responsemessage">
+              <h4>ResponseMessage</h4>
+              <pre className="code-block">
+                <code>{`type ResponseMessage struct {
+	Role      string             \`json:"role"\`
+	Content   string             \`json:"content"\`
+	Reasoning string             \`json:"reasoning"\`
+	ToolCalls []ResponseToolCall \`json:"tool_calls,omitempty"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">ResponseMessage represents a single message in a response.</p>
+            </div>
+
+            <div className="doc-section" id="type-responsetoolcall">
+              <h4>ResponseToolCall</h4>
+              <pre className="code-block">
+                <code>{`type ResponseToolCall struct {
+	ID        string         \`json:"id"\`
+	Name      string         \`json:"name"\`
+	Arguments map[string]any \`json:"arguments"\`
+	Status    int            \`json:"status"\`
+	Raw       string         \`json:"raw"\`
+	Error     string         \`json:"error"\`
+}`}</code>
+              </pre>
+            </div>
+
+            <div className="doc-section" id="type-template">
+              <h4>Template</h4>
+              <pre className="code-block">
+                <code>{`type Template struct {
+	FileName string
+	Script   string
+}`}</code>
+              </pre>
+              <p className="doc-description">Template provides the template file name.</p>
+            </div>
+
+            <div className="doc-section" id="type-templateretriever">
+              <h4>TemplateRetriever</h4>
+              <pre className="code-block">
+                <code>{`type TemplateRetriever interface {
+	Retrieve(modelID string) (Template, error)
+}`}</code>
+              </pre>
+              <p className="doc-description">TemplateRetriever returns a configured template for a model.</p>
+            </div>
+
+            <div className="doc-section" id="type-usage">
+              <h4>Usage</h4>
+              <pre className="code-block">
+                <code>{`type Usage struct {
+	PromptTokens     int     \`json:"prompt_tokens"\`
+	ReasoningTokens  int     \`json:"reasoning_tokens"\`
+	CompletionTokens int     \`json:"completion_tokens"\`
+	OutputTokens     int     \`json:"output_tokens"\`
+	TotalTokens      int     \`json:"total_tokens"\`
+	TokensPerSecond  float64 \`json:"tokens_per_second"\`
+}`}</code>
+              </pre>
+              <p className="doc-description">Usage provides details usage information for the request.</p>
+            </div>
+          </div>
+
+          <div className="card" id="methods">
+            <h3>Methods</h3>
+
+            <div className="doc-section" id="method-model-chat">
+              <h4>Model.Chat</h4>
+              <pre className="code-block">
+                <code>func (m *Model) Chat(ctx context.Context, d D) (ChatResponse, error)</code>
+              </pre>
+              <p className="doc-description">Chat performs a chat request and returns the final response.</p>
+            </div>
+
+            <div className="doc-section" id="method-model-chatstreaming">
+              <h4>Model.ChatStreaming</h4>
+              <pre className="code-block">
+                <code>func (m *Model) ChatStreaming(ctx context.Context, d D) &lt;-chan ChatResponse</code>
+              </pre>
+              <p className="doc-description">ChatStreaming performs a chat request and streams the response.</p>
+            </div>
+
+            <div className="doc-section" id="method-model-config">
+              <h4>Model.Config</h4>
+              <pre className="code-block">
+                <code>func (m *Model) Config() Config</code>
+              </pre>
+            </div>
+
+            <div className="doc-section" id="method-model-embeddings">
+              <h4>Model.Embeddings</h4>
+              <pre className="code-block">
+                <code>func (m *Model) Embeddings(ctx context.Context, input string) (EmbedReponse, error)</code>
+              </pre>
+              <p className="doc-description">Embeddings performs an embedding request and returns the final response.</p>
+            </div>
+
+            <div className="doc-section" id="method-model-modelinfo">
+              <h4>Model.ModelInfo</h4>
+              <pre className="code-block">
+                <code>func (m *Model) ModelInfo() ModelInfo</code>
+              </pre>
+            </div>
+
+            <div className="doc-section" id="method-model-unload">
+              <h4>Model.Unload</h4>
+              <pre className="code-block">
+                <code>func (m *Model) Unload(ctx context.Context) error</code>
+              </pre>
+            </div>
+          </div>
+
+          <div className="card" id="constants">
+            <h3>Constants</h3>
+
+            <div className="doc-section" id="const-objectchatunknown">
+              <h4>ObjectChatUnknown</h4>
+              <pre className="code-block">
+                <code>{`const (
+	ObjectChatUnknown = "chat.unknown"
+	ObjectChatText    = "chat.completion.chunk"
+	ObjectChatMedia   = "chat.media"
 )`}</code>
-          </pre>
-          <p className="doc-description">Objects represent the different types of data that is being processed.</p>
-        </div>
+              </pre>
+              <p className="doc-description">Objects represent the different types of data that is being processed.</p>
+            </div>
 
-        <div className="doc-section">
-          <h4>Roles</h4>
-          <pre className="code-block">
-            <code>{`const (
-    RoleAssistant = "assistant"
+            <div className="doc-section" id="const-finishreasonstop">
+              <h4>FinishReasonStop</h4>
+              <pre className="code-block">
+                <code>{`const (
+	FinishReasonStop  = "stop"
+	FinishReasonTool  = "tool_calls"
+	FinishReasonError = "error"
 )`}</code>
-          </pre>
-          <p className="doc-description">Roles represent the different roles that can be used in a chat.</p>
-        </div>
+              </pre>
+              <p className="doc-description">FinishReasons represent the different reasons a response can be finished.</p>
+            </div>
 
-        <div className="doc-section">
-          <h4>Finish Reasons</h4>
-          <pre className="code-block">
-            <code>{`const (
-    FinishReasonStop  = "stop"
-    FinishReasonTool  = "tool_calls"
-    FinishReasonError = "error"
+            <div className="doc-section" id="const-thinkingenabled">
+              <h4>ThinkingEnabled</h4>
+              <pre className="code-block">
+                <code>{`const (
+	// The model will perform thinking. This is the default setting.
+	ThinkingEnabled = "true"
+
+	// The model will not perform thinking.
+	ThinkingDisabled = "false"
 )`}</code>
-          </pre>
-          <p className="doc-description">FinishReasons represent the different reasons a response can be finished.</p>
-        </div>
+              </pre>
+            </div>
 
-        <div className="doc-section">
-          <h4>Thinking Constants</h4>
-          <pre className="code-block">
-            <code>{`const (
-    ThinkingEnabled  = "true"   // The model will perform thinking (default)
-    ThinkingDisabled = "false"  // The model will not perform thinking
+            <div className="doc-section" id="const-reasoningeffortnone">
+              <h4>ReasoningEffortNone</h4>
+              <pre className="code-block">
+                <code>{`const (
+	// The model does not perform reasoning This setting is fastest and lowest
+	// cost, ideal for latency-sensitive tasks that do not require complex logic,
+	// such as simple translation or data reformatting.
+	ReasoningEffortNone = "none"
+
+	// GPT: A very low amount of internal reasoning, optimized for throughput
+	// and speed.
+	ReasoningEffortMinimal = "minimal"
+
+	// GPT: Light reasoning that favors speed and lower token usage, suitable
+	// for triage or short answers.
+	ReasoningEffortLow = "low"
+
+	// GPT: The default setting, providing a balance between speed and reasoning
+	// accuracy. This is a good general-purpose choice for most tasks like
+	// content drafting or standard Q&A.
+	ReasoningEffortMedium = "medium"
+
+	// GPT: Extensive reasoning for complex, multi-step problems. This setting
+	// leads to the most thorough and accurate analysis but increases latency
+	// and cost due to a larger number of internal reasoning tokens used.
+	ReasoningEffortHigh = "high"
 )`}</code>
-          </pre>
-        </div>
+              </pre>
+            </div>
 
-        <div className="doc-section">
-          <h4>Reasoning Effort Constants</h4>
-          <pre className="code-block">
-            <code>{`const (
-    ReasoningEffortNone    = "none"     // No reasoning, fastest
-    ReasoningEffortMinimal = "minimal"  // Very low reasoning
-    ReasoningEffortLow     = "low"      // Light reasoning
-    ReasoningEffortMedium  = "medium"   // Default, balanced
-    ReasoningEffortHigh    = "high"     // Extensive reasoning
+            <div className="doc-section" id="const-roleassistant">
+              <h4>RoleAssistant</h4>
+              <pre className="code-block">
+                <code>{`const (
+	RoleAssistant = "assistant"
 )`}</code>
-          </pre>
-          <p className="doc-description">ReasoningEffort specifies the level of reasoning effort for GPT models.</p>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>Types</h3>
-
-        <div className="doc-section">
-          <h4>Config</h4>
-          <pre className="code-block">
-            <code>{`type Config struct {
-    Log           Logger
-    ModelFile     string
-    ProjFile      string
-    JinjaFile     string
-    Device        string
-    ContextWindow int
-    NBatch        int
-    NUBatch       int
-    NThreads      int
-    NThreadsBatch int
-}`}</code>
-          </pre>
-          <p className="doc-description">
-            Config represents model level configuration. These values if configured incorrectly can cause
-            the system to panic.
-          </p>
-          <ul className="doc-list">
-            <li>
-              <strong>ModelFile</strong> - Path to the model file (mandatory)
-            </li>
-            <li>
-              <strong>ProjFile</strong> - Path to the projection file (required for vision/audio models)
-            </li>
-            <li>
-              <strong>JinjaFile</strong> - Optional path to override the model's template
-            </li>
-            <li>
-              <strong>Device</strong> - Device to use (run llama-bench --list-devices to see available)
-            </li>
-            <li>
-              <strong>ContextWindow</strong> - Maximum tokens the model can process (default: 4096)
-            </li>
-            <li>
-              <strong>NBatch</strong> - Logical batch size for forward pass (default: 2048)
-            </li>
-            <li>
-              <strong>NUBatch</strong> - Physical batch size for prompt processing (default: 512)
-            </li>
-            <li>
-              <strong>NThreads</strong> - Number of threads for generation
-            </li>
-            <li>
-              <strong>NThreadsBatch</strong> - Number of threads for batch processing
-            </li>
-          </ul>
+              </pre>
+              <p className="doc-description">Roles represent the different roles that can be used in a chat.</p>
+            </div>
+          </div>
         </div>
 
-        <div className="doc-section">
-          <h4>Logger</h4>
-          <pre className="code-block">
-            <code>type Logger func(ctx context.Context, msg string, args ...any)</code>
-          </pre>
-          <p className="doc-description">Logger provides a function for logging messages from different APIs.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model</h4>
-          <pre className="code-block">
-            <code>{`type Model struct {
-    // contains filtered or unexported fields
-}`}</code>
-          </pre>
-          <p className="doc-description">
-            Model represents a model and provides a low-level API for working with it.
-          </p>
-        </div>
-
-        <div className="doc-section">
-          <h4>ModelInfo</h4>
-          <pre className="code-block">
-            <code>{`type ModelInfo struct {
-    ID            string
-    HasProjection bool
-    Desc          string
-    Size          uint64
-    HasEncoder    bool
-    HasDecoder    bool
-    IsRecurrent   bool
-    IsHybrid      bool
-    IsGPTModel    bool
-    IsEmbedModel  bool
-    Metadata      map[string]string
-    TemplateFile  string
-    Template      Template
-}`}</code>
-          </pre>
-          <p className="doc-description">ModelInfo represents the model's card information.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>D</h4>
-          <pre className="code-block">
-            <code>type D map[string]any</code>
-          </pre>
-          <p className="doc-description">D represents a generic document of fields and values.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Params</h4>
-          <pre className="code-block">
-            <code>{`type Params struct {
-    Temperature     float32  // Randomness of output (default: 0.8)
-    TopK            int32    // Limit to K most probable tokens (default: 40)
-    TopP            float32  // Nucleus sampling threshold (default: 0.9)
-    MinP            float32  // Dynamic sampling threshold (default: 0.0)
-    MaxTokens       int      // Maximum output tokens (default: 1024)
-    Thinking        string   // Enable thinking mode
-    ReasoningEffort string   // Reasoning level for GPT models
-}`}</code>
-          </pre>
-          <p className="doc-description">
-            Params represents the different options when using a model. Temperature is applied first, then
-            Top-K filters the token list, then Top-P filters again before selection.
-          </p>
-        </div>
-
-        <div className="doc-section">
-          <h4>ChatResponse</h4>
-          <pre className="code-block">
-            <code>{`type ChatResponse struct {
-    ID      string   \`json:"id"\`
-    Object  string   \`json:"object"\`
-    Created int64    \`json:"created"\`
-    Model   string   \`json:"model"\`
-    Choice  []Choice \`json:"choices"\`
-    Usage   Usage    \`json:"usage"\`
-    Prompt  string   \`json:"prompt"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">ChatResponse represents output for inference models.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Choice</h4>
-          <pre className="code-block">
-            <code>{`type Choice struct {
-    Index        int             \`json:"index"\`
-    Delta        ResponseMessage \`json:"delta"\`
-    FinishReason string          \`json:"finish_reason"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">Choice represents a single choice in a response.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>ResponseMessage</h4>
-          <pre className="code-block">
-            <code>{`type ResponseMessage struct {
-    Role      string             \`json:"role"\`
-    Content   string             \`json:"content"\`
-    Reasoning string             \`json:"reasoning"\`
-    ToolCalls []ResponseToolCall \`json:"tool_calls,omitempty"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">ResponseMessage represents a single message in a response.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>ResponseToolCall</h4>
-          <pre className="code-block">
-            <code>{`type ResponseToolCall struct {
-    ID        string         \`json:"id"\`
-    Name      string         \`json:"name"\`
-    Arguments map[string]any \`json:"arguments"\`
-    Status    int            \`json:"status"\`
-    Raw       string         \`json:"raw"\`
-    Error     string         \`json:"error"\`
-}`}</code>
-          </pre>
-        </div>
-
-        <div className="doc-section">
-          <h4>Usage</h4>
-          <pre className="code-block">
-            <code>{`type Usage struct {
-    PromptTokens     int     \`json:"prompt_tokens"\`
-    ReasoningTokens  int     \`json:"reasoning_tokens"\`
-    CompletionTokens int     \`json:"completion_tokens"\`
-    OutputTokens     int     \`json:"output_tokens"\`
-    TotalTokens      int     \`json:"total_tokens"\`
-    TokensPerSecond  float64 \`json:"tokens_per_second"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">Usage provides detailed usage information for the request.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>EmbedReponse</h4>
-          <pre className="code-block">
-            <code>{`type EmbedReponse struct {
-    Object  string      \`json:"object"\`
-    Created int64       \`json:"created"\`
-    Model   string      \`json:"model"\`
-    Data    []EmbedData \`json:"data"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">EmbedReponse represents the output for an embedding call.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>EmbedData</h4>
-          <pre className="code-block">
-            <code>{`type EmbedData struct {
-    Object    string    \`json:"object"\`
-    Index     int       \`json:"index"\`
-    Embedding []float32 \`json:"embedding"\`
-}`}</code>
-          </pre>
-          <p className="doc-description">EmbedData represents the data associated with an embedding call.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Template</h4>
-          <pre className="code-block">
-            <code>{`type Template struct {
-    FileName string
-    Script   string
-}`}</code>
-          </pre>
-          <p className="doc-description">Template provides the template file name and script content.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>TemplateRetriever</h4>
-          <pre className="code-block">
-            <code>{`type TemplateRetriever interface {
-    Retrieve(modelID string) (Template, error)
-}`}</code>
-          </pre>
-          <p className="doc-description">TemplateRetriever returns a configured template for a model.</p>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>Functions</h3>
-
-        <div className="doc-section">
-          <h4>NewModel</h4>
-          <pre className="code-block">
-            <code>func NewModel(tmlpRetriever TemplateRetriever, cfg Config) (*Model, error)</code>
-          </pre>
-          <p className="doc-description">
-            NewModel creates a new Model instance with the specified template retriever and configuration.
-          </p>
-        </div>
-
-        <div className="doc-section">
-          <h4>TextMessage</h4>
-          <pre className="code-block">
-            <code>func TextMessage(role string, content string) D</code>
-          </pre>
-          <p className="doc-description">TextMessage creates a new text message document.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>MediaMessage</h4>
-          <pre className="code-block">
-            <code>func MediaMessage(text string, media []byte) []D</code>
-          </pre>
-          <p className="doc-description">MediaMessage creates a new media message document.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>DocumentArray</h4>
-          <pre className="code-block">
-            <code>func DocumentArray(doc ...D) []D</code>
-          </pre>
-          <p className="doc-description">DocumentArray creates a new document array from the provided documents.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>MapToModelD</h4>
-          <pre className="code-block">
-            <code>func MapToModelD(m map[string]any) D</code>
-          </pre>
-          <p className="doc-description">MapToModelD converts a map[string]any to a D.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>AddParams</h4>
-          <pre className="code-block">
-            <code>func AddParams(p Params, d D)</code>
-          </pre>
-          <p className="doc-description">AddParams adds the configured parameters to the specified document.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>ChatResponseErr</h4>
-          <pre className="code-block">
-            <code>func ChatResponseErr(id string, object string, model string, index int, prompt string, err error, u Usage) ChatResponse</code>
-          </pre>
-          <p className="doc-description">ChatResponseErr creates a ChatResponse representing an error.</p>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3>Methods</h3>
-
-        <div className="doc-section">
-          <h4>Model.Config</h4>
-          <pre className="code-block">
-            <code>func (m *Model) Config() Config</code>
-          </pre>
-          <p className="doc-description">Config returns the model's configuration.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model.ModelInfo</h4>
-          <pre className="code-block">
-            <code>func (m *Model) ModelInfo() ModelInfo</code>
-          </pre>
-          <p className="doc-description">ModelInfo returns the model information.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model.Unload</h4>
-          <pre className="code-block">
-            <code>func (m *Model) Unload(ctx context.Context) error</code>
-          </pre>
-          <p className="doc-description">Unload closes down the model and frees resources.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model.Chat</h4>
-          <pre className="code-block">
-            <code>func (m *Model) Chat(ctx context.Context, d D) (ChatResponse, error)</code>
-          </pre>
-          <p className="doc-description">Chat performs a chat request and returns the final response.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model.ChatStreaming</h4>
-          <pre className="code-block">
-            <code>func (m *Model) ChatStreaming(ctx context.Context, d D) &lt;-chan ChatResponse</code>
-          </pre>
-          <p className="doc-description">ChatStreaming performs a chat request and streams the response.</p>
-        </div>
-
-        <div className="doc-section">
-          <h4>Model.Embeddings</h4>
-          <pre className="code-block">
-            <code>func (m *Model) Embeddings(ctx context.Context, input string) (EmbedReponse, error)</code>
-          </pre>
-          <p className="doc-description">
-            Embeddings performs an embedding request and returns the response. Returns an error if the
-            model doesn't support embedding.
-          </p>
-        </div>
+        <nav className="doc-sidebar">
+          <div className="doc-sidebar-content">
+            <div className="doc-index-section">
+              <a href="#functions" className="doc-index-header">Functions</a>
+              <ul>
+                <li><a href="#func-addparams">AddParams</a></li>
+                <li><a href="#func-newmodel">NewModel</a></li>
+              </ul>
+            </div>
+            <div className="doc-index-section">
+              <a href="#types" className="doc-index-header">Types</a>
+              <ul>
+                <li><a href="#type-chatresponse">ChatResponse</a></li>
+                <li><a href="#type-choice">Choice</a></li>
+                <li><a href="#type-config">Config</a></li>
+                <li><a href="#type-d">D</a></li>
+                <li><a href="#type-embeddata">EmbedData</a></li>
+                <li><a href="#type-embedreponse">EmbedReponse</a></li>
+                <li><a href="#type-logger">Logger</a></li>
+                <li><a href="#type-model">Model</a></li>
+                <li><a href="#type-modelinfo">ModelInfo</a></li>
+                <li><a href="#type-params">Params</a></li>
+                <li><a href="#type-responsemessage">ResponseMessage</a></li>
+                <li><a href="#type-responsetoolcall">ResponseToolCall</a></li>
+                <li><a href="#type-template">Template</a></li>
+                <li><a href="#type-templateretriever">TemplateRetriever</a></li>
+                <li><a href="#type-usage">Usage</a></li>
+              </ul>
+            </div>
+            <div className="doc-index-section">
+              <a href="#methods" className="doc-index-header">Methods</a>
+              <ul>
+                <li><a href="#method-model-chat">Model.Chat</a></li>
+                <li><a href="#method-model-chatstreaming">Model.ChatStreaming</a></li>
+                <li><a href="#method-model-config">Model.Config</a></li>
+                <li><a href="#method-model-embeddings">Model.Embeddings</a></li>
+                <li><a href="#method-model-modelinfo">Model.ModelInfo</a></li>
+                <li><a href="#method-model-unload">Model.Unload</a></li>
+              </ul>
+            </div>
+            <div className="doc-index-section">
+              <a href="#constants" className="doc-index-header">Constants</a>
+              <ul>
+                <li><a href="#const-objectchatunknown">ObjectChatUnknown</a></li>
+                <li><a href="#const-finishreasonstop">FinishReasonStop</a></li>
+                <li><a href="#const-thinkingenabled">ThinkingEnabled</a></li>
+                <li><a href="#const-reasoningeffortnone">ReasoningEffortNone</a></li>
+                <li><a href="#const-roleassistant">RoleAssistant</a></li>
+              </ul>
+            </div>
+          </div>
+        </nav>
       </div>
     </div>
   );
