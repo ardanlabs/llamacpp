@@ -69,7 +69,7 @@ Error generating stack: `+s.message+`
 `);d=S.pop()||"";for(const j of S){if(!j.trim())continue;const k=j.startsWith("data: ")?j.slice(6):j;if(k.trim())try{const N=JSON.parse(k);if(n(N),N.status==="complete"||N.downloaded){l();return}}catch{r("Failed to parse response")}}}l()}).catch(o=>{o.name!=="AbortError"&&r("Connection error")}),()=>s.abort()}pullLibs(t,n,r){const l=new AbortController;return fetch(`${this.baseUrl}/libs/pull`,{method:"POST",signal:l.signal}).then(async s=>{var d;if(!s.ok){n(`HTTP ${s.status}`);return}const o=(d=s.body)==null?void 0:d.getReader();if(!o){n("Streaming not supported");return}const a=new TextDecoder;let u="";for(;;){const{done:g,value:h}=await o.read();if(g)break;u+=a.decode(h,{stream:!0});const v=u.split(`
 `);u=v.pop()||"";for(const S of v){if(!S.trim())continue;const j=S.startsWith("data: ")?S.slice(6):S;if(j.trim())try{const k=JSON.parse(j);if(t(k),k.status==="complete"){r();return}}catch{n("Failed to parse response")}}}r()}).catch(s=>{s.name!=="AbortError"&&n("Connection error")}),()=>l.abort()}async listKeys(t){return this.request("/security/keys",{headers:{Authorization:`Bearer ${t}`}})}async createKey(t){return this.request("/security/keys/add",{method:"POST",headers:{Authorization:`Bearer ${t}`}})}async deleteKey(t,n){await this.request(`/security/keys/remove/${encodeURIComponent(n)}`,{method:"POST",headers:{Authorization:`Bearer ${t}`}})}async createToken(t,n){return this.request("/security/token/create",{method:"POST",headers:{Authorization:`Bearer ${t}`},body:JSON.stringify(n)})}}const ve=new Kp,rd=w.createContext(null);function Wp({children:e}){const[t,n]=w.useState(null),[r,l]=w.useState(!1),[s,o]=w.useState(null),[a,u]=w.useState(!1),d=w.useCallback(async()=>{if(!(a&&t)){l(!0),o(null);try{const h=await ve.listModels();n(h),u(!0)}catch(h){o(h instanceof Error?h.message:"Failed to load models")}finally{l(!1)}}},[a,t]),g=w.useCallback(()=>{u(!1),n(null)},[]);return i.jsx(rd.Provider,{value:{models:t,loading:r,error:s,loadModels:d,invalidate:g},children:e})}function so(){const e=w.useContext(rd);if(!e)throw new Error("useModelList must be used within a ModelListProvider");return e}function Ra(e){if(e===0)return"0 B";const t=1024,n=["B","KB","MB","GB","TB"],r=Math.floor(Math.log(e)/Math.log(t));return parseFloat((e/Math.pow(t,r)).toFixed(2))+" "+n[r]}function Vp(e){return new Date(e).toLocaleString()}function Hp(){const{models:e,loading:t,error:n,loadModels:r,invalidate:l}=so(),[s,o]=w.useState(null),[a,u]=w.useState(null),[d,g]=w.useState(!1),[h,v]=w.useState(null),[S,j]=w.useState(!1),[k,N]=w.useState(null),[p,c]=w.useState(!1),[f,m]=w.useState(!1),[x,y]=w.useState(!1),[C,E]=w.useState(null),[_,R]=w.useState(null),z=async()=>{j(!0),N(null),c(!1);try{await ve.rebuildModelIndex(),l(),r(),o(null),u(null),c(!0),setTimeout(()=>c(!1),3e3)}catch(M){N(M instanceof Error?M.message:"Failed to rebuild index")}finally{j(!1)}};w.useEffect(()=>{r()},[r]);const F=async M=>{if(s===M){o(null),u(null),m(!1);return}o(M),m(!1),E(null),R(null),g(!0),v(null),u(null);try{const re=await ve.showModel(M);u(re)}catch(re){v(re instanceof Error?re.message:"Failed to load model info")}finally{g(!1)}},Y=()=>{s&&m(!0)},qe=async()=>{if(s){y(!0),m(!1),E(null),R(null);try{await ve.removeModel(s),R(`Model "${s}" removed successfully`),o(null),u(null),l(),await r(),setTimeout(()=>R(null),3e3)}catch(M){E(M instanceof Error?M.message:"Failed to remove model")}finally{y(!1)}}},ee=()=>{m(!1)};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Models"}),i.jsx("p",{children:"List of all models available in the system. Click a model to view details."})]}),i.jsxs("div",{className:"card",children:[t&&i.jsx("div",{className:"loading",children:"Loading models"}),n&&i.jsx("div",{className:"alert alert-error",children:n}),C&&i.jsx("div",{className:"alert alert-error",children:C}),_&&i.jsx("div",{className:"alert alert-success",children:_}),!t&&!n&&e&&i.jsx("div",{className:"table-container",children:e.data&&e.data.length>0?i.jsxs("table",{children:[i.jsx("thead",{children:i.jsxs("tr",{children:[i.jsx("th",{children:"ID"}),i.jsx("th",{children:"Owner"}),i.jsx("th",{children:"Family"}),i.jsx("th",{children:"Size"}),i.jsx("th",{children:"Modified"})]})}),i.jsx("tbody",{children:e.data.map(M=>i.jsxs("tr",{onClick:()=>F(M.id),className:s===M.id?"selected":"",style:{cursor:"pointer"},children:[i.jsx("td",{children:M.id}),i.jsx("td",{children:M.owned_by}),i.jsx("td",{children:M.model_family}),i.jsx("td",{children:Ra(M.size)}),i.jsx("td",{children:Vp(M.modified)})]},M.id))})]}):i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"No models found"}),i.jsx("p",{children:"Pull a model to get started"})]})}),i.jsxs("div",{style:{marginTop:"16px",display:"flex",gap:"8px"},children:[i.jsx("button",{className:"btn btn-secondary",onClick:()=>{l(),r(),o(null),u(null),m(!1)},disabled:t,children:"Refresh"}),i.jsx("button",{className:"btn btn-secondary",onClick:z,disabled:S||t,children:S?"Rebuilding...":"Rebuild Index"}),s&&!f&&i.jsx("button",{className:"btn btn-danger",onClick:Y,disabled:x,children:"Remove Model"}),s&&f&&i.jsxs(i.Fragment,{children:[i.jsx("button",{className:"btn btn-danger",onClick:qe,disabled:x,children:x?"Removing...":"Yes, Remove"}),i.jsx("button",{className:"btn btn-secondary",onClick:ee,disabled:x,children:"Cancel"})]})]}),k&&i.jsx("div",{className:"alert alert-error",style:{marginTop:"8px"},children:k}),p&&i.jsx("div",{className:"alert alert-success",style:{marginTop:"8px"},children:"Index rebuilt successfully"})]}),h&&i.jsx("div",{className:"alert alert-error",children:h}),d&&i.jsx("div",{className:"card",children:i.jsx("div",{className:"loading",children:"Loading model details"})}),a&&!d&&i.jsxs("div",{className:"card",children:[i.jsx("h3",{style:{marginBottom:"16px"},children:a.id}),i.jsxs("div",{className:"model-meta",children:[i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Owner"}),i.jsx("span",{children:a.owned_by})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Size"}),i.jsx("span",{children:Ra(a.size)})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Created"}),i.jsx("span",{children:new Date(a.created).toLocaleString()})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Has Projection"}),i.jsx("span",{className:`badge ${a.has_projection?"badge-yes":"badge-no"}`,children:a.has_projection?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Has Encoder"}),i.jsx("span",{className:`badge ${a.has_encoder?"badge-yes":"badge-no"}`,children:a.has_encoder?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Has Decoder"}),i.jsx("span",{className:`badge ${a.has_decoder?"badge-yes":"badge-no"}`,children:a.has_decoder?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Is Recurrent"}),i.jsx("span",{className:`badge ${a.is_recurrent?"badge-yes":"badge-no"}`,children:a.is_recurrent?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Is Hybrid"}),i.jsx("span",{className:`badge ${a.is_hybrid?"badge-yes":"badge-no"}`,children:a.is_hybrid?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Is GPT"}),i.jsx("span",{className:`badge ${a.is_gpt?"badge-yes":"badge-no"}`,children:a.is_gpt?"Yes":"No"})]})]}),a.desc&&i.jsxs("div",{style:{marginTop:"16px"},children:[i.jsx("label",{style:{fontWeight:500,display:"block",marginBottom:"8px"},children:"Description"}),i.jsx("p",{children:a.desc})]}),a.metadata&&Object.keys(a.metadata).filter(M=>M!=="tokenizer.chat_template").length>0&&i.jsxs("div",{style:{marginTop:"16px"},children:[i.jsx("label",{style:{fontWeight:500,display:"block",marginBottom:"8px"},children:"Metadata"}),i.jsx("div",{className:"model-meta",children:Object.entries(a.metadata).filter(([M])=>M!=="tokenizer.chat_template").map(([M,re])=>i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:M}),i.jsx("span",{children:re})]},M))})]})]})]})}function Qp(e){if(e===0)return"0 B";const t=1024,n=["B","KB","MB","GB","TB"],r=Math.floor(Math.log(e)/Math.log(t));return parseFloat((e/Math.pow(t,r)).toFixed(2))+" "+n[r]}function Gp(e){return new Date(e).toLocaleString()}function Yp(){const[e,t]=w.useState(null),[n,r]=w.useState(!0),[l,s]=w.useState(null);w.useEffect(()=>{o()},[]);const o=async()=>{r(!0),s(null);try{const a=await ve.listRunningModels();t(a)}catch(a){s(a instanceof Error?a.message:"Failed to load running models")}finally{r(!1)}};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Running Models"}),i.jsx("p",{children:"Models currently loaded in cache"})]}),i.jsxs("div",{className:"card",children:[n&&i.jsx("div",{className:"loading",children:"Loading running models"}),l&&i.jsx("div",{className:"alert alert-error",children:l}),!n&&!l&&e&&i.jsx("div",{className:"table-container",children:e.length>0?i.jsxs("table",{children:[i.jsx("thead",{children:i.jsxs("tr",{children:[i.jsx("th",{children:"ID"}),i.jsx("th",{children:"Owner"}),i.jsx("th",{children:"Family"}),i.jsx("th",{children:"Size"}),i.jsx("th",{children:"Expires At"}),i.jsx("th",{children:"Active Streams"})]})}),i.jsx("tbody",{children:e.map(a=>i.jsxs("tr",{children:[i.jsx("td",{children:a.id}),i.jsx("td",{children:a.owned_by}),i.jsx("td",{children:a.model_family}),i.jsx("td",{children:Qp(a.size)}),i.jsx("td",{children:Gp(a.expires_at)}),i.jsx("td",{children:a.active_streams})]},a.id))})]}):i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"No running models"}),i.jsx("p",{children:"Models will appear here when loaded into cache"})]})}),i.jsx("div",{style:{marginTop:"16px"},children:i.jsx("button",{className:"btn btn-secondary",onClick:o,disabled:n,children:"Refresh"})})]})]})}function qp(){const{invalidate:e}=so(),[t,n]=w.useState(""),[r,l]=w.useState(!1),[s,o]=w.useState([]),a=w.useRef(null),u=g=>{if(g.preventDefault(),!t.trim())return;l(!0),o([]);const h="\x1B[1A\r\x1B[K",v=(j,k)=>{o(N=>[...N,{text:j,type:k}])},S=(j,k)=>{o(N=>{if(N.length===0)return[{text:j,type:k}];const p=[...N];return p[p.length-1]={text:j,type:k},p})};a.current=ve.pullModel(t.trim(),j=>{if(j.status)if(j.status.startsWith(h)){const k=j.status.slice(h.length);S(k,"info")}else v(j.status,"info");j.model_file&&v(`Model file: ${j.model_file}`,"info")},j=>{v(j,"error"),l(!1)},()=>{v("Pull complete!","success"),l(!1),e()})},d=()=>{a.current&&(a.current(),a.current=null),l(!1),o(g=>[...g,{text:"Cancelled",type:"error"}])};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Pull Model"}),i.jsx("p",{children:"Download a model from a URL"})]}),i.jsxs("div",{className:"card",children:[i.jsxs("form",{onSubmit:u,children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"modelUrl",children:"Model URL"}),i.jsx("input",{type:"text",id:"modelUrl",value:t,onChange:g=>n(g.target.value),placeholder:"https://huggingface.co/...",disabled:r})]}),i.jsxs("div",{style:{display:"flex",gap:"12px"},children:[i.jsx("button",{className:"btn btn-primary",type:"submit",disabled:r||!t.trim(),children:r?"Pulling...":"Pull Model"}),r&&i.jsx("button",{className:"btn btn-danger",type:"button",onClick:d,children:"Cancel"})]})]}),s.length>0&&i.jsx("div",{className:"status-box",children:s.map((g,h)=>i.jsx("div",{className:`status-line ${g.type}`,children:g.text},h))})]})]})}function Xp(){var z;const{invalidate:e}=so(),[t,n]=w.useState(null),[r,l]=w.useState(!0),[s,o]=w.useState(null),[a,u]=w.useState(null),[d,g]=w.useState(null),[h,v]=w.useState(!1),[S,j]=w.useState(null),[k,N]=w.useState("details"),[p,c]=w.useState(!1),[f,m]=w.useState([]),x=w.useRef(null);w.useEffect(()=>{y()},[]);const y=async()=>{l(!0),o(null);try{const F=await ve.listCatalog();n(F)}catch(F){o(F instanceof Error?F.message:"Failed to load catalog")}finally{l(!1)}},C=async F=>{if(a===F){u(null),g(null),N("details"),m([]);return}u(F),N("details"),m([]),v(!0),j(null),g(null);try{const Y=await ve.showCatalogModel(F);g(Y)}catch(Y){j(Y instanceof Error?Y.message:"Failed to load model info")}finally{v(!1)}},E=()=>{if(!a)return;c(!0),m([]),N("pull");const F="\x1B[1A\r\x1B[K",Y=(ee,M)=>{m(re=>[...re,{text:ee,type:M}])},qe=(ee,M)=>{m(re=>{if(re.length===0)return[{text:ee,type:M}];const T=[...re];return T[T.length-1]={text:ee,type:M},T})};x.current=ve.pullCatalogModel(a,ee=>{if(ee.status)if(ee.status.startsWith(F)){const M=ee.status.slice(F.length);qe(M,"info")}else Y(ee.status,"info");ee.model_file&&Y(`Model file: ${ee.model_file}`,"info")},ee=>{Y(ee,"error"),c(!1)},()=>{Y("Pull complete!","success"),c(!1),e(),y()})},_=()=>{x.current&&(x.current(),x.current=null),c(!1),m(F=>[...F,{text:"Cancelled",type:"error"}])},R=((z=t==null?void 0:t.find(F=>F.id===a))==null?void 0:z.downloaded)??!1;return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Catalog"}),i.jsx("p",{children:"Browse available models in the catalog. Click a model to view details."})]}),i.jsxs("div",{className:"card",children:[r&&i.jsx("div",{className:"loading",children:"Loading catalog"}),s&&i.jsx("div",{className:"alert alert-error",children:s}),!r&&!s&&t&&i.jsx("div",{className:"table-container",children:t.length>0?i.jsxs("table",{children:[i.jsx("thead",{children:i.jsxs("tr",{children:[i.jsx("th",{children:"ID"}),i.jsx("th",{children:"Category"}),i.jsx("th",{children:"Owner"}),i.jsx("th",{children:"Family"}),i.jsx("th",{children:"Downloaded"}),i.jsx("th",{children:"Capabilities"})]})}),i.jsx("tbody",{children:t.map(F=>i.jsxs("tr",{onClick:()=>C(F.id),className:a===F.id?"selected":"",style:{cursor:"pointer"},children:[i.jsx("td",{children:F.id}),i.jsx("td",{children:F.category}),i.jsx("td",{children:F.owned_by}),i.jsx("td",{children:F.model_family}),i.jsx("td",{children:i.jsx("span",{className:`badge ${F.downloaded?"badge-yes":"badge-no"}`,children:F.downloaded?"Yes":"No"})}),i.jsxs("td",{children:[F.capabilities.images&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Images"}),F.capabilities.audio&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Audio"}),F.capabilities.video&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Video"}),F.capabilities.streaming&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Streaming"}),F.capabilities.reasoning&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Reasoning"}),F.capabilities.tooling&&i.jsx("span",{className:"badge badge-yes",style:{marginRight:4},children:"Tooling"})]})]},F.id))})]}):i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"No catalog entries"}),i.jsx("p",{children:"The catalog is empty"})]})}),i.jsxs("div",{style:{marginTop:"16px",display:"flex",gap:"8px"},children:[i.jsx("button",{className:"btn btn-secondary",onClick:()=>{y(),u(null),g(null),m([]),N("details")},disabled:r,children:"Refresh"}),a&&i.jsx("button",{className:"btn btn-primary",onClick:E,disabled:p||R,children:p?"Pulling...":R?"Already Downloaded":"Pull Model"}),p&&i.jsx("button",{className:"btn btn-danger",onClick:_,children:"Cancel"})]})]}),S&&i.jsx("div",{className:"alert alert-error",children:S}),h&&i.jsx("div",{className:"card",children:i.jsx("div",{className:"loading",children:"Loading model details"})}),a&&!h&&(d||f.length>0)&&i.jsxs("div",{className:"card",children:[i.jsxs("div",{className:"tabs",children:[i.jsx("button",{className:`tab ${k==="details"?"active":""}`,onClick:()=>N("details"),children:"Details"}),i.jsx("button",{className:`tab ${k==="pull"?"active":""}`,onClick:()=>N("pull"),disabled:f.length===0&&!p,children:"Pull Output"})]}),k==="details"&&d&&i.jsxs(i.Fragment,{children:[i.jsx("h3",{style:{marginBottom:"16px"},children:d.id}),i.jsxs("div",{className:"model-meta",children:[i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Category"}),i.jsx("span",{children:d.category})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Owner"}),i.jsx("span",{children:d.owned_by})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Family"}),i.jsx("span",{children:d.model_family})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Downloaded"}),i.jsx("span",{className:`badge ${d.downloaded?"badge-yes":"badge-no"}`,children:d.downloaded?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Endpoint"}),i.jsx("span",{children:d.capabilities.endpoint})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Web Page"}),i.jsx("span",{children:d.web_page?i.jsx("a",{href:d.web_page,target:"_blank",rel:"noopener noreferrer",children:d.web_page}):"-"})]})]}),i.jsxs("div",{style:{marginTop:"24px"},children:[i.jsx("h4",{style:{marginBottom:"12px"},children:"Capabilities"}),i.jsxs("div",{className:"model-meta",children:[i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Images"}),i.jsx("span",{className:`badge ${d.capabilities.images?"badge-yes":"badge-no"}`,children:d.capabilities.images?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Audio"}),i.jsx("span",{className:`badge ${d.capabilities.audio?"badge-yes":"badge-no"}`,children:d.capabilities.audio?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Video"}),i.jsx("span",{className:`badge ${d.capabilities.video?"badge-yes":"badge-no"}`,children:d.capabilities.video?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Streaming"}),i.jsx("span",{className:`badge ${d.capabilities.streaming?"badge-yes":"badge-no"}`,children:d.capabilities.streaming?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Reasoning"}),i.jsx("span",{className:`badge ${d.capabilities.reasoning?"badge-yes":"badge-no"}`,children:d.capabilities.reasoning?"Yes":"No"})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Tooling"}),i.jsx("span",{className:`badge ${d.capabilities.tooling?"badge-yes":"badge-no"}`,children:d.capabilities.tooling?"Yes":"No"})]})]})]}),i.jsxs("div",{style:{marginTop:"24px"},children:[i.jsx("h4",{style:{marginBottom:"12px"},children:"Files"}),i.jsxs("div",{className:"model-meta",children:[i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Model"}),i.jsxs("span",{children:[d.files.model.url||"-"," ",d.files.model.size&&`(${d.files.model.size})`]})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Projection"}),i.jsxs("span",{children:[d.files.proj.url||"-"," ",d.files.proj.size&&`(${d.files.proj.size})`]})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Template"}),i.jsx("span",{children:d.template||"-"})]})]})]}),d.metadata.description&&i.jsxs("div",{style:{marginTop:"24px"},children:[i.jsx("h4",{style:{marginBottom:"12px"},children:"Description"}),i.jsx("p",{children:d.metadata.description})]}),i.jsxs("div",{style:{marginTop:"24px"},children:[i.jsx("h4",{style:{marginBottom:"12px"},children:"Metadata"}),i.jsxs("div",{className:"model-meta",children:[i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Created"}),i.jsx("span",{children:new Date(d.metadata.created).toLocaleString()})]}),i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Collections"}),i.jsx("span",{children:d.metadata.collections||"-"})]})]})]})]}),k==="pull"&&i.jsxs("div",{children:[i.jsxs("h3",{style:{marginBottom:"16px"},children:["Pull Output: ",a]}),f.length>0?i.jsx("div",{className:"status-box",children:f.map((F,Y)=>i.jsx("div",{className:`status-line ${F.type}`,children:F.text},Y))}):i.jsx("p",{children:"No pull output yet."}),p&&i.jsx("button",{className:"btn btn-danger",onClick:_,style:{marginTop:"16px"},children:"Cancel"})]})]})]})}function Zp(){const[e,t]=w.useState(!1),[n,r]=w.useState([]),[l,s]=w.useState(null),[o,a]=w.useState(!0),u=w.useRef(null);w.useEffect(()=>{ve.getLibsVersion().then(s).catch(()=>{}).finally(()=>a(!1))},[]);const d=()=>{t(!0),r([]),s(null);const h=(v,S)=>{r(j=>[...j,{text:v,type:S}])};u.current=ve.pullLibs(v=>{v.status&&h(v.status,"info"),(v.current||v.latest)&&s(v)},v=>{h(v,"error"),t(!1)},()=>{h("Libs update complete!","success"),t(!1)})},g=()=>{u.current&&(u.current(),u.current=null),t(!1),r(h=>[...h,{text:"Cancelled",type:"error"}])};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Pull/Update Libs"}),i.jsx("p",{children:"Download or update the Kronk libraries"})]}),i.jsxs("div",{className:"card",children:[o?i.jsx("p",{children:"Loading version info..."}):l?i.jsxs("div",{style:{marginBottom:"24px"},children:[i.jsx("h4",{style:{marginBottom:"12px"},children:"Current Version"}),i.jsxs("div",{className:"model-meta",children:[l.arch&&i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Architecture"}),i.jsx("span",{children:l.arch})]}),l.os&&i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"OS"}),i.jsx("span",{children:l.os})]}),l.processor&&i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Processor"}),i.jsx("span",{children:l.processor})]}),l.current&&i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Installed Version"}),i.jsx("span",{children:l.current})]}),l.latest&&i.jsxs("div",{className:"model-meta-item",children:[i.jsx("label",{children:"Latest Version"}),i.jsx("span",{children:l.latest})]})]})]}):i.jsx("p",{style:{marginBottom:"24px",color:"var(--color-gray-600)"},children:"No libs installed yet."}),i.jsxs("div",{style:{display:"flex",gap:"12px"},children:[i.jsx("button",{className:"btn btn-primary",onClick:d,disabled:e,children:e?"Updating...":"Pull/Update Libs"}),e&&i.jsx("button",{className:"btn btn-danger",onClick:g,children:"Cancel"})]}),n.length>0&&i.jsx("div",{className:"status-box",children:n.map((h,v)=>i.jsx("div",{className:`status-line ${h.type}`,children:h.text},v))})]})]})}function Jp(){const[e,t]=w.useState(""),[n,r]=w.useState(null),[l,s]=w.useState(!1),[o,a]=w.useState(null),u=async d=>{if(d.preventDefault(),!!e.trim()){s(!0),a(null);try{const g=await ve.listKeys(e.trim());r(g)}catch(g){a(g instanceof Error?g.message:"Failed to load keys"),r(null)}finally{s(!1)}}};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Security Keys"}),i.jsx("p",{children:"List all security keys (requires admin token)"})]}),i.jsx("div",{className:"card",children:i.jsxs("form",{onSubmit:u,children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"adminToken",children:"Admin Token"}),i.jsx("input",{type:"password",id:"adminToken",value:e,onChange:d=>t(d.target.value),placeholder:"Enter admin token (KRONK_TOKEN)"})]}),i.jsx("button",{className:"btn btn-primary",type:"submit",disabled:l||!e.trim(),children:l?"Loading...":"List Keys"})]})}),o&&i.jsx("div",{className:"alert alert-error",children:o}),n&&i.jsx("div",{className:"card",children:i.jsx("div",{className:"table-container",children:n.length>0?i.jsxs("table",{children:[i.jsx("thead",{children:i.jsxs("tr",{children:[i.jsx("th",{children:"ID"}),i.jsx("th",{children:"Created"})]})}),i.jsx("tbody",{children:n.map(d=>i.jsxs("tr",{children:[i.jsx("td",{children:d.id}),i.jsx("td",{children:new Date(d.created).toLocaleString()})]},d.id))})]}):i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"No keys found"}),i.jsx("p",{children:"Create a key to get started"})]})})})]})}function em(){const[e,t]=w.useState(""),[n,r]=w.useState(!1),[l,s]=w.useState(null),[o,a]=w.useState(null),u=async d=>{if(d.preventDefault(),!!e.trim()){r(!0),s(null),a(null);try{const g=await ve.createKey(e.trim());a(g.id)}catch(g){s(g instanceof Error?g.message:"Failed to create key")}finally{r(!1)}}};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Create Security Key"}),i.jsx("p",{children:"Generate a new security key (requires admin token)"})]}),i.jsx("div",{className:"card",children:i.jsxs("form",{onSubmit:u,children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"adminToken",children:"Admin Token"}),i.jsx("input",{type:"password",id:"adminToken",value:e,onChange:d=>t(d.target.value),placeholder:"Enter admin token (KRONK_TOKEN)"})]}),i.jsx("button",{className:"btn btn-primary",type:"submit",disabled:n||!e.trim(),children:n?"Creating...":"Create Key"})]})}),l&&i.jsx("div",{className:"alert alert-error",children:l}),o&&i.jsxs("div",{className:"card",children:[i.jsx("div",{className:"alert alert-success",children:"Key created successfully!"}),i.jsxs("div",{style:{marginTop:"12px"},children:[i.jsx("label",{style:{fontWeight:500,display:"block",marginBottom:"8px"},children:"New Key ID"}),i.jsx("div",{className:"token-display",children:o}),i.jsx("p",{style:{marginTop:"8px",fontSize:"13px",color:"var(--color-gray-600)"},children:"Store this key securely. It will not be shown again."})]})]})]})}function tm(){const[e,t]=w.useState(""),[n,r]=w.useState(""),[l,s]=w.useState(!1),[o,a]=w.useState(null),[u,d]=w.useState(null),g=async h=>{if(h.preventDefault(),!(!e.trim()||!n.trim())){s(!0),a(null),d(null);try{await ve.deleteKey(e.trim(),n.trim()),d(`Key "${n}" deleted successfully`),r("")}catch(v){a(v instanceof Error?v.message:"Failed to delete key")}finally{s(!1)}}};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Delete Security Key"}),i.jsx("p",{children:"Remove a security key (requires admin token)"})]}),i.jsxs("div",{className:"card",children:[o&&i.jsx("div",{className:"alert alert-error",children:o}),u&&i.jsx("div",{className:"alert alert-success",children:u}),i.jsxs("form",{onSubmit:g,children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"adminToken",children:"Admin Token"}),i.jsx("input",{type:"password",id:"adminToken",value:e,onChange:h=>t(h.target.value),placeholder:"Enter admin token (KRONK_TOKEN)"})]}),i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"keyId",children:"Key ID"}),i.jsx("input",{type:"text",id:"keyId",value:n,onChange:h=>r(h.target.value),placeholder:"Enter key ID to delete"})]}),i.jsx("button",{className:"btn btn-danger",type:"submit",disabled:l||!e.trim()||!n.trim(),children:l?"Deleting...":"Delete Key"})]})]})]})}const ba=[{label:"/v1/chat/completions",value:"chat-completions"},{label:"/v1/embeddings",value:"embeddings"}],nm=[{label:"Unlimited",value:"unlimited"},{label:"Per Day",value:"day"},{label:"Per Month",value:"month"},{label:"Per Year",value:"year"}],rm=()=>({enabled:!1,limit:1e3,window:"unlimited"});function lm(){const[e,t]=w.useState(""),[n,r]=w.useState(!1),[l,s]=w.useState(()=>{const c={};return ba.forEach(f=>{c[f.value]=rm()}),c}),[o,a]=w.useState("24"),[u,d]=w.useState("h"),[g,h]=w.useState(!1),[v,S]=w.useState(null),[j,k]=w.useState(null),N=(c,f)=>{s(m=>({...m,[c]:{...m[c],...f}}))},p=async c=>{if(c.preventDefault(),!e.trim())return;h(!0),S(null),k(null);const f=parseInt(o);let m;switch(u){case"h":m=f*60*60*1e9;break;case"d":m=f*24*60*60*1e9;break;case"M":m=f*30*24*60*60*1e9;break;case"y":m=f*365*24*60*60*1e9;break}const x={};Object.entries(l).forEach(([y,C])=>{C.enabled&&(x[y]={limit:C.window==="unlimited"?0:C.limit,window:C.window})});try{const y=await ve.createToken(e.trim(),{admin:n,endpoints:x,duration:m});k(y.token)}catch(y){S(y instanceof Error?y.message:"Failed to create token")}finally{h(!1)}};return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Create Token"}),i.jsx("p",{children:"Generate a new authentication token"})]}),i.jsx("div",{className:"card",children:i.jsxs("form",{onSubmit:p,children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"adminToken",children:"Admin Token"}),i.jsx("input",{type:"password",id:"adminToken",value:e,onChange:c=>t(c.target.value),placeholder:"Enter admin token (KRONK_TOKEN)"})]}),i.jsx("div",{className:"form-group",children:i.jsxs("label",{children:[i.jsx("input",{type:"checkbox",checked:n,onChange:c=>r(c.target.checked)}),"Admin privileges"]})}),i.jsxs("div",{className:"form-group",children:[i.jsx("label",{children:"Endpoints & Rate Limits"}),i.jsx("div",{style:{display:"flex",flexDirection:"column",gap:"12px"},children:ba.map(c=>{const f=l[c.value];return i.jsxs("div",{style:{padding:"12px",background:f.enabled?"rgba(240, 181, 49, 0.1)":"var(--color-gray-100)",borderRadius:"6px",border:f.enabled?"1px solid rgba(240, 181, 49, 0.3)":"1px solid transparent"},children:[i.jsxs("label",{style:{display:"flex",alignItems:"center",cursor:"pointer",fontWeight:500},children:[i.jsx("input",{type:"checkbox",checked:f.enabled,onChange:m=>N(c.value,{enabled:m.target.checked}),style:{marginRight:"8px"}}),c.label]}),f.enabled&&i.jsxs("div",{style:{display:"flex",gap:"12px",marginTop:"10px",paddingLeft:"24px"},children:[i.jsxs("div",{style:{flex:1},children:[i.jsx("label",{style:{fontSize:"12px",color:"var(--color-gray-600)",display:"block",marginBottom:"4px"},children:"Rate Limit"}),i.jsx("select",{value:f.window,onChange:m=>N(c.value,{window:m.target.value}),style:{width:"100%"},children:nm.map(m=>i.jsx("option",{value:m.value,children:m.label},m.value))})]}),f.window!=="unlimited"&&i.jsxs("div",{style:{flex:1},children:[i.jsx("label",{style:{fontSize:"12px",color:"var(--color-gray-600)",display:"block",marginBottom:"4px"},children:"Max Requests"}),i.jsx("input",{type:"number",value:f.limit,onChange:m=>N(c.value,{limit:parseInt(m.target.value)||0}),min:"1",style:{width:"100%"}})]})]})]},c.value)})})]}),i.jsxs("div",{className:"form-row",children:[i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"duration",children:"Duration"}),i.jsx("input",{type:"number",id:"duration",value:o,onChange:c=>a(c.target.value),min:"1"})]}),i.jsxs("div",{className:"form-group",children:[i.jsx("label",{htmlFor:"durationUnit",children:"Unit"}),i.jsxs("select",{id:"durationUnit",value:u,onChange:c=>d(c.target.value),children:[i.jsx("option",{value:"h",children:"Hours"}),i.jsx("option",{value:"d",children:"Days"}),i.jsx("option",{value:"M",children:"Months"}),i.jsx("option",{value:"y",children:"Years"})]})]})]}),i.jsx("button",{className:"btn btn-primary",type:"submit",disabled:g||!e.trim(),children:g?"Creating...":"Create Token"})]})}),v&&i.jsx("div",{className:"alert alert-error",children:v}),j&&i.jsxs("div",{className:"card",children:[i.jsx("div",{className:"alert alert-success",children:"Token created successfully!"}),i.jsxs("div",{style:{marginTop:"12px"},children:[i.jsx("label",{style:{fontWeight:500,display:"block",marginBottom:"8px"},children:"Token"}),i.jsx("div",{className:"token-display",children:j}),i.jsx("p",{style:{marginTop:"8px",fontSize:"13px",color:"var(--color-gray-600)"},children:"Store this token securely. It will not be shown again."})]})]})]})}function im(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"SDK Documentation"}),i.jsx("p",{children:"Documentation for the Kronk SDK"})]}),i.jsx("div",{className:"card",children:i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"🚧 Under Construction"}),i.jsx("p",{children:"SDK documentation is coming soon."})]})})]})}function sm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Kronk Package"}),i.jsx("p",{children:"Package kronk provides support for working with models using llama.cpp via yzma."})]}),i.jsxs("div",{className:"doc-layout",children:[i.jsxs("div",{className:"doc-content",children:[i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Import"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:'import "github.com/ardanlabs/kronk/sdk/kronk"'})})]}),i.jsxs("div",{className:"card",id:"functions",children:[i.jsx("h3",{children:"Functions"}),i.jsxs("div",{className:"doc-section",id:"func-init",children:[i.jsx("h4",{children:"Init"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func Init() error"})}),i.jsx("p",{className:"doc-description",children:"Init initializes the Kronk backend suport."})]}),i.jsxs("div",{className:"doc-section",id:"func-initwithsettings",children:[i.jsx("h4",{children:"InitWithSettings"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func InitWithSettings(libPath string, logLevel LogLevel) error"})}),i.jsx("p",{className:"doc-description",children:"InitWithSettings initializes the Kronk backend suport."})]}),i.jsxs("div",{className:"doc-section",id:"func-setfmtloggertraceid",children:[i.jsx("h4",{children:"SetFmtLoggerTraceID"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func SetFmtLoggerTraceID(ctx context.Context, traceID string) context.Context"})}),i.jsx("p",{className:"doc-description",children:"SetFmtLoggerTraceID allows you to set a trace id in the content that can be part of the output of the FmtLogger."})]}),i.jsxs("div",{className:"doc-section",id:"func-new",children:[i.jsx("h4",{children:"New"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func New(modelInstances int, cfg model.Config, opts ...Option) (*Kronk, error)"})}),i.jsx("p",{className:"doc-description",children:"New provides the ability to use models in a concurrently safe way. modelInstances represents the number of instances of the model to create. Unless you have more than 1 GPU, the recommended number of instances is 1."})]})]}),i.jsxs("div",{className:"card",id:"types",children:[i.jsx("h3",{children:"Types"}),i.jsxs("div",{className:"doc-section",id:"type-kronk",children:[i.jsx("h4",{children:"Kronk"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:`type Kronk struct {
 	// Has unexported fields.
-}`})}),i.jsx("p",{className:"doc-description",children:"Kronk provides a concurrently safe api for using llama.cpp to access models."})]}),i.jsxs("div",{className:"doc-section",id:"type-loglevel",children:[i.jsx("h4",{children:"LogLevel"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type LogLevel int"})}),i.jsx("p",{className:"doc-description",children:"LogLevel represents the logging level."})]}),i.jsxs("div",{className:"doc-section",id:"type-logger",children:[i.jsx("h4",{children:"Logger"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type Logger func(ctx context.Context, msg string, args ...any)"})}),i.jsx("p",{className:"doc-description",children:"Logger provides a function for logging messages from different APIs."})]}),i.jsxs("div",{className:"doc-section",id:"type-option",children:[i.jsx("h4",{children:"Option"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type Option func(*options)"})}),i.jsx("p",{className:"doc-description",children:"Option represents a functional option for configuring Kronk."})]})]}),i.jsxs("div",{className:"card",id:"methods",children:[i.jsx("h3",{children:"Methods"}),i.jsxs("div",{className:"doc-section",id:"method-kronk-activestreams",children:[i.jsx("h4",{children:"Kronk.ActiveStreams"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ActiveStreams() int"})}),i.jsx("p",{className:"doc-description",children:"ActiveStreams returns the number of active streams."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chat",children:[i.jsx("h4",{children:"Kronk.Chat"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Chat(ctx context.Context, d model.D) (model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"Chat provides support to interact with an inference model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chatstreaming",children:[i.jsx("h4",{children:"Kronk.ChatStreaming"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ChatStreaming(ctx context.Context, d model.D) (<-chan model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"ChatStreaming provides support to interact with an inference model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chatstreaminghttp",children:[i.jsx("h4",{children:"Kronk.ChatStreamingHTTP"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, w http.ResponseWriter, d model.D) (model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"ChatStreamingHTTP provides http handler support for a chat/completions call."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-embeddings",children:[i.jsx("h4",{children:"Kronk.Embeddings"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Embeddings(ctx context.Context, input string) (model.EmbedReponse, error)"})}),i.jsx("p",{className:"doc-description",children:"Embeddings provides support to interact with an embedding model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-embeddingshttp",children:[i.jsx("h4",{children:"Kronk.EmbeddingsHTTP"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) EmbeddingsHTTP(ctx context.Context, log Logger, w http.ResponseWriter, d model.D) (model.EmbedReponse, error)"})}),i.jsx("p",{className:"doc-description",children:"EmbeddingsHTTP provides http handler support for an embeddings call."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-modelconfig",children:[i.jsx("h4",{children:"Kronk.ModelConfig"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ModelConfig() model.Config"})}),i.jsx("p",{className:"doc-description",children:"ModelConfig returns a copy of the configuration being used. This may be different from the configuration passed to New() if the model has overridden any of the settings."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-modelinfo",children:[i.jsx("h4",{children:"Kronk.ModelInfo"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ModelInfo() model.ModelInfo"})}),i.jsx("p",{className:"doc-description",children:"ModelInfo returns the model information."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-systeminfo",children:[i.jsx("h4",{children:"Kronk.SystemInfo"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) SystemInfo() map[string]string"})}),i.jsx("p",{className:"doc-description",children:"SystemInfo returns system information."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-unload",children:[i.jsx("h4",{children:"Kronk.Unload"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Unload(ctx context.Context) error"})}),i.jsx("p",{className:"doc-description",children:"Unload will close down all loaded models. You should call this only when you are completely done using the group."})]}),i.jsxs("div",{className:"doc-section",id:"method-loglevel-int",children:[i.jsx("h4",{children:"LogLevel.Int"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (ll LogLevel) Int() int"})}),i.jsx("p",{className:"doc-description",children:"Int returns the integer value."})]})]}),i.jsxs("div",{className:"card",id:"constants",children:[i.jsx("h3",{children:"Constants"}),i.jsxs("div",{className:"doc-section",id:"const-version",children:[i.jsx("h4",{children:"Version"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:'const Version = "1.9.2"'})}),i.jsx("p",{className:"doc-description",children:"Version contains the current version of the kronk package."})]})]}),i.jsxs("div",{className:"card",id:"variables",children:[i.jsx("h3",{children:"Variables"}),i.jsxs("div",{className:"doc-section",id:"var-discardlogger",children:[i.jsx("h4",{children:"DiscardLogger"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:`var DiscardLogger = func(ctx context.Context, msg string, args ...any) {
+}`})}),i.jsx("p",{className:"doc-description",children:"Kronk provides a concurrently safe api for using llama.cpp to access models."})]}),i.jsxs("div",{className:"doc-section",id:"type-loglevel",children:[i.jsx("h4",{children:"LogLevel"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type LogLevel int"})}),i.jsx("p",{className:"doc-description",children:"LogLevel represents the logging level."})]}),i.jsxs("div",{className:"doc-section",id:"type-logger",children:[i.jsx("h4",{children:"Logger"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type Logger func(ctx context.Context, msg string, args ...any)"})}),i.jsx("p",{className:"doc-description",children:"Logger provides a function for logging messages from different APIs."})]}),i.jsxs("div",{className:"doc-section",id:"type-option",children:[i.jsx("h4",{children:"Option"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"type Option func(*options)"})}),i.jsx("p",{className:"doc-description",children:"Option represents a functional option for configuring Kronk."})]})]}),i.jsxs("div",{className:"card",id:"methods",children:[i.jsx("h3",{children:"Methods"}),i.jsxs("div",{className:"doc-section",id:"method-kronk-activestreams",children:[i.jsx("h4",{children:"Kronk.ActiveStreams"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ActiveStreams() int"})}),i.jsx("p",{className:"doc-description",children:"ActiveStreams returns the number of active streams."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chat",children:[i.jsx("h4",{children:"Kronk.Chat"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Chat(ctx context.Context, d model.D) (model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"Chat provides support to interact with an inference model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chatstreaming",children:[i.jsx("h4",{children:"Kronk.ChatStreaming"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ChatStreaming(ctx context.Context, d model.D) (<-chan model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"ChatStreaming provides support to interact with an inference model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-chatstreaminghttp",children:[i.jsx("h4",{children:"Kronk.ChatStreamingHTTP"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ChatStreamingHTTP(ctx context.Context, w http.ResponseWriter, d model.D) (model.ChatResponse, error)"})}),i.jsx("p",{className:"doc-description",children:"ChatStreamingHTTP provides http handler support for a chat/completions call."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-embeddings",children:[i.jsx("h4",{children:"Kronk.Embeddings"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Embeddings(ctx context.Context, input string) (model.EmbedReponse, error)"})}),i.jsx("p",{className:"doc-description",children:"Embeddings provides support to interact with an embedding model."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-embeddingshttp",children:[i.jsx("h4",{children:"Kronk.EmbeddingsHTTP"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) EmbeddingsHTTP(ctx context.Context, log Logger, w http.ResponseWriter, d model.D) (model.EmbedReponse, error)"})}),i.jsx("p",{className:"doc-description",children:"EmbeddingsHTTP provides http handler support for an embeddings call."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-modelconfig",children:[i.jsx("h4",{children:"Kronk.ModelConfig"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ModelConfig() model.Config"})}),i.jsx("p",{className:"doc-description",children:"ModelConfig returns a copy of the configuration being used. This may be different from the configuration passed to New() if the model has overridden any of the settings."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-modelinfo",children:[i.jsx("h4",{children:"Kronk.ModelInfo"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) ModelInfo() model.ModelInfo"})}),i.jsx("p",{className:"doc-description",children:"ModelInfo returns the model information."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-systeminfo",children:[i.jsx("h4",{children:"Kronk.SystemInfo"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) SystemInfo() map[string]string"})}),i.jsx("p",{className:"doc-description",children:"SystemInfo returns system information."})]}),i.jsxs("div",{className:"doc-section",id:"method-kronk-unload",children:[i.jsx("h4",{children:"Kronk.Unload"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (krn *Kronk) Unload(ctx context.Context) error"})}),i.jsx("p",{className:"doc-description",children:"Unload will close down all loaded models. You should call this only when you are completely done using the group."})]}),i.jsxs("div",{className:"doc-section",id:"method-loglevel-int",children:[i.jsx("h4",{children:"LogLevel.Int"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:"func (ll LogLevel) Int() int"})}),i.jsx("p",{className:"doc-description",children:"Int returns the integer value."})]})]}),i.jsxs("div",{className:"card",id:"constants",children:[i.jsx("h3",{children:"Constants"}),i.jsxs("div",{className:"doc-section",id:"const-version",children:[i.jsx("h4",{children:"Version"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:'const Version = "1.9.3"'})}),i.jsx("p",{className:"doc-description",children:"Version contains the current version of the kronk package."})]})]}),i.jsxs("div",{className:"card",id:"variables",children:[i.jsx("h3",{children:"Variables"}),i.jsxs("div",{className:"doc-section",id:"var-discardlogger",children:[i.jsx("h4",{children:"DiscardLogger"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:`var DiscardLogger = func(ctx context.Context, msg string, args ...any) {
 }`})}),i.jsx("p",{className:"doc-description",children:"DiscardLogger discards logging."})]}),i.jsxs("div",{className:"doc-section",id:"var-fmtlogger",children:[i.jsx("h4",{children:"FmtLogger"}),i.jsx("pre",{className:"code-block",children:i.jsx("code",{children:`var FmtLogger = func(ctx context.Context, msg string, args ...any) {
 	traceID, ok := ctx.Value(traceIDKey(1)).(string)
 	switch ok {
@@ -164,7 +164,13 @@ Error generating stack: `+s.message+`
  * @namespace
  * @public
  */var n=function(r){var l=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,s=0,o={},a={manual:r.Prism&&r.Prism.manual,disableWorkerMessageHandler:r.Prism&&r.Prism.disableWorkerMessageHandler,util:{encode:function c(f){return f instanceof u?new u(f.type,c(f.content),f.alias):Array.isArray(f)?f.map(c):f.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(c){return Object.prototype.toString.call(c).slice(8,-1)},objId:function(c){return c.__id||Object.defineProperty(c,"__id",{value:++s}),c.__id},clone:function c(f,m){m=m||{};var x,y;switch(a.util.type(f)){case"Object":if(y=a.util.objId(f),m[y])return m[y];x={},m[y]=x;for(var C in f)f.hasOwnProperty(C)&&(x[C]=c(f[C],m));return x;case"Array":return y=a.util.objId(f),m[y]?m[y]:(x=[],m[y]=x,f.forEach(function(E,_){x[_]=c(E,m)}),x);default:return f}},getLanguage:function(c){for(;c;){var f=l.exec(c.className);if(f)return f[1].toLowerCase();c=c.parentElement}return"none"},setLanguage:function(c,f){c.className=c.className.replace(RegExp(l,"gi"),""),c.classList.add("language-"+f)},currentScript:function(){if(typeof document>"u")return null;if(document.currentScript&&document.currentScript.tagName==="SCRIPT")return document.currentScript;try{throw new Error}catch(x){var c=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(x.stack)||[])[1];if(c){var f=document.getElementsByTagName("script");for(var m in f)if(f[m].src==c)return f[m]}return null}},isActive:function(c,f,m){for(var x="no-"+f;c;){var y=c.classList;if(y.contains(f))return!0;if(y.contains(x))return!1;c=c.parentElement}return!!m}},languages:{plain:o,plaintext:o,text:o,txt:o,extend:function(c,f){var m=a.util.clone(a.languages[c]);for(var x in f)m[x]=f[x];return m},insertBefore:function(c,f,m,x){x=x||a.languages;var y=x[c],C={};for(var E in y)if(y.hasOwnProperty(E)){if(E==f)for(var _ in m)m.hasOwnProperty(_)&&(C[_]=m[_]);m.hasOwnProperty(E)||(C[E]=y[E])}var R=x[c];return x[c]=C,a.languages.DFS(a.languages,function(z,F){F===R&&z!=c&&(this[z]=C)}),C},DFS:function c(f,m,x,y){y=y||{};var C=a.util.objId;for(var E in f)if(f.hasOwnProperty(E)){m.call(f,E,f[E],x||E);var _=f[E],R=a.util.type(_);R==="Object"&&!y[C(_)]?(y[C(_)]=!0,c(_,m,null,y)):R==="Array"&&!y[C(_)]&&(y[C(_)]=!0,c(_,m,E,y))}}},plugins:{},highlightAll:function(c,f){a.highlightAllUnder(document,c,f)},highlightAllUnder:function(c,f,m){var x={callback:m,container:c,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};a.hooks.run("before-highlightall",x),x.elements=Array.prototype.slice.apply(x.container.querySelectorAll(x.selector)),a.hooks.run("before-all-elements-highlight",x);for(var y=0,C;C=x.elements[y++];)a.highlightElement(C,f===!0,x.callback)},highlightElement:function(c,f,m){var x=a.util.getLanguage(c),y=a.languages[x];a.util.setLanguage(c,x);var C=c.parentElement;C&&C.nodeName.toLowerCase()==="pre"&&a.util.setLanguage(C,x);var E=c.textContent,_={element:c,language:x,grammar:y,code:E};function R(F){_.highlightedCode=F,a.hooks.run("before-insert",_),_.element.innerHTML=_.highlightedCode,a.hooks.run("after-highlight",_),a.hooks.run("complete",_),m&&m.call(_.element)}if(a.hooks.run("before-sanity-check",_),C=_.element.parentElement,C&&C.nodeName.toLowerCase()==="pre"&&!C.hasAttribute("tabindex")&&C.setAttribute("tabindex","0"),!_.code){a.hooks.run("complete",_),m&&m.call(_.element);return}if(a.hooks.run("before-highlight",_),!_.grammar){R(a.util.encode(_.code));return}if(f&&r.Worker){var z=new Worker(a.filename);z.onmessage=function(F){R(F.data)},z.postMessage(JSON.stringify({language:_.language,code:_.code,immediateClose:!0}))}else R(a.highlight(_.code,_.grammar,_.language))},highlight:function(c,f,m){var x={code:c,grammar:f,language:m};if(a.hooks.run("before-tokenize",x),!x.grammar)throw new Error('The language "'+x.language+'" has no grammar.');return x.tokens=a.tokenize(x.code,x.grammar),a.hooks.run("after-tokenize",x),u.stringify(a.util.encode(x.tokens),x.language)},tokenize:function(c,f){var m=f.rest;if(m){for(var x in m)f[x]=m[x];delete f.rest}var y=new h;return v(y,y.head,c),g(c,y,f,y.head,0),j(y)},hooks:{all:{},add:function(c,f){var m=a.hooks.all;m[c]=m[c]||[],m[c].push(f)},run:function(c,f){var m=a.hooks.all[c];if(!(!m||!m.length))for(var x=0,y;y=m[x++];)y(f)}},Token:u};r.Prism=a;function u(c,f,m,x){this.type=c,this.content=f,this.alias=m,this.length=(x||"").length|0}u.stringify=function c(f,m){if(typeof f=="string")return f;if(Array.isArray(f)){var x="";return f.forEach(function(R){x+=c(R,m)}),x}var y={type:f.type,content:c(f.content,m),tag:"span",classes:["token",f.type],attributes:{},language:m},C=f.alias;C&&(Array.isArray(C)?Array.prototype.push.apply(y.classes,C):y.classes.push(C)),a.hooks.run("wrap",y);var E="";for(var _ in y.attributes)E+=" "+_+'="'+(y.attributes[_]||"").replace(/"/g,"&quot;")+'"';return"<"+y.tag+' class="'+y.classes.join(" ")+'"'+E+">"+y.content+"</"+y.tag+">"};function d(c,f,m,x){c.lastIndex=f;var y=c.exec(m);if(y&&x&&y[1]){var C=y[1].length;y.index+=C,y[0]=y[0].slice(C)}return y}function g(c,f,m,x,y,C){for(var E in m)if(!(!m.hasOwnProperty(E)||!m[E])){var _=m[E];_=Array.isArray(_)?_:[_];for(var R=0;R<_.length;++R){if(C&&C.cause==E+","+R)return;var z=_[R],F=z.inside,Y=!!z.lookbehind,qe=!!z.greedy,ee=z.alias;if(qe&&!z.pattern.global){var M=z.pattern.toString().match(/[imsuy]*$/)[0];z.pattern=RegExp(z.pattern.source,M+"g")}for(var re=z.pattern||z,T=x.next,L=y;T!==f.tail&&!(C&&L>=C.reach);L+=T.value.length,T=T.next){var I=T.value;if(f.length>c.length)return;if(!(I instanceof u)){var $=1,U;if(qe){if(U=d(re,L,c,Y),!U||U.index>=c.length)break;var be=U.index,Qt=U.index+U[0].length,ce=L;for(ce+=T.value.length;be>=ce;)T=T.next,ce+=T.value.length;if(ce-=T.value.length,L=ce,T.value instanceof u)continue;for(var Xe=T;Xe!==f.tail&&(ce<Qt||typeof Xe.value=="string");Xe=Xe.next)$++,ce+=Xe.value.length;$--,I=c.slice(L,ce),U.index-=L}else if(U=d(re,0,I,Y),!U)continue;var be=U.index,Ze=U[0],zl=I.slice(0,be),oo=I.slice(be+Ze.length),Ol=L+I.length;C&&Ol>C.reach&&(C.reach=Ol);var yr=T.prev;zl&&(yr=v(f,yr,zl),L+=zl.length),S(f,yr,$);var sd=new u(E,F?a.tokenize(Ze,F):Ze,ee,Ze);if(T=v(f,yr,sd),oo&&v(f,T,oo),$>1){var Ul={cause:E+","+R,reach:Ol};g(c,f,m,T.prev,L,Ul),C&&Ul.reach>C.reach&&(C.reach=Ul.reach)}}}}}}function h(){var c={value:null,prev:null,next:null},f={value:null,prev:c,next:null};c.next=f,this.head=c,this.tail=f,this.length=0}function v(c,f,m){var x=f.next,y={value:m,prev:f,next:x};return f.next=y,x.prev=y,c.length++,y}function S(c,f,m){for(var x=f.next,y=0;y<m&&x!==c.tail;y++)x=x.next;f.next=x,x.prev=f,c.length-=y}function j(c){for(var f=[],m=c.head.next;m!==c.tail;)f.push(m.value),m=m.next;return f}if(!r.document)return r.addEventListener&&(a.disableWorkerMessageHandler||r.addEventListener("message",function(c){var f=JSON.parse(c.data),m=f.language,x=f.code,y=f.immediateClose;r.postMessage(a.highlight(x,a.languages[m],m)),y&&r.close()},!1)),a;var k=a.util.currentScript();k&&(a.filename=k.src,k.hasAttribute("data-manual")&&(a.manual=!0));function N(){a.manual||a.highlightAll()}if(!a.manual){var p=document.readyState;p==="loading"||p==="interactive"&&k&&k.defer?document.addEventListener("DOMContentLoaded",N):window.requestAnimationFrame?window.requestAnimationFrame(N):window.setTimeout(N,16)}return a}(t);e.exports&&(e.exports=n),typeof uo<"u"&&(uo.Prism=n),n.languages.markup={comment:{pattern:/<!--(?:(?!<!--)[\s\S])*?-->/,greedy:!0},prolog:{pattern:/<\?[\s\S]+?\?>/,greedy:!0},doctype:{pattern:/<!DOCTYPE(?:[^>"'[\]]|"[^"]*"|'[^']*')+(?:\[(?:[^<"'\]]|"[^"]*"|'[^']*'|<(?!!--)|<!--(?:[^-]|-(?!->))*-->)*\]\s*)?>/i,greedy:!0,inside:{"internal-subset":{pattern:/(^[^\[]*\[)[\s\S]+(?=\]>$)/,lookbehind:!0,greedy:!0,inside:null},string:{pattern:/"[^"]*"|'[^']*'/,greedy:!0},punctuation:/^<!|>$|[[\]]/,"doctype-tag":/^DOCTYPE/i,name:/[^\s<>'"]+/}},cdata:{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,greedy:!0},tag:{pattern:/<\/?(?!\d)[^\s>\/=$<%]+(?:\s(?:\s*[^\s>\/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))|(?=[\s/>])))+)?\s*\/?>/,greedy:!0,inside:{tag:{pattern:/^<\/?[^\s>\/]+/,inside:{punctuation:/^<\/?/,namespace:/^[^\s>\/:]+:/}},"special-attr":[],"attr-value":{pattern:/=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+)/,inside:{punctuation:[{pattern:/^=/,alias:"attr-equals"},{pattern:/^(\s*)["']|["']$/,lookbehind:!0}]}},punctuation:/\/?>/,"attr-name":{pattern:/[^\s>\/]+/,inside:{namespace:/^[^\s>\/:]+:/}}}},entity:[{pattern:/&[\da-z]{1,8};/i,alias:"named-entity"},/&#x?[\da-f]{1,8};/i]},n.languages.markup.tag.inside["attr-value"].inside.entity=n.languages.markup.entity,n.languages.markup.doctype.inside["internal-subset"].inside=n.languages.markup,n.hooks.add("wrap",function(r){r.type==="entity"&&(r.attributes.title=r.content.replace(/&amp;/,"&"))}),Object.defineProperty(n.languages.markup.tag,"addInlined",{value:function(l,s){var o={};o["language-"+s]={pattern:/(^<!\[CDATA\[)[\s\S]+?(?=\]\]>$)/i,lookbehind:!0,inside:n.languages[s]},o.cdata=/^<!\[CDATA\[|\]\]>$/i;var a={"included-cdata":{pattern:/<!\[CDATA\[[\s\S]*?\]\]>/i,inside:o}};a["language-"+s]={pattern:/[\s\S]+/,inside:n.languages[s]};var u={};u[l]={pattern:RegExp(/(<__[^>]*>)(?:<!\[CDATA\[(?:[^\]]|\](?!\]>))*\]\]>|(?!<!\[CDATA\[)[\s\S])*?(?=<\/__>)/.source.replace(/__/g,function(){return l}),"i"),lookbehind:!0,greedy:!0,inside:a},n.languages.insertBefore("markup","cdata",u)}}),Object.defineProperty(n.languages.markup.tag,"addAttribute",{value:function(r,l){n.languages.markup.tag.inside["special-attr"].push({pattern:RegExp(/(^|["'\s])/.source+"(?:"+r+")"+/\s*=\s*(?:"[^"]*"|'[^']*'|[^\s'">=]+(?=[\s>]))/.source,"i"),lookbehind:!0,inside:{"attr-name":/^[^\s=]+/,"attr-value":{pattern:/=[\s\S]+/,inside:{value:{pattern:/(^=\s*(["']|(?!["'])))\S[\s\S]*(?=\2$)/,lookbehind:!0,alias:[l,"language-"+l],inside:n.languages[l]},punctuation:[{pattern:/^=/,alias:"attr-equals"},/"|'/]}}}})}}),n.languages.html=n.languages.markup,n.languages.mathml=n.languages.markup,n.languages.svg=n.languages.markup,n.languages.xml=n.languages.extend("markup",{}),n.languages.ssml=n.languages.xml,n.languages.atom=n.languages.xml,n.languages.rss=n.languages.xml,function(r){var l=/(?:"(?:\\(?:\r\n|[\s\S])|[^"\\\r\n])*"|'(?:\\(?:\r\n|[\s\S])|[^'\\\r\n])*')/;r.languages.css={comment:/\/\*[\s\S]*?\*\//,atrule:{pattern:RegExp("@[\\w-](?:"+/[^;{\s"']|\s+(?!\s)/.source+"|"+l.source+")*?"+/(?:;|(?=\s*\{))/.source),inside:{rule:/^@[\w-]+/,"selector-function-argument":{pattern:/(\bselector\s*\(\s*(?![\s)]))(?:[^()\s]|\s+(?![\s)])|\((?:[^()]|\([^()]*\))*\))+(?=\s*\))/,lookbehind:!0,alias:"selector"},keyword:{pattern:/(^|[^\w-])(?:and|not|only|or)(?![\w-])/,lookbehind:!0}}},url:{pattern:RegExp("\\burl\\((?:"+l.source+"|"+/(?:[^\\\r\n()"']|\\[\s\S])*/.source+")\\)","i"),greedy:!0,inside:{function:/^url/i,punctuation:/^\(|\)$/,string:{pattern:RegExp("^"+l.source+"$"),alias:"url"}}},selector:{pattern:RegExp(`(^|[{}\\s])[^{}\\s](?:[^{};"'\\s]|\\s+(?![\\s{])|`+l.source+")*(?=\\s*\\{)"),lookbehind:!0},string:{pattern:l,greedy:!0},property:{pattern:/(^|[^-\w\xA0-\uFFFF])(?!\s)[-_a-z\xA0-\uFFFF](?:(?!\s)[-\w\xA0-\uFFFF])*(?=\s*:)/i,lookbehind:!0},important:/!important\b/i,function:{pattern:/(^|[^-a-z0-9])[-a-z0-9]+(?=\()/i,lookbehind:!0},punctuation:/[(){};:,]/},r.languages.css.atrule.inside.rest=r.languages.css;var s=r.languages.markup;s&&(s.tag.addInlined("style","css"),s.tag.addAttribute("style","css"))}(n),n.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0}],string:{pattern:/(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/(\b(?:class|extends|implements|instanceof|interface|new|trait)\s+|\bcatch\s+\()[\w.\\]+/i,lookbehind:!0,inside:{punctuation:/[.\\]/}},keyword:/\b(?:break|catch|continue|do|else|finally|for|function|if|in|instanceof|new|null|return|throw|try|while)\b/,boolean:/\b(?:false|true)\b/,function:/\b\w+(?=\()/,number:/\b0x[\da-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:e[+-]?\d+)?/i,operator:/[<>]=?|[!=]=?=?|--?|\+\+?|&&?|\|\|?|[?*/~^%]/,punctuation:/[{}[\];(),.:]/},n.languages.javascript=n.languages.extend("clike",{"class-name":[n.languages.clike["class-name"],{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$A-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\.(?:constructor|prototype))/,lookbehind:!0}],keyword:[{pattern:/((?:^|\})\s*)catch\b/,lookbehind:!0},{pattern:/(^|[^.]|\.\.\.\s*)\b(?:as|assert(?=\s*\{)|async(?=\s*(?:function\b|\(|[$\w\xA0-\uFFFF]|$))|await|break|case|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally(?=\s*(?:\{|$))|for|from(?=\s*(?:['"]|$))|function|(?:get|set)(?=\s*(?:[#\[$\w\xA0-\uFFFF]|$))|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)\b/,lookbehind:!0}],function:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*(?:\.\s*(?:apply|bind|call)\s*)?\()/,number:{pattern:RegExp(/(^|[^\w$])/.source+"(?:"+(/NaN|Infinity/.source+"|"+/0[bB][01]+(?:_[01]+)*n?/.source+"|"+/0[oO][0-7]+(?:_[0-7]+)*n?/.source+"|"+/0[xX][\dA-Fa-f]+(?:_[\dA-Fa-f]+)*n?/.source+"|"+/\d+(?:_\d+)*n/.source+"|"+/(?:\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\.\d+(?:_\d+)*)(?:[Ee][+-]?\d+(?:_\d+)*)?/.source)+")"+/(?![\w$])/.source),lookbehind:!0},operator:/--|\+\+|\*\*=?|=>|&&=?|\|\|=?|[!=]==|<<=?|>>>?=?|[-+*/%&|^!=<>]=?|\.{3}|\?\?=?|\?\.?|[~:]/}),n.languages.javascript["class-name"][0].pattern=/(\b(?:class|extends|implements|instanceof|interface|new)\s+)[\w.\\]+/,n.languages.insertBefore("javascript","keyword",{regex:{pattern:RegExp(/((?:^|[^$\w\xA0-\uFFFF."'\])\s]|\b(?:return|yield))\s*)/.source+/\//.source+"(?:"+/(?:\[(?:[^\]\\\r\n]|\\.)*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}/.source+"|"+/(?:\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.|\[(?:[^[\]\\\r\n]|\\.)*\])*\])*\]|\\.|[^/\\\[\r\n])+\/[dgimyus]{0,7}v[dgimyus]{0,7}/.source+")"+/(?=(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*(?:$|[\r\n,.;:})\]]|\/\/))/.source),lookbehind:!0,greedy:!0,inside:{"regex-source":{pattern:/^(\/)[\s\S]+(?=\/[a-z]*$)/,lookbehind:!0,alias:"language-regex",inside:n.languages.regex},"regex-delimiter":/^\/|\/$/,"regex-flags":/^[a-z]+$/}},"function-variable":{pattern:/#?(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*[=:]\s*(?:async\s*)?(?:\bfunction\b|(?:\((?:[^()]|\([^()]*\))*\)|(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)\s*=>))/,alias:"function"},parameter:[{pattern:/(function(?:\s+(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*)?\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\))/,lookbehind:!0,inside:n.languages.javascript},{pattern:/(^|[^$\w\xA0-\uFFFF])(?!\s)[_$a-z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*=>)/i,lookbehind:!0,inside:n.languages.javascript},{pattern:/(\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*=>)/,lookbehind:!0,inside:n.languages.javascript},{pattern:/((?:\b|\s|^)(?!(?:as|async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|let|new|null|of|package|private|protected|public|return|set|static|super|switch|this|throw|try|typeof|undefined|var|void|while|with|yield)(?![$\w\xA0-\uFFFF]))(?:(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*\s*)\(\s*|\]\s*\(\s*)(?!\s)(?:[^()\s]|\s+(?![\s)])|\([^()]*\))+(?=\s*\)\s*\{)/,lookbehind:!0,inside:n.languages.javascript}],constant:/\b[A-Z](?:[A-Z_]|\dx?)*\b/}),n.languages.insertBefore("javascript","string",{hashbang:{pattern:/^#!.*/,greedy:!0,alias:"comment"},"template-string":{pattern:/`(?:\\[\s\S]|\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}|(?!\$\{)[^\\`])*`/,greedy:!0,inside:{"template-punctuation":{pattern:/^`|`$/,alias:"string"},interpolation:{pattern:/((?:^|[^\\])(?:\\{2})*)\$\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})+\}/,lookbehind:!0,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:n.languages.javascript}},string:/[\s\S]+/}},"string-property":{pattern:/((?:^|[,{])[ \t]*)(["'])(?:\\(?:\r\n|[\s\S])|(?!\2)[^\\\r\n])*\2(?=\s*:)/m,lookbehind:!0,greedy:!0,alias:"property"}}),n.languages.insertBefore("javascript","operator",{"literal-property":{pattern:/((?:^|[,{])[ \t]*)(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*:)/m,lookbehind:!0,alias:"property"}}),n.languages.markup&&(n.languages.markup.tag.addInlined("script","javascript"),n.languages.markup.tag.addAttribute(/on(?:abort|blur|change|click|composition(?:end|start|update)|dblclick|error|focus(?:in|out)?|key(?:down|up)|load|mouse(?:down|enter|leave|move|out|over|up)|reset|resize|scroll|select|slotchange|submit|unload|wheel)/.source,"javascript")),n.languages.js=n.languages.javascript,function(){if(typeof n>"u"||typeof document>"u")return;Element.prototype.matches||(Element.prototype.matches=Element.prototype.msMatchesSelector||Element.prototype.webkitMatchesSelector);var r="Loading…",l=function(k,N){return"✖ Error "+k+" while fetching file: "+N},s="✖ Error: File does not exist or is empty",o={js:"javascript",py:"python",rb:"ruby",ps1:"powershell",psm1:"powershell",sh:"bash",bat:"batch",h:"c",tex:"latex"},a="data-src-status",u="loading",d="loaded",g="failed",h="pre[data-src]:not(["+a+'="'+d+'"]):not(['+a+'="'+u+'"])';function v(k,N,p){var c=new XMLHttpRequest;c.open("GET",k,!0),c.onreadystatechange=function(){c.readyState==4&&(c.status<400&&c.responseText?N(c.responseText):c.status>=400?p(l(c.status,c.statusText)):p(s))},c.send(null)}function S(k){var N=/^\s*(\d+)\s*(?:(,)\s*(?:(\d+)\s*)?)?$/.exec(k||"");if(N){var p=Number(N[1]),c=N[2],f=N[3];return c?f?[p,Number(f)]:[p,void 0]:[p,p]}}n.hooks.add("before-highlightall",function(k){k.selector+=", "+h}),n.hooks.add("before-sanity-check",function(k){var N=k.element;if(N.matches(h)){k.code="",N.setAttribute(a,u);var p=N.appendChild(document.createElement("CODE"));p.textContent=r;var c=N.getAttribute("data-src"),f=k.language;if(f==="none"){var m=(/\.(\w+)$/.exec(c)||[,"none"])[1];f=o[m]||m}n.util.setLanguage(p,f),n.util.setLanguage(N,f);var x=n.plugins.autoloader;x&&x.loadLanguages(f),v(c,function(y){N.setAttribute(a,d);var C=S(N.getAttribute("data-range"));if(C){var E=y.split(/\r\n?|\n/g),_=C[0],R=C[1]==null?E.length:C[1];_<0&&(_+=E.length),_=Math.max(0,Math.min(_-1,E.length)),R<0&&(R+=E.length),R=Math.max(0,Math.min(R,E.length)),y=E.slice(_,R).join(`
-`),N.hasAttribute("data-start")||N.setAttribute("data-start",String(_+1))}p.textContent=y,n.highlightElement(p)},function(y){N.setAttribute(a,g),p.textContent=y})}}),n.plugins.fileHighlight={highlight:function(N){for(var p=(N||document).querySelectorAll(h),c=0,f;f=p[c++];)n.highlightElement(f)}};var j=!1;n.fileHighlight=function(){j||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),j=!0),n.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(ld);var am=ld.exports;const um=La(am);Prism.languages.go=Prism.languages.extend("clike",{string:{pattern:/(^|[^\\])"(?:\\.|[^"\\\r\n])*"|`[^`]*`/,lookbehind:!0,greedy:!0},keyword:/\b(?:break|case|chan|const|continue|default|defer|else|fallthrough|for|func|go(?:to)?|if|import|interface|map|package|range|return|select|struct|switch|type|var)\b/,boolean:/\b(?:_|false|iota|nil|true)\b/,number:[/\b0(?:b[01_]+|o[0-7_]+)i?\b/i,/\b0x(?:[a-f\d_]+(?:\.[a-f\d_]*)?|\.[a-f\d_]+)(?:p[+-]?\d+(?:_\d+)*)?i?(?!\w)/i,/(?:\b\d[\d_]*(?:\.[\d_]*)?|\B\.\d[\d_]*)(?:e[+-]?[\d_]+)?i?(?!\w)/i],operator:/[*\/%^!=]=?|\+[=+]?|-[=-]?|\|[=|]?|&(?:=|&|\^=?)?|>(?:>=?|=)?|<(?:<=?|=|-)?|:=|\.\.\./,builtin:/\b(?:append|bool|byte|cap|close|complex|complex(?:64|128)|copy|delete|error|float(?:32|64)|u?int(?:8|16|32|64)?|imag|len|make|new|panic|print(?:ln)?|real|recover|rune|string|uintptr)\b/});Prism.languages.insertBefore("go","string",{char:{pattern:/'(?:\\.|[^'\\\r\n]){0,10}'/,greedy:!0}});delete Prism.languages.go["class-name"];function Fn({children:e}){const t=w.useRef(null);return w.useEffect(()=>{t.current&&um.highlightElement(t.current)},[e]),i.jsx("pre",{className:"code-go",children:i.jsx("code",{ref:t,className:"language-go",children:e})})}const cm=`// Run: make example-question
+`),N.hasAttribute("data-start")||N.setAttribute("data-start",String(_+1))}p.textContent=y,n.highlightElement(p)},function(y){N.setAttribute(a,g),p.textContent=y})}}),n.plugins.fileHighlight={highlight:function(N){for(var p=(N||document).querySelectorAll(h),c=0,f;f=p[c++];)n.highlightElement(f)}};var j=!1;n.fileHighlight=function(){j||(console.warn("Prism.fileHighlight is deprecated. Use `Prism.plugins.fileHighlight.highlight` instead."),j=!0),n.plugins.fileHighlight.highlight.apply(this,arguments)}}()})(ld);var am=ld.exports;const um=La(am);Prism.languages.go=Prism.languages.extend("clike",{string:{pattern:/(^|[^\\])"(?:\\.|[^"\\\r\n])*"|`[^`]*`/,lookbehind:!0,greedy:!0},keyword:/\b(?:break|case|chan|const|continue|default|defer|else|fallthrough|for|func|go(?:to)?|if|import|interface|map|package|range|return|select|struct|switch|type|var)\b/,boolean:/\b(?:_|false|iota|nil|true)\b/,number:[/\b0(?:b[01_]+|o[0-7_]+)i?\b/i,/\b0x(?:[a-f\d_]+(?:\.[a-f\d_]*)?|\.[a-f\d_]+)(?:p[+-]?\d+(?:_\d+)*)?i?(?!\w)/i,/(?:\b\d[\d_]*(?:\.[\d_]*)?|\B\.\d[\d_]*)(?:e[+-]?[\d_]+)?i?(?!\w)/i],operator:/[*\/%^!=]=?|\+[=+]?|-[=-]?|\|[=|]?|&(?:=|&|\^=?)?|>(?:>=?|=)?|<(?:<=?|=|-)?|:=|\.\.\./,builtin:/\b(?:append|bool|byte|cap|close|complex|complex(?:64|128)|copy|delete|error|float(?:32|64)|u?int(?:8|16|32|64)?|imag|len|make|new|panic|print(?:ln)?|real|recover|rune|string|uintptr)\b/});Prism.languages.insertBefore("go","string",{char:{pattern:/'(?:\\.|[^'\\\r\n]){0,10}'/,greedy:!0}});delete Prism.languages.go["class-name"];function Fn({children:e}){const t=w.useRef(null);return w.useEffect(()=>{t.current&&um.highlightElement(t.current)},[e]),i.jsx("pre",{className:"code-go",children:i.jsx("code",{ref:t,className:"language-go",children:e})})}const cm=`// This example shows you a basic program of using Kronk to ask a model a question.
+//
+// The first time you run this program the system will download and install
+// the model and libraries.
+//
+// Run the example like this from the root of the project:
+// $ make example-question
 
 package main
 
@@ -211,7 +217,7 @@ func run() error {
 	}
 
 	defer func() {
-		fmt.Println("\\n\\nUnloading Kronk")
+		fmt.Println("\\nUnloading Kronk")
 		if err := krn.Unload(context.Background()); err != nil {
 			fmt.Printf("failed to unload model: %v", err)
 		}
@@ -301,7 +307,16 @@ func installSystem() (models.Path, error) {
 	}
 
 	return mp, nil
-}`,dm=`// Run: make example-chat
+}
+`,dm=`// This example shows you how to create a simple chat application against an
+// inference model using kronk. Thanks to Kronk and yzma, reasoning and tool
+// calling is enabled.
+//
+// The first time you run this program the system will download and install
+// the model and libraries.
+//
+// Run the example like this from the root of the project:
+// $ make example-chat
 
 package main
 
@@ -323,6 +338,8 @@ import (
 
 const (
 	modelURL = "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf"
+	//modelURL = "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q8_0.gguf"
+	//modelURL       = "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q8_0.gguf"
 	modelInstances = 1
 )
 
@@ -451,7 +468,7 @@ func newKronk(mp models.Path) (*kronk.Kronk, error) {
 		return nil, fmt.Errorf("unable to create inference model: %w", err)
 	}
 
-	fmt.Print("- system info:\\n	")
+	fmt.Print("- system info:\\n\\t")
 	for k, v := range krn.SystemInfo() {
 		fmt.Printf("%s:%v, ", k, v)
 	}
@@ -607,12 +624,18 @@ loop:
 	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
 	of := float32(contextWindow) / float32(1024)
 
-	fmt.Printf("\\n\\n\\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\x1B[0m
-",
+	fmt.Printf("\\n\\n\\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\\u001b[0m\\n",
 		lr.Usage.PromptTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
 
 	return messages, nil
-}`,fm=`// Run: make example-embedding
+}
+`,fm=`// This example shows you how to use an embedding model.
+//
+// The first time you run this program the system will download and install
+// the model and libraries.
+//
+// Run the example like this from the root of the project:
+// $ make example-embedding
 
 package main
 
@@ -732,208 +755,14 @@ func newKronk(mp models.Path) (*kronk.Kronk, error) {
 	fmt.Println("  - isGPT        :", krn.ModelInfo().IsGPTModel)
 
 	return krn, nil
-}`,hm=`// Run: make example-audio
-
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/ardanlabs/kronk/sdk/kronk"
-	"github.com/ardanlabs/kronk/sdk/kronk/model"
-	"github.com/ardanlabs/kronk/sdk/tools/libs"
-	"github.com/ardanlabs/kronk/sdk/tools/models"
-)
-
-const (
-	modelURL       = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.Q8_0.gguf"
-	projURL        = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.mmproj-Q8_0.gguf"
-	audioFile      = "examples/samples/jfk.wav"
-	modelInstances = 1
-)
-
-func main() {
-	if err := run(); err != nil {
-		fmt.Printf("\\nERROR: %s\\n", err)
-		os.Exit(1)
-	}
 }
-
-func run() error {
-	info, err := installSystem()
-	if err != nil {
-		return fmt.Errorf("unable to install system: %w", err)
-	}
-
-	krn, err := newKronk(info)
-	if err != nil {
-		return fmt.Errorf("unable to init kronk: %w", err)
-	}
-	defer func() {
-		fmt.Println("\\nUnloading Kronk")
-		if err := krn.Unload(context.Background()); err != nil {
-			fmt.Printf("failed to unload model: %v", err)
-		}
-	}()
-
-	// -------------------------------------------------------------------------
-
-	question := "Please describe what you hear in the following audio clip."
-
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
-	ch, err := performChat(ctx, krn, question, audioFile)
-	if err != nil {
-		return fmt.Errorf("perform chat: %w", err)
-	}
-
-	if err := modelResponse(krn, ch); err != nil {
-		return fmt.Errorf("model response: %w", err)
-	}
-
-	return nil
-}
-
-func installSystem() (models.Path, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	defer cancel()
-
-	libs, err := libs.New()
-	if err != nil {
-		return models.Path{}, err
-	}
-
-	if _, err := libs.Download(ctx, kronk.FmtLogger); err != nil {
-		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	// -------------------------------------------------------------------------
-
-	modelTool, err := models.New()
-	if err != nil {
-		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
-	}
-
-	mp, err := modelTool.Download(ctx, kronk.FmtLogger, modelURL, projURL)
-	if err != nil {
-		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
-	}
-
-	return mp, nil
-}
-
-func newKronk(mp models.Path) (*kronk.Kronk, error) {
-	if err := kronk.Init(); err != nil {
-		return nil, fmt.Errorf("unable to init kronk: %w", err)
-	}
-
-	krn, err := kronk.New(modelInstances, model.Config{
-		ModelFile: mp.ModelFile,
-		ProjFile:  mp.ProjFile,
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create inference model: %w", err)
-	}
-
-	fmt.Print("- system info:\\n	")
-	for k, v := range krn.SystemInfo() {
-		fmt.Printf("%s:%v, ", k, v)
-	}
-	fmt.Println()
-
-	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
-	fmt.Println("- embeddings   :", krn.ModelInfo().IsEmbedModel)
-	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
-
-	return krn, nil
-}
-
-func performChat(ctx context.Context, krn *kronk.Kronk, question string, imageFile string) (<-chan model.ChatResponse, error) {
-	image, err := readImage(imageFile)
-	if err != nil {
-		return nil, fmt.Errorf("read image: %w", err)
-	}
-
-	fmt.Printf("\\nQuestion: %s\\n", question)
-
-	d := model.D{
-		"messages":    model.MediaMessage(question, image),
-		"max_tokens":  2048,
-		"temperature": 0.7,
-		"top_p":       0.9,
-		"top_k":       40,
-	}
-
-	ch, err := krn.ChatStreaming(ctx, d)
-	if err != nil {
-		return nil, fmt.Errorf("chat streaming: %w", err)
-	}
-
-	return ch, nil
-}
-
-func modelResponse(krn *kronk.Kronk, ch <-chan model.ChatResponse) error {
-	fmt.Print("\\nMODEL> ")
-
-	var reasoning bool
-	var lr model.ChatResponse
-
-loop:
-	for resp := range ch {
-		lr = resp
-
-		switch resp.Choice[0].FinishReason {
-		case model.FinishReasonStop:
-			break loop
-
-		case model.FinishReasonError:
-			return fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
-		}
-
-		if resp.Choice[0].Delta.Reasoning != "" {
-			fmt.Printf("\\u001b[91m%s\\u001b[0m", resp.Choice[0].Delta.Reasoning)
-			reasoning = true
-			continue
-		}
-
-		if reasoning {
-			reasoning = false
-			fmt.Print("\\n\\n")
-		}
-
-		fmt.Printf("%s", resp.Choice[0].Delta.Content)
-	}
-
-	// -------------------------------------------------------------------------
-
-	contextTokens := lr.Usage.PromptTokens + lr.Usage.CompletionTokens
-	contextWindow := krn.ModelConfig().ContextWindow
-	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
-	of := float32(contextWindow) / float32(1024)
-
-	fmt.Printf("\\n\\n\\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\\u001b[0m\\n",
-		lr.Usage.PromptTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
-
-	return nil
-}
-
-func readImage(imageFile string) ([]byte, error) {
-	if _, err := os.Stat(imageFile); err != nil {
-		return nil, fmt.Errorf("error accessing file %q: %w", imageFile, err)
-	}
-
-	image, err := os.ReadFile(imageFile)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file %q: %w", imageFile, err)
-	}
-
-	return image, nil
-}`,pm=`// Run: make example-vision
+`,hm=`// This example shows you how to execute a simple prompt against a vision model.
+//
+// The first time you run this program the system will download and install
+// the model and libraries.
+//
+// Run the example like this from the root of the project:
+// $ make example-vision
 
 package main
 
@@ -1134,4 +963,213 @@ func newKronk(mp models.Path) (*kronk.Kronk, error) {
 	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
 
 	return krn, nil
-}`;function mm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"SDK Examples"}),i.jsx("p",{children:"Complete working examples demonstrating how to use the Kronk SDK"})]}),i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Question"}),i.jsx("p",{className:"doc-description",children:"Basic program demonstrating how to ask a model a question with streaming response. The simplest way to get started."}),i.jsx(Fn,{children:cm})]}),i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Chat"}),i.jsx("p",{className:"doc-description",children:"Create a simple chat application with tool calling support. Demonstrates multi-turn conversation and function calling."}),i.jsx(Fn,{children:dm})]}),i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Embedding"}),i.jsx("p",{className:"doc-description",children:"Generate embeddings using an embedding model. Useful for semantic search and similarity comparisons."}),i.jsx(Fn,{children:fm})]}),i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Audio"}),i.jsx("p",{className:"doc-description",children:"Execute a prompt against an audio model. Uses Qwen2-Audio-7B for audio understanding."}),i.jsx(Fn,{children:hm})]}),i.jsxs("div",{className:"card",children:[i.jsx("h3",{children:"Vision"}),i.jsx("p",{className:"doc-description",children:"Execute a prompt against a vision model to analyze images. Uses Qwen2.5-VL for image understanding."}),i.jsx(Fn,{children:pm})]})]})}function gm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"CLI Documentation"}),i.jsx("p",{children:"Documentation for the Kronk CLI"})]}),i.jsx("div",{className:"card",children:i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"🚧 Under Construction"}),i.jsx("p",{children:"CLI documentation is coming soon."})]})})]})}function vm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Web API Documentation"}),i.jsx("p",{children:"Documentation for the Kronk Web API"})]}),i.jsx("div",{className:"card",children:i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"🚧 Under Construction"}),i.jsx("p",{children:"Web API documentation is coming soon."})]})})]})}const id={home:"/","model-list":"/models","model-ps":"/models/running","model-pull":"/models/pull","catalog-list":"/catalog","libs-pull":"/libs/pull","security-key-list":"/security/keys","security-key-create":"/security/keys/create","security-key-delete":"/security/keys/delete","security-token-create":"/security/tokens/create","docs-sdk":"/docs/sdk","docs-sdk-kronk":"/docs/sdk/kronk","docs-sdk-model":"/docs/sdk/model","docs-sdk-examples":"/docs/sdk/examples","docs-cli":"/docs/cli","docs-webapi":"/docs/webapi"},xm=Object.fromEntries(Object.entries(id).map(([e,t])=>[t,e]));function ym(){return i.jsxs("div",{className:"welcome",children:[i.jsx("img",{src:"https://raw.githubusercontent.com/ardanlabs/kronk/refs/heads/main/images/project/kronk_banner.jpg",alt:"Kronk Banner",className:"welcome-banner"}),i.jsx("h2",{children:"Welcome to Kronk"}),i.jsx("p",{children:"Select an option from the sidebar to manage your Kronk environment."})]})}function km(){return i.jsx(zp,{children:i.jsx(Wp,{children:i.jsx(Bp,{children:i.jsxs(Rp,{children:[i.jsx(se,{path:"/",element:i.jsx(ym,{})}),i.jsx(se,{path:"/models",element:i.jsx(Hp,{})}),i.jsx(se,{path:"/models/running",element:i.jsx(Yp,{})}),i.jsx(se,{path:"/models/pull",element:i.jsx(qp,{})}),i.jsx(se,{path:"/catalog",element:i.jsx(Xp,{})}),i.jsx(se,{path:"/libs/pull",element:i.jsx(Zp,{})}),i.jsx(se,{path:"/security/keys",element:i.jsx(Jp,{})}),i.jsx(se,{path:"/security/keys/create",element:i.jsx(em,{})}),i.jsx(se,{path:"/security/keys/delete",element:i.jsx(tm,{})}),i.jsx(se,{path:"/security/tokens/create",element:i.jsx(lm,{})}),i.jsx(se,{path:"/docs/sdk",element:i.jsx(im,{})}),i.jsx(se,{path:"/docs/sdk/kronk",element:i.jsx(sm,{})}),i.jsx(se,{path:"/docs/sdk/model",element:i.jsx(om,{})}),i.jsx(se,{path:"/docs/sdk/examples",element:i.jsx(mm,{})}),i.jsx(se,{path:"/docs/cli",element:i.jsx(gm,{})}),i.jsx(se,{path:"/docs/webapi",element:i.jsx(vm,{})})]})})})})}hi.createRoot(document.getElementById("root")).render(i.jsx(Ka.StrictMode,{children:i.jsx(km,{})}));
+}
+`,pm=`// This example shows you how to execute a simple prompt against a vision model.
+//
+// The first time you run this program the system will download and install
+// the model and libraries.
+//
+// Run the example like this from the root of the project:
+// $ make example-vision
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/ardanlabs/kronk/sdk/kronk"
+	"github.com/ardanlabs/kronk/sdk/kronk/model"
+	"github.com/ardanlabs/kronk/sdk/tools/libs"
+	"github.com/ardanlabs/kronk/sdk/tools/models"
+)
+
+const (
+	modelURL       = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.Q8_0.gguf"
+	projURL        = "https://huggingface.co/mradermacher/Qwen2-Audio-7B-GGUF/resolve/main/Qwen2-Audio-7B.mmproj-Q8_0.gguf"
+	audioFile      = "examples/samples/jfk.wav"
+	modelInstances = 1
+)
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Printf("\\nERROR: %s\\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	info, err := installSystem()
+	if err != nil {
+		return fmt.Errorf("unable to install system: %w", err)
+	}
+
+	krn, err := newKronk(info)
+	if err != nil {
+		return fmt.Errorf("unable to init kronk: %w", err)
+	}
+	defer func() {
+		fmt.Println("\\nUnloading Kronk")
+		if err := krn.Unload(context.Background()); err != nil {
+			fmt.Printf("failed to unload model: %v", err)
+		}
+	}()
+
+	// -------------------------------------------------------------------------
+
+	question := "Please describe what you hear in the following audio clip."
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	ch, err := performChat(ctx, krn, question, audioFile)
+	if err != nil {
+		return fmt.Errorf("perform chat: %w", err)
+	}
+
+	if err := modelResponse(krn, ch); err != nil {
+		return fmt.Errorf("model response: %w", err)
+	}
+
+	return nil
+}
+
+func installSystem() (models.Path, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
+	libs, err := libs.New()
+	if err != nil {
+		return models.Path{}, err
+	}
+
+	if _, err := libs.Download(ctx, kronk.FmtLogger); err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	// -------------------------------------------------------------------------
+
+	modelTool, err := models.New()
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install llama.cpp: %w", err)
+	}
+
+	mp, err := modelTool.Download(ctx, kronk.FmtLogger, modelURL, projURL)
+	if err != nil {
+		return models.Path{}, fmt.Errorf("unable to install model: %w", err)
+	}
+
+	return mp, nil
+}
+
+func newKronk(mp models.Path) (*kronk.Kronk, error) {
+	if err := kronk.Init(); err != nil {
+		return nil, fmt.Errorf("unable to init kronk: %w", err)
+	}
+
+	krn, err := kronk.New(modelInstances, model.Config{
+		ModelFile: mp.ModelFile,
+		ProjFile:  mp.ProjFile,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to create inference model: %w", err)
+	}
+
+	fmt.Print("- system info:\\n\\t")
+	for k, v := range krn.SystemInfo() {
+		fmt.Printf("%s:%v, ", k, v)
+	}
+	fmt.Println()
+
+	fmt.Println("- contextWindow:", krn.ModelConfig().ContextWindow)
+	fmt.Println("- embeddings   :", krn.ModelInfo().IsEmbedModel)
+	fmt.Println("- isGPT        :", krn.ModelInfo().IsGPTModel)
+
+	return krn, nil
+}
+
+func performChat(ctx context.Context, krn *kronk.Kronk, question string, imageFile string) (<-chan model.ChatResponse, error) {
+	image, err := readImage(imageFile)
+	if err != nil {
+		return nil, fmt.Errorf("read image: %w", err)
+	}
+
+	fmt.Printf("\\nQuestion: %s\\n", question)
+
+	d := model.D{
+		"messages":    model.MediaMessage(question, image),
+		"max_tokens":  2048,
+		"temperature": 0.7,
+		"top_p":       0.9,
+		"top_k":       40,
+	}
+
+	ch, err := krn.ChatStreaming(ctx, d)
+	if err != nil {
+		return nil, fmt.Errorf("chat streaming: %w", err)
+	}
+
+	return ch, nil
+}
+
+func modelResponse(krn *kronk.Kronk, ch <-chan model.ChatResponse) error {
+	fmt.Print("\\nMODEL> ")
+
+	var reasoning bool
+	var lr model.ChatResponse
+
+loop:
+	for resp := range ch {
+		lr = resp
+
+		switch resp.Choice[0].FinishReason {
+		case model.FinishReasonStop:
+			break loop
+
+		case model.FinishReasonError:
+			return fmt.Errorf("error from model: %s", resp.Choice[0].Delta.Content)
+		}
+
+		if resp.Choice[0].Delta.Reasoning != "" {
+			fmt.Printf("\\u001b[91m%s\\u001b[0m", resp.Choice[0].Delta.Reasoning)
+			reasoning = true
+			continue
+		}
+
+		if reasoning {
+			reasoning = false
+			fmt.Print("\\n\\n")
+		}
+
+		fmt.Printf("%s", resp.Choice[0].Delta.Content)
+	}
+
+	// -------------------------------------------------------------------------
+
+	contextTokens := lr.Usage.PromptTokens + lr.Usage.CompletionTokens
+	contextWindow := krn.ModelConfig().ContextWindow
+	percentage := (float64(contextTokens) / float64(contextWindow)) * 100
+	of := float32(contextWindow) / float32(1024)
+
+	fmt.Printf("\\n\\n\\u001b[90mInput: %d  Reasoning: %d  Completion: %d  Output: %d  Window: %d (%.0f%% of %.0fK) TPS: %.2f\\u001b[0m\\n",
+		lr.Usage.PromptTokens, lr.Usage.ReasoningTokens, lr.Usage.CompletionTokens, lr.Usage.OutputTokens, contextTokens, percentage, of, lr.Usage.TokensPerSecond)
+
+	return nil
+}
+
+func readImage(imageFile string) ([]byte, error) {
+	if _, err := os.Stat(imageFile); err != nil {
+		return nil, fmt.Errorf("error accessing file %q: %w", imageFile, err)
+	}
+
+	image, err := os.ReadFile(imageFile)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %q: %w", imageFile, err)
+	}
+
+	return image, nil
+}
+`;function mm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"SDK Examples"}),i.jsx("p",{children:"Complete working examples demonstrating how to use the Kronk SDK"})]}),i.jsxs("div",{className:"doc-layout",children:[i.jsxs("div",{className:"doc-content",children:[i.jsxs("div",{className:"card",id:"example-question",children:[i.jsx("h3",{children:"Question"}),i.jsx("p",{className:"doc-description",children:"Ask a single question to a model"}),i.jsx(Fn,{children:cm})]}),i.jsxs("div",{className:"card",id:"example-chat",children:[i.jsx("h3",{children:"Chat"}),i.jsx("p",{className:"doc-description",children:"Interactive chat with conversation history"}),i.jsx(Fn,{children:dm})]}),i.jsxs("div",{className:"card",id:"example-embedding",children:[i.jsx("h3",{children:"Embedding"}),i.jsx("p",{className:"doc-description",children:"Generate embeddings for semantic search"}),i.jsx(Fn,{children:fm})]}),i.jsxs("div",{className:"card",id:"example-vision",children:[i.jsx("h3",{children:"Vision"}),i.jsx("p",{className:"doc-description",children:"Analyze images using vision models"}),i.jsx(Fn,{children:hm})]}),i.jsxs("div",{className:"card",id:"example-audio",children:[i.jsx("h3",{children:"Audio"}),i.jsx("p",{className:"doc-description",children:"Process audio files using audio models"}),i.jsx(Fn,{children:pm})]})]}),i.jsx("nav",{className:"doc-sidebar",children:i.jsx("div",{className:"doc-sidebar-content",children:i.jsxs("div",{className:"doc-index-section",children:[i.jsx("span",{className:"doc-index-header",children:"Examples"}),i.jsxs("ul",{children:[i.jsx("li",{children:i.jsx("a",{href:"#example-question",children:"Question"})}),i.jsx("li",{children:i.jsx("a",{href:"#example-chat",children:"Chat"})}),i.jsx("li",{children:i.jsx("a",{href:"#example-embedding",children:"Embedding"})}),i.jsx("li",{children:i.jsx("a",{href:"#example-vision",children:"Vision"})}),i.jsx("li",{children:i.jsx("a",{href:"#example-audio",children:"Audio"})})]})]})})})]})]})}function gm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"CLI Documentation"}),i.jsx("p",{children:"Documentation for the Kronk CLI"})]}),i.jsx("div",{className:"card",children:i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"🚧 Under Construction"}),i.jsx("p",{children:"CLI documentation is coming soon."})]})})]})}function vm(){return i.jsxs("div",{children:[i.jsxs("div",{className:"page-header",children:[i.jsx("h2",{children:"Web API Documentation"}),i.jsx("p",{children:"Documentation for the Kronk Web API"})]}),i.jsx("div",{className:"card",children:i.jsxs("div",{className:"empty-state",children:[i.jsx("h3",{children:"🚧 Under Construction"}),i.jsx("p",{children:"Web API documentation is coming soon."})]})})]})}const id={home:"/","model-list":"/models","model-ps":"/models/running","model-pull":"/models/pull","catalog-list":"/catalog","libs-pull":"/libs/pull","security-key-list":"/security/keys","security-key-create":"/security/keys/create","security-key-delete":"/security/keys/delete","security-token-create":"/security/tokens/create","docs-sdk":"/docs/sdk","docs-sdk-kronk":"/docs/sdk/kronk","docs-sdk-model":"/docs/sdk/model","docs-sdk-examples":"/docs/sdk/examples","docs-cli":"/docs/cli","docs-webapi":"/docs/webapi"},xm=Object.fromEntries(Object.entries(id).map(([e,t])=>[t,e]));function ym(){return i.jsxs("div",{className:"welcome",children:[i.jsx("img",{src:"https://raw.githubusercontent.com/ardanlabs/kronk/refs/heads/main/images/project/kronk_banner.jpg",alt:"Kronk Banner",className:"welcome-banner"}),i.jsx("h2",{children:"Welcome to Kronk"}),i.jsx("p",{children:"Select an option from the sidebar to manage your Kronk environment."})]})}function km(){return i.jsx(zp,{children:i.jsx(Wp,{children:i.jsx(Bp,{children:i.jsxs(Rp,{children:[i.jsx(se,{path:"/",element:i.jsx(ym,{})}),i.jsx(se,{path:"/models",element:i.jsx(Hp,{})}),i.jsx(se,{path:"/models/running",element:i.jsx(Yp,{})}),i.jsx(se,{path:"/models/pull",element:i.jsx(qp,{})}),i.jsx(se,{path:"/catalog",element:i.jsx(Xp,{})}),i.jsx(se,{path:"/libs/pull",element:i.jsx(Zp,{})}),i.jsx(se,{path:"/security/keys",element:i.jsx(Jp,{})}),i.jsx(se,{path:"/security/keys/create",element:i.jsx(em,{})}),i.jsx(se,{path:"/security/keys/delete",element:i.jsx(tm,{})}),i.jsx(se,{path:"/security/tokens/create",element:i.jsx(lm,{})}),i.jsx(se,{path:"/docs/sdk",element:i.jsx(im,{})}),i.jsx(se,{path:"/docs/sdk/kronk",element:i.jsx(sm,{})}),i.jsx(se,{path:"/docs/sdk/model",element:i.jsx(om,{})}),i.jsx(se,{path:"/docs/sdk/examples",element:i.jsx(mm,{})}),i.jsx(se,{path:"/docs/cli",element:i.jsx(gm,{})}),i.jsx(se,{path:"/docs/webapi",element:i.jsx(vm,{})})]})})})})}hi.createRoot(document.getElementById("root")).render(i.jsx(Ka.StrictMode,{children:i.jsx(km,{})}));

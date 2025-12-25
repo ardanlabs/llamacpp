@@ -17,5 +17,9 @@ func run() error {
 		return err
 	}
 
+	if err := examples(); err != nil {
+		return err
+	}
+
 	return nil
 }
