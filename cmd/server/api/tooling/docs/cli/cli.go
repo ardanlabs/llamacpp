@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type command struct {
@@ -61,7 +64,7 @@ func Run() error {
 func generateCLIDoc(cmd command) error {
 	tsx := generateCLITSX(cmd)
 
-	filename := fmt.Sprintf("DocsCLI%s.tsx", strings.Title(cmd.Name))
+	filename := fmt.Sprintf("DocsCLI%s.tsx", cases.Title(language.English).String(cmd.Name))
 	outputPath := outputDir + "/" + filename
 
 	if err := os.WriteFile(outputPath, []byte(tsx), 0644); err != nil {
@@ -76,7 +79,7 @@ func generateCLIDoc(cmd command) error {
 func generateCLITSX(cmd command) string {
 	var b strings.Builder
 
-	componentName := fmt.Sprintf("DocsCLI%s", strings.Title(cmd.Name))
+	componentName := fmt.Sprintf("DocsCLI%s", cases.Title(language.English).String(cmd.Name))
 
 	b.WriteString(fmt.Sprintf("export default function %s() {\n", componentName))
 	b.WriteString("  return (\n")
