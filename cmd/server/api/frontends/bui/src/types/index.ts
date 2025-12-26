@@ -62,8 +62,8 @@ export interface CatalogFile {
 }
 
 export interface CatalogFiles {
-  model: CatalogFile;
-  proj: CatalogFile;
+  model: CatalogFile[];
+  proj: CatalogFile[];
 }
 
 export interface CatalogModelResponse {

@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -17,9 +18,28 @@ import (
 // Logger represents a logger for capturing events.
 type Logger func(ctx context.Context, msg string, args ...any)
 
+// DownloadShards performs a complete workflow for downloading and installing
+// a shard of models. NOT IMPLEMENTED YET.
+func (m *Models) DownloadShards(ctx context.Context, log Logger, modelURLs []string, projURLs []string) (Path, error) {
+	if !hasNetwork() {
+		return Path{}, fmt.Errorf("download-model: no network available")
+	}
+
+	if len(modelURLs) == 1 {
+		var projURL string
+		if len(projURLs) == 1 {
+			projURL = projURLs[0]
+		}
+
+		return m.Download(ctx, log, modelURLs[0], projURL)
+	}
+
+	return Path{}, errors.New("sharding not implemented yet")
+}
+
 // Download performs a complete workflow for downloading and installing
 // the specified model.
-func (m *Models) Download(ctx context.Context, log Logger, modelFileURL string, projURL string) (Path, error) {
+func (m *Models) Download(ctx context.Context, log Logger, modelURL string, projURL string) (Path, error) {
 	if !hasNetwork() {
 		return Path{}, fmt.Errorf("download-model: no network available")
 	}
@@ -30,23 +50,23 @@ func (m *Models) Download(ctx context.Context, log Logger, modelFileURL string, 
 		}
 	}()
 
-	modelFileName, err := extractFileName(modelFileURL)
+	modelFileName, err := extractFileName(modelURL)
 	if err != nil {
 		return Path{}, fmt.Errorf("download-model: unable to extract file name: %w", err)
 	}
 
 	modelID := extractModelID(modelFileName)
 
-	log(ctx, fmt.Sprintf("download-model: model-url[%s] proj-url[%s] model-id[%s]", modelFileURL, projURL, modelID))
+	log(ctx, fmt.Sprintf("download-model: model-url[%s] proj-url[%s] model-id[%s]", modelURL, projURL, modelID))
 	log(ctx, "download-model: waiting to check model status...")
 
 	progress := func(src string, currentSize int64, totalSize int64, mibPerSec float64, complete bool) {
 		log(ctx, fmt.Sprintf("\x1b[1A\r\x1b[Kdownload-model: Downloading %s... %d MiB of %d MiB (%.2f MiB/s)", src, currentSize/(1024*1024), totalSize/(1024*1024), mibPerSec))
 	}
 
-	mp, errOrg := m.downloadModel(ctx, modelFileURL, projURL, progress)
+	mp, errOrg := m.downloadModel(ctx, modelURL, projURL, progress)
 	if errOrg != nil {
-		log(ctx, "download-model:", "ERROR", errOrg, "model-file-url", modelFileURL)
+		log(ctx, "download-model:", "ERROR", errOrg, "model-file-url", modelURL)
 
 		if mp, err := m.RetrievePath(modelID); err == nil {
 			size, err := fileSize(mp.ModelFile)

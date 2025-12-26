@@ -7,9 +7,9 @@ models:
     web_page: https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
     template:
     files:
-      model:
-        url: https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/resolve/main/embeddinggemma-300m-qat-Q8_0.gguf
-        size: 329 MiB
+      models:
+        - url: https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/resolve/main/embeddinggemma-300m-qat-Q8_0.gguf
+          size: 329 MiB
     capabilities:
       endpoint: embeddings
       images: false

@@ -10,10 +10,10 @@ import (
 
 	"github.com/ardanlabs/kronk/cmd/server/app/domain/authapp"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/authclient"
+	"github.com/ardanlabs/kronk/cmd/server/app/sdk/cache"
 	"github.com/ardanlabs/kronk/cmd/server/app/sdk/errs"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/logger"
 	"github.com/ardanlabs/kronk/cmd/server/foundation/web"
-	"github.com/ardanlabs/kronk/cmd/server/app/sdk/cache"
 	"github.com/ardanlabs/kronk/sdk/tools/catalog"
 	"github.com/ardanlabs/kronk/sdk/tools/libs"
 	"github.com/ardanlabs/kronk/sdk/tools/models"
@@ -287,7 +287,9 @@ func (a *app) pullCatalog(ctx context.Context, r *http.Request) web.Encoder {
 		f.Flush()
 	}
 
-	mp, err := a.models.Download(ctx, logger, model.Files.Model.URL, model.Files.Proj.URL)
+	modelURLs, projURLs := model.Files.ToURLS()
+
+	mp, err := a.models.DownloadShards(ctx, logger, modelURLs, projURLs)
 	if err != nil {
 		ver := toAppPull(err.Error(), models.Path{})
 

@@ -56,15 +56,27 @@ func Test_Catalog(t *testing.T) {
 		Name: "Text-Generation",
 		Models: []catalog.Model{
 			{
-				ID:          "Qwen3-8B-Q8_0",
+				ID:          "Llama-3.3-70B-Instruct-Q8_0",
 				Category:    "Text-Generation",
-				OwnedBy:     "Qwen",
-				ModelFamily: "Qwen3-8B-GGUF",
-				WebPage:     "https://huggingface.co/Qwen/Qwen3-8B-GGUF",
+				OwnedBy:     "unsloth",
+				ModelFamily: "Llama-3.3-70B-Instruct-GGUF",
+				WebPage:     "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-GGUF",
 				Files: catalog.Files{
-					Model: catalog.File{
-						URL:  "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q8_0.gguf",
-						Size: "8.71 GiB",
+					Models: []catalog.File{
+						{
+							URL:  "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-GGUF/resolve/main/Llama-3.3-70B-Instruct-Q8_0/Llama-3.3-70B-Instruct-Q8_0-00001-of-00002.gguf",
+							Size: "39.8 GiB",
+						},
+						{
+							URL:  "https://huggingface.co/unsloth/Llama-3.3-70B-Instruct-GGUF/resolve/main/Llama-3.3-70B-Instruct-Q8_0/Llama-3.3-70B-Instruct-Q8_0-00002-of-00002.gguf",
+							Size: "35.2 GiB",
+						},
+					},
+					Projs: []catalog.File{
+						{
+							URL:  "projs: just for testing",
+							Size: "0.0 GiB",
+						},
 					},
 				},
 				Capabilities: catalog.Capabilities{
@@ -77,9 +89,9 @@ func Test_Catalog(t *testing.T) {
 					Tooling:   true,
 				},
 				Metadata: catalog.Metadata{
-					Created:     time.Date(2025, 5, 3, 0, 0, 0, 0, time.UTC),
-					Collections: "https://huggingface.co/collections/Qwen",
-					Description: "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models.",
+					Created:     time.Date(2025, 5, 10, 0, 0, 0, 0, time.UTC),
+					Collections: "https://huggingface.co/collections/unsloth",
+					Description: "Llama 3.3 70B is Meta's advanced, multilingual, open-source large language model (LLM) with 70 billion parameters, excelling in complex reasoning, dialogue, and coding tasks, delivering flagship-level performance (like 405B models) with better efficiency, optimized for text-only applications, and featuring improved instruction-following, safety, and tool-use capabilities for enterprise and research use.",
 				},
 			},
 		},
@@ -90,19 +102,21 @@ func Test_Catalog(t *testing.T) {
 	}
 
 	var gotCat catalog.CatalogModels
-	for _, catalog := range catalogs {
-		if len(catalog.Models) == 0 {
-			continue
-		}
-
-		if catalog.Models[0].ID == expCat.Models[0].ID {
-			gotCat = catalog
-			break
+outer:
+	for _, cat := range catalogs {
+		for _, model := range cat.Models {
+			if model.ID == expCat.Models[0].ID {
+				gotCat = cat
+				break outer
+			}
 		}
 	}
 
-	if len(gotCat.Models) > 1 {
-		gotCat.Models = gotCat.Models[:1]
+	for i, model := range gotCat.Models {
+		if model.ID == expCat.Models[0].ID {
+			gotCat.Models = []catalog.Model{gotCat.Models[i]}
+			break
+		}
 	}
 
 	if diff := cmp.Diff(expCat, gotCat); diff != "" {
@@ -147,8 +161,8 @@ func Test_RetrieveCatalog(t *testing.T) {
 		t.Errorf("expected catalog name %q, got %q", "Text-Generation", catalog.Name)
 	}
 
-	if len(catalog.Models) != 2 {
-		t.Errorf("expected 2 models, got %d", len(catalog.Models))
+	if len(catalog.Models) != 3 {
+		t.Errorf("expected 3 models, got %d", len(catalog.Models))
 	}
 
 	modelIDs := make(map[string]bool)

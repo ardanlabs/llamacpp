@@ -362,15 +362,23 @@ export default function CatalogList() {
                 <h4 style={{ marginBottom: '12px' }}>Files</h4>
                 <div className="model-meta">
                   <div className="model-meta-item">
-                    <label>Model</label>
+                    <label>Models</label>
                     <span>
-                      {modelInfo.files.model.url || '-'} {modelInfo.files.model.size && `(${modelInfo.files.model.size})`}
+                      {modelInfo.files.model.length > 0 ? (
+                        modelInfo.files.model.map((file, idx) => (
+                          <div key={idx}>{file.url} {file.size && `(${file.size})`}</div>
+                        ))
+                      ) : '-'}
                     </span>
                   </div>
                   <div className="model-meta-item">
-                    <label>Projection</label>
+                    <label>Projections</label>
                     <span>
-                      {modelInfo.files.proj.url || '-'} {modelInfo.files.proj.size && `(${modelInfo.files.proj.size})`}
+                      {modelInfo.files.proj.length > 0 ? (
+                        modelInfo.files.proj.map((file, idx) => (
+                          <div key={idx}>{file.url} {file.size && `(${file.size})`}</div>
+                        ))
+                      ) : '-'}
                     </span>
                   </div>
                   <div className="model-meta-item">

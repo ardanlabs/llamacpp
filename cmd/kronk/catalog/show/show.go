@@ -70,10 +70,15 @@ func printWeb(model toolapp.CatalogModelResponse) {
 
 	fmt.Println("Files")
 	fmt.Println("-----")
-	fmt.Printf("Model:        %s (%s)\n", model.Files.Model.URL, model.Files.Model.Size)
-	if model.Files.Proj.URL != "" {
-		fmt.Printf("Proj:         %s (%s)\n", model.Files.Proj.URL, model.Files.Proj.Size)
+
+	for _, model := range model.Files.Models {
+		fmt.Printf("Model:        %s (%s)\n", model.URL, model.Size)
 	}
+
+	for _, proj := range model.Files.Projs {
+		fmt.Printf("Proj:         %s (%s)\n", proj.URL, proj.Size)
+	}
+
 	fmt.Println()
 
 	fmt.Println("Capabilities")
@@ -107,10 +112,18 @@ func print(model catalog.Model) {
 
 	fmt.Println("Files")
 	fmt.Println("-----")
-	fmt.Printf("Model:        %s (%s)\n", model.Files.Model.URL, model.Files.Model.Size)
-	if model.Files.Proj.URL != "" {
-		fmt.Printf("Proj:         %s (%s)\n", model.Files.Proj.URL, model.Files.Proj.Size)
+	if len(model.Files.Models) > 0 {
+		for _, model := range model.Files.Models {
+			fmt.Printf("Model:        %s (%s)\n", model.URL, model.Size)
+		}
 	}
+
+	if len(model.Files.Projs) > 0 {
+		for _, proj := range model.Files.Projs {
+			fmt.Printf("Proj:         %s (%s)\n", proj.URL, proj.Size)
+		}
+	}
+
 	fmt.Println()
 
 	fmt.Println("Capabilities")

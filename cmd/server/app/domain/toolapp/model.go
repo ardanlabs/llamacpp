@@ -248,8 +248,8 @@ type CatalogFile struct {
 
 // CatalogFiles represents file information for a model.
 type CatalogFiles struct {
-	Model CatalogFile `json:"model"`
-	Proj  CatalogFile `json:"proj"`
+	Models []CatalogFile `json:"model"`
+	Projs  []CatalogFile `json:"proj"`
 }
 
 // CatalogModelResponse represents information for a model.
@@ -282,6 +282,16 @@ func (app CatalogModelsResponse) Encode() ([]byte, string, error) {
 }
 
 func toCatalogModelResponse(model catalog.Model) CatalogModelResponse {
+	models := make([]CatalogFile, len(model.Files.Models))
+	for i, model := range model.Files.Models {
+		models[i] = CatalogFile(model)
+	}
+
+	projs := make([]CatalogFile, len(model.Files.Projs))
+	for i, proj := range model.Files.Projs {
+		projs[i] = CatalogFile(proj)
+	}
+
 	return CatalogModelResponse{
 		ID:          model.ID,
 		Category:    model.Category,
@@ -290,14 +300,8 @@ func toCatalogModelResponse(model catalog.Model) CatalogModelResponse {
 		WebPage:     model.WebPage,
 		Template:    model.Template,
 		Files: CatalogFiles{
-			Model: CatalogFile{
-				URL:  model.Files.Model.URL,
-				Size: model.Files.Model.Size,
-			},
-			Proj: CatalogFile{
-				URL:  model.Files.Proj.URL,
-				Size: model.Files.Proj.Size,
-			},
+			Models: models,
+			Projs:  projs,
 		},
 		Capabilities: CatalogCapabilities{
 			Endpoint:  model.Capabilities.Endpoint,
