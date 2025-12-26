@@ -352,3 +352,21 @@ deps-upgrade: bui-upgrade
 
 yzma-latest:
 	GOPROXY=direct go get github.com/hybridgroup/yzma@main
+
+# ==============================================================================
+# Examples
+
+example-audio:
+	CGO_ENABLED=0 go run examples/audio/main.go
+
+example-chat:
+	CGO_ENABLED=0 go run examples/chat/main.go
+
+example-embedding:
+	CGO_ENABLED=0 go run examples/embedding/main.go
+
+example-question:
+	CGO_ENABLED=0 go run examples/question/main.go
+
+example-vision:
+	CGO_ENABLED=0 go run examples/vision/main.go
