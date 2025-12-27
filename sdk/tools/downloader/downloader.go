@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"time"
 
 	"github.com/hashicorp/go-getter"
@@ -37,12 +38,28 @@ func Download(ctx context.Context, src string, dest string, progress ProgressFun
 		}
 	}
 
+	var getters map[string]getter.Getter
+
+	if os.Getenv("KRONK_HF_TOKEN") != "" {
+		httpGetter := &getter.HttpGetter{
+			Header: map[string][]string{
+				"Authorization": {"Bearer " + os.Getenv("HF_TOKEN")},
+			},
+		}
+
+		getters = map[string]getter.Getter{
+			"https": httpGetter,
+			"http":  httpGetter,
+		}
+	}
+
 	client := getter.Client{
 		Ctx:              ctx,
 		Src:              src,
 		Dst:              dest,
 		Mode:             getter.ClientModeAny,
 		ProgressListener: getter.ProgressTracker(&pr),
+		Getters:          getters,
 	}
 
 	if err := client.Get(); err != nil {

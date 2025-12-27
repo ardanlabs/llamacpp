@@ -38,7 +38,8 @@ func (m *Models) DownloadShards(ctx context.Context, log Logger, modelURLs []str
 }
 
 // Download performs a complete workflow for downloading and installing
-// the specified model.
+// the specified model. If you need to set your HuggingFace token, use the
+// environment variable KRONK_HF_TOKEN.
 func (m *Models) Download(ctx context.Context, log Logger, modelURL string, projURL string) (Path, error) {
 	if !hasNetwork() {
 		return Path{}, fmt.Errorf("download-model: no network available")
